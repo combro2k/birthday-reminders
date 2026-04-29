@@ -230,4 +230,15 @@ impl BirthdayRepository for PgBirthdayRepo {
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
         Ok(())
     }
+
+    async fn cleanup_old_reminders(&self, older_than_days: u32) -> Result<u64, RepositoryError> {
+        let result = sqlx::query(
+            "DELETE FROM reminder_log WHERE reminded_at < NOW() - make_interval(days => $1)",
+        )
+        .bind(older_than_days as i32)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        Ok(result.rows_affected())
+    }
 }

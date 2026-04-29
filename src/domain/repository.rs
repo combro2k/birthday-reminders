@@ -69,6 +69,9 @@ pub trait BirthdayRepository: Send + Sync {
         days_before: u32,
         year: i32,
     ) -> Result<(), RepositoryError>;
+
+    /// Delete reminder log entries older than the given number of days
+    async fn cleanup_old_reminders(&self, older_than_days: u32) -> Result<u64, RepositoryError>;
 }
 
 /// Notification channel persistence

@@ -44,6 +44,13 @@ impl ReminderJobService {
             }
         }
 
+        // Clean up reminder log entries older than 400 days
+        match self.birthday_repo.cleanup_old_reminders(400).await {
+            Ok(count) if count > 0 => info!("Cleaned up {} old reminder log entries", count),
+            Err(e) => warn!("Failed to clean up old reminder logs: {}", e),
+            _ => {}
+        }
+
         Ok(())
     }
 
