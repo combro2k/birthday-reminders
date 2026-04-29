@@ -16,12 +16,14 @@ pub struct LoginTemplate {
     pub oidc_enabled: bool,
     pub oidc_provider_name: String,
     pub registration_enabled: bool,
+    pub csrf_token: String,
 }
 
 #[derive(Template)]
 #[template(path = "auth/register.html")]
 pub struct RegisterTemplate {
     pub error: Option<String>,
+    pub csrf_token: String,
 }
 
 // ---- Birthday Templates ----
@@ -31,6 +33,7 @@ pub struct RegisterTemplate {
 pub struct DashboardTemplate {
     pub user: User,
     pub upcoming: Vec<BirthdayView>,
+    pub csrf_token: String,
 }
 
 #[derive(Template)]
@@ -38,6 +41,7 @@ pub struct DashboardTemplate {
 pub struct BirthdayListTemplate {
     pub user: User,
     pub birthdays: Vec<BirthdayView>,
+    pub csrf_token: String,
 }
 
 #[derive(Template)]
@@ -49,6 +53,7 @@ pub struct BirthdayFormTemplate {
     pub edit_date: String,
     pub edit_notes: String,
     pub error: Option<String>,
+    pub csrf_token: String,
 }
 
 // ---- Notification Templates ----
@@ -59,6 +64,7 @@ pub struct ChannelsTemplate {
     pub user: User,
     pub channels: Vec<ChannelView>,
     pub available: Vec<ChannelKindView>,
+    pub csrf_token: String,
 }
 
 #[derive(Template)]
@@ -72,6 +78,7 @@ pub struct ChannelFormTemplate {
     pub has_existing: bool,
     pub error: Option<String>,
     pub success: Option<String>,
+    pub csrf_token: String,
 }
 
 // ---- Settings Templates ----
@@ -82,6 +89,7 @@ pub struct ProfileTemplate {
     pub user: User,
     pub error: Option<String>,
     pub success: Option<String>,
+    pub csrf_token: String,
 }
 
 #[derive(Template)]
@@ -91,6 +99,7 @@ pub struct ApiTokensTemplate {
     pub tokens: Vec<ApiTokenView>,
     pub new_token: Option<String>,
     pub error: Option<String>,
+    pub csrf_token: String,
 }
 
 // ---- Admin Templates ----
@@ -102,6 +111,7 @@ pub struct AdminUsersTemplate {
     pub users: Vec<User>,
     pub error: Option<String>,
     pub success: Option<String>,
+    pub csrf_token: String,
 }
 
 // ---- View Models ----

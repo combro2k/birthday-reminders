@@ -12,6 +12,7 @@
         <a href="/settings/profile">Settings</a>
         {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
         <form method="POST" action="/auth/logout" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn-link">Logout</button>
         </form>
     </div>
@@ -29,6 +30,7 @@
     {% endif %}
 
     <form method="POST" action="/notifications/{{ channel_type }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="form-group">
             <label>
                 <input type="checkbox" name="enabled" value="true"
@@ -116,6 +118,7 @@
     {% if has_existing %}
     <div class="mt-2">
         <form method="POST" action="/notifications/{{ channel_type }}/test" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-secondary">Send Test Notification</button>
         </form>
     </div>

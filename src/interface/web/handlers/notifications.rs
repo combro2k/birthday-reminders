@@ -6,16 +6,20 @@ use axum::{
     Form,
 };
 use serde::Deserialize;
+use tower_sessions::Session;
 
 use crate::domain::notification::ChannelKind;
 use crate::domain::user::User;
+use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::{ChannelFormTemplate, ChannelKindView, ChannelView, ChannelsTemplate};
 
 pub async fn list_channels(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let records = state
         .notification_service
         .list_channels(&user.id)
@@ -39,6 +43,7 @@ pub async fn list_channels(
         user,
         channels,
         available,
+        csrf_token,
     };
     Html(template.to_string())
 }
@@ -46,8 +51,10 @@ pub async fn list_channels(
 pub async fn channel_form(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Path(channel_type): Path<String>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let kind = match ChannelKind::from_str(&channel_type) {
         Some(k) => k,
         None => return Redirect::to("/notifications").into_response(),
@@ -70,6 +77,7 @@ pub async fn channel_form(
         enabled: existing.as_ref().map(|r| r.enabled).unwrap_or(true),
         error: None,
         success: None,
+        csrf_token,
     };
     Html(template.to_string()).into_response()
 }
@@ -83,9 +91,11 @@ pub struct ChannelConfigForm {
 pub async fn save_channel(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Path(channel_type): Path<String>,
     Form(form): Form<ChannelConfigForm>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let kind = match ChannelKind::from_str(&channel_type) {
         Some(k) => k,
         None => return Redirect::to("/notifications").into_response(),
@@ -103,6 +113,7 @@ pub async fn save_channel(
                 enabled: true,
                 error: Some(format!("Invalid JSON config: {}", e)),
                 success: None,
+                csrf_token,
             };
             return Html(template.to_string()).into_response();
         }
@@ -125,6 +136,7 @@ pub async fn save_channel(
                 enabled,
                 error: None,
                 success: Some("Channel saved successfully".to_string()),
+                csrf_token,
             };
             Html(template.to_string()).into_response()
         }
@@ -138,6 +150,7 @@ pub async fn save_channel(
                 enabled,
                 error: Some(e.to_string()),
                 success: None,
+                csrf_token,
             };
             Html(template.to_string()).into_response()
         }
@@ -147,8 +160,10 @@ pub async fn save_channel(
 pub async fn test_channel(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Path(channel_type): Path<String>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let kind = match ChannelKind::from_str(&channel_type) {
         Some(k) => k,
         None => return Redirect::to("/notifications").into_response(),
@@ -180,6 +195,7 @@ pub async fn test_channel(
         enabled: existing.as_ref().map(|r| r.enabled).unwrap_or(true),
         error,
         success,
+        csrf_token,
     };
     Html(template.to_string()).into_response()
 }

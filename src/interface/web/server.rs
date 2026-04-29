@@ -24,7 +24,7 @@ use crate::infrastructure::auth::oidc::OidcClient;
 use crate::infrastructure::config::AppConfig;
 
 use super::handlers::{admin, auth, birthdays, notifications, settings};
-use super::middleware::{auth_middleware, rate_limit_middleware, RateLimiter};
+use super::middleware::{auth_middleware, csrf_middleware, rate_limit_middleware, RateLimiter};
 
 pub struct AppState {
     pub pool: PgPool,
@@ -61,6 +61,7 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
         )
         .route("/auth/oidc", get(auth::oidc_login))
         .route("/auth/oidc/callback", get(auth::oidc_callback))
+        .layer(middleware::from_fn(csrf_middleware))
         .layer(middleware::from_fn(move |req, next| {
             let limiter = auth_rate_limiter.clone();
             rate_limit_middleware(limiter, req, next)
@@ -117,7 +118,8 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
-        ));
+        ))
+        .layer(middleware::from_fn(csrf_middleware));
 
     let app = Router::new()
         .merge(public)

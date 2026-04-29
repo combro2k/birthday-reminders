@@ -6,16 +6,23 @@ use axum::{
     Form,
 };
 use serde::Deserialize;
+use tower_sessions::Session;
 
 use crate::domain::user::User;
+use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::{ApiTokensTemplate, ApiTokenView, ProfileTemplate};
 
-pub async fn profile_page(Extension(user): Extension<User>) -> impl IntoResponse {
+pub async fn profile_page(
+    Extension(user): Extension<User>,
+    session: Session,
+) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let template = ProfileTemplate {
         user,
         error: None,
         success: None,
+        csrf_token,
     };
     Html(template.to_string())
 }
@@ -30,14 +37,18 @@ pub struct PasswordForm {
 pub async fn update_password(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Form(form): Form<PasswordForm>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
+
     if form.new_password != form.confirm_password {
         return Html(
             ProfileTemplate {
                 user,
                 error: Some("New passwords do not match".to_string()),
                 success: None,
+                csrf_token,
             }
             .to_string(),
         )
@@ -50,6 +61,7 @@ pub async fn update_password(
                 user,
                 error: Some(msg.to_string()),
                 success: None,
+                csrf_token,
             }
             .to_string(),
         )
@@ -64,6 +76,7 @@ pub async fn update_password(
                     user,
                     error: Some("Current password is incorrect".to_string()),
                     success: None,
+                    csrf_token,
                 }
                 .to_string(),
             )
@@ -81,6 +94,7 @@ pub async fn update_password(
                 user,
                 error: None,
                 success: Some("Password updated successfully".to_string()),
+                csrf_token,
             }
             .to_string(),
         )
@@ -90,6 +104,7 @@ pub async fn update_password(
                 user,
                 error: Some(e.to_string()),
                 success: None,
+                csrf_token,
             }
             .to_string(),
         )
@@ -100,7 +115,9 @@ pub async fn update_password(
 pub async fn api_tokens_page(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let tokens = state
         .user_command_service
         .list_api_tokens(&user.id, &state.pool)
@@ -112,6 +129,7 @@ pub async fn api_tokens_page(
         tokens: tokens.into_iter().map(ApiTokenView::from).collect(),
         new_token: None,
         error: None,
+        csrf_token,
     };
     Html(template.to_string())
 }
@@ -124,8 +142,10 @@ pub struct NewTokenForm {
 pub async fn create_api_token(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Form(form): Form<NewTokenForm>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     match state
         .user_command_service
         .generate_api_token(&user.id, &form.name, &state.pool)
@@ -143,6 +163,7 @@ pub async fn create_api_token(
                     tokens: tokens.into_iter().map(ApiTokenView::from).collect(),
                     new_token: Some(plain_token),
                     error: None,
+                    csrf_token,
                 }
                 .to_string(),
             )
@@ -160,6 +181,7 @@ pub async fn create_api_token(
                     tokens: tokens.into_iter().map(ApiTokenView::from).collect(),
                     new_token: None,
                     error: Some(e.to_string()),
+                    csrf_token,
                 }
                 .to_string(),
             )

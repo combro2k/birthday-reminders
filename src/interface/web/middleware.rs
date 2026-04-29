@@ -4,8 +4,9 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use axum::{
+    body::Body,
     extract::{ConnectInfo, Request, State},
-    http::StatusCode,
+    http::{Method, StatusCode},
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
@@ -77,6 +78,82 @@ async fn validate_bearer_token(token: &str, state: &AppState) -> Option<User> {
 /// Extract the current user from request extensions
 pub fn get_current_user(request: &Request) -> Option<&User> {
     request.extensions().get::<User>()
+}
+
+/// CSRF protection middleware for POST requests.
+/// Validates that the `csrf_token` form field or header matches the session token.
+pub async fn csrf_middleware(
+    session: Session,
+    request: Request,
+    next: Next,
+) -> Response {
+    // Only validate POST/PUT/PATCH/DELETE requests
+    if request.method() != Method::POST
+        && request.method() != Method::PUT
+        && request.method() != Method::PATCH
+        && request.method() != Method::DELETE
+    {
+        return next.run(request).await;
+    }
+
+    // Skip CSRF check for API requests (they use Bearer tokens)
+    if request
+        .headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.starts_with("Bearer "))
+    {
+        return next.run(request).await;
+    }
+
+    // Extract CSRF token from the form body
+    // We need to buffer the body to read the form data and then reconstruct it
+    let (parts, body) = request.into_parts();
+    let bytes = match axum::body::to_bytes(body, 1024 * 1024).await {
+        Ok(b) => b,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+
+    // Try to find csrf_token in URL-encoded form data
+    let body_str = String::from_utf8_lossy(&bytes);
+    let csrf_token = form_field_value(&body_str, "csrf_token");
+
+    // Also check header as fallback
+    let csrf_token = csrf_token.or_else(|| {
+        parts
+            .headers
+            .get("x-csrf-token")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string())
+    });
+
+    let valid = match csrf_token {
+        Some(token) => {
+            crate::infrastructure::auth::session::validate_csrf_token(&session, &token).await
+        }
+        None => false,
+    };
+
+    if !valid {
+        return (StatusCode::FORBIDDEN, "Invalid or missing CSRF token").into_response();
+    }
+
+    // Reconstruct the request with the buffered body, stripping the csrf_token field
+    let filtered_body: String = url::form_urlencoded::parse(&bytes)
+        .filter(|(key, _)| key != "csrf_token")
+        .map(|(k, v)| format!("{}={}", url::form_urlencoded::byte_serialize(k.as_bytes()).collect::<String>(), url::form_urlencoded::byte_serialize(v.as_bytes()).collect::<String>()))
+        .collect::<Vec<_>>()
+        .join("&");
+    let request = Request::from_parts(parts, Body::from(filtered_body));
+    next.run(request).await
+}
+
+/// Extract a form field value from URL-encoded form data
+fn form_field_value(body: &str, field: &str) -> Option<String> {
+    let pairs: Vec<(String, String)> = url::form_urlencoded::parse(body.as_bytes())
+        .into_owned()
+        .collect();
+    pairs.into_iter().find(|(k, _)| k == field).map(|(_, v)| v)
 }
 
 /// Simple IP-based rate limiter using a sliding window
