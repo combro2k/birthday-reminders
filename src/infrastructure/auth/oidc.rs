@@ -39,7 +39,7 @@ impl OidcClient {
         let http_client = reqwest::ClientBuilder::new()
             .redirect(reqwest::redirect::Policy::none())
             .build()
-            .expect("HTTP client should build");
+            .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {}", e))?;
 
         let issuer_url = IssuerUrl::new(config.issuer_url.clone())?;
         let metadata =
