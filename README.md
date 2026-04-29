@@ -137,6 +137,16 @@ server:
 >
 > The `encryption_key` is used to encrypt notification channel secrets at rest (XChaCha20-Poly1305). If not set, it defaults to the `session_secret`. For best security, set a dedicated key with: `openssl rand -base64 32`
 
+### Authentication
+
+```yaml
+auth:
+  # Allow new users to self-register via the web UI (default: false)
+  allow_registration: false
+```
+
+When `allow_registration` is `true`, a "Register" link appears on the login page allowing anyone to create an account. When `false` (default), only administrators can create new users via the admin panel or CLI.
+
 ### Reminders
 
 ```yaml
