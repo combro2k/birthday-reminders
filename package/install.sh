@@ -5,7 +5,6 @@ PREFIX="${PREFIX:-/opt/birthday-reminders}"
 BINDIR="$PREFIX/bin"
 CONFDIR="$PREFIX/etc"
 DATADIR="$PREFIX/data"
-MIGRATIONSDIR="$PREFIX/migrations"
 STATICDIR="$PREFIX/static"
 
 echo "Installing birthday-reminders to $PREFIX ..."
@@ -14,7 +13,6 @@ echo "Installing birthday-reminders to $PREFIX ..."
 install -d "$BINDIR"
 install -d "$CONFDIR"
 install -d "$DATADIR"
-install -d "$MIGRATIONSDIR"
 install -d "$STATICDIR"
 
 # Install binary
@@ -31,7 +29,6 @@ else
 fi
 
 # Install data files
-cp -r migrations/* "$MIGRATIONSDIR/"
 cp -r static/* "$STATICDIR/"
 
 # Create service user if it doesn't exist

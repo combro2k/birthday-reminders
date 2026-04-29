@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use sqlx::SqlitePool;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::migrate;
 
 use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
 use crate::domain::user_repository::UserRepository;
@@ -62,12 +63,14 @@ impl DatabasePool {
     }
 
     pub async fn run_migrations(&self) -> anyhow::Result<()> {
+        // Compile-time embedded migrations
+        let migrator = migrate!("./migrations");
         match self {
             Self::Postgres(pool) => {
-                sqlx::migrate!("./migrations").run(pool).await?;
+                migrator.run(pool).await?;
             }
             Self::Sqlite(pool) => {
-                sqlx::migrate!("./migrations").run(pool).await?;
+                migrator.run(pool).await?;
             }
         }
         Ok(())
