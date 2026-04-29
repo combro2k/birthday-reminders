@@ -288,19 +288,32 @@ This installs:
 - Migrations → `<prefix>/share/migrations/`
 - Static files → `<prefix>/share/static/`
 
-### systemd
+### Package & Deploy
+
+```bash
+# Create a distributable tar.gz
+make package
+
+# Copy to target server, extract, and install
+scp target/package/birthday-reminders-*.tar.gz user@server:/tmp/
+ssh user@server 'cd /tmp && tar xzf birthday-reminders-*.tar.gz && cd birthday-reminders-* && sudo ./install.sh'
+```
+
+The `install.sh` script automatically detects systemd or OpenRC, creates a service user, and installs the appropriate service file.
+
+### systemd (manual)
 
 ```bash
 # Create service user
 useradd -r -s /usr/sbin/nologin -d /opt/birthday-reminders birthday-reminders
 
 # Install and enable the service
-cp dist/birthday-reminders.service /etc/systemd/system/
+cp package/systemd/birthday-reminders.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now birthday-reminders
 ```
 
-### Alpine Linux (OpenRC)
+### Alpine Linux / OpenRC (manual)
 
 ```bash
 # Create service user
@@ -308,7 +321,7 @@ adduser -S -D -H -h /opt/birthday-reminders -s /sbin/nologin birthday-reminders
 addgroup -S birthday-reminders
 
 # Install and enable the service
-cp dist/birthday-reminders.openrc /etc/init.d/birthday-reminders
+cp package/openrc/birthday-reminders.openrc /etc/init.d/birthday-reminders
 chmod +x /etc/init.d/birthday-reminders
 rc-update add birthday-reminders default
 rc-service birthday-reminders start
