@@ -327,6 +327,13 @@ Options:
   -c, --config <PATH>  Path to config file [default: config.yaml]
 ```
 
+The `serve` command accepts a `--port` (`-p`) flag to override the listen port from the config:
+
+```bash
+# Start on a custom port
+birthday-reminders -c config.yaml serve --port 8080
+```
+
 ### Examples
 
 ```bash
