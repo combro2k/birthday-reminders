@@ -43,6 +43,7 @@ impl TryFrom<UserRow> for User {
             role: Role::from_str(&row.role),
             auth_method: AuthMethod::from_str(&row.auth_method),
             oidc_subject: row.oidc_subject,
+            date_format: "%d-%m-%Y".to_string(), // Default date format
             created_at: chrono::DateTime::parse_from_rfc3339(&row.created_at)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or_else(|_| chrono::Utc::now()),
@@ -91,6 +92,7 @@ impl UserRepository for SqliteUserRepo {
             role: new.role,
             auth_method: new.auth_method,
             oidc_subject: new.oidc_subject,
+            date_format: "%d-%m-%Y".to_string(), // Default date format
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
         })

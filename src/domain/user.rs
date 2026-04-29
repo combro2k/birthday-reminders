@@ -77,6 +77,7 @@ pub struct User {
     pub role: Role,
     pub auth_method: AuthMethod,
     pub oidc_subject: Option<String>,
+    pub date_format: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }

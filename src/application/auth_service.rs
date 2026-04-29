@@ -114,6 +114,7 @@ impl AuthService {
             role,
             auth_method: AuthMethod::Oidc,
             oidc_subject: Some(info.subject.clone()),
+            date_format: "%d-%m-%Y".to_string(), // Default date format
         };
 
         let user = self

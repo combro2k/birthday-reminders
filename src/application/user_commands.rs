@@ -29,6 +29,7 @@ impl UserCommandService {
             role,
             auth_method: AuthMethod::Local,
             oidc_subject: None,
+            date_format: "%d-%m-%Y".to_string(), // Default date format
         };
         let user = self
             .user_repo
