@@ -90,6 +90,8 @@ pub struct ProfileTemplate {
     pub error: Option<String>,
     pub success: Option<String>,
     pub csrf_token: String,
+    pub reminder_days: Vec<i32>,
+    pub reminder_days_csv: String,
 }
 
 #[derive(Template)]

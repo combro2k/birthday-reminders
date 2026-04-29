@@ -59,6 +59,46 @@
     </div>
     {% endif %}
 
+    <div class="card mt-2">
+        <h3>Reminder Preferences</h3>
+        <p>Choose how many days before a birthday you'd like to be reminded:</p>
+        <form method="POST" action="/settings/reminders">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="days_before" id="days_before_value" value="{{ reminder_days_csv }}">
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" value="14" {% if reminder_days.contains(&14) %}checked{% endif %} onchange="updateDays(this)">
+                    14 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="7" {% if reminder_days.contains(&7) %}checked{% endif %} onchange="updateDays(this)">
+                    7 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="3" {% if reminder_days.contains(&3) %}checked{% endif %} onchange="updateDays(this)">
+                    3 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="1" {% if reminder_days.contains(&1) %}checked{% endif %} onchange="updateDays(this)">
+                    1 day before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="0" {% if reminder_days.contains(&0) %}checked{% endif %} onchange="updateDays(this)">
+                    On the day
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary mt-1">Save Preferences</button>
+        </form>
+    </div>
+
+    <script>
+    function updateDays() {
+        const checked = document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked');
+        const values = Array.from(checked).map(cb => cb.value);
+        document.getElementById('days_before_value').value = values.join(',');
+    }
+    </script>
+
     <div class="mt-2">
         <a href="/settings/api-tokens" class="btn btn-secondary">Manage API Tokens</a>
     </div>
