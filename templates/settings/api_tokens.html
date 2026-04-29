@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}API Tokens - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/settings/profile" class="active">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <h1>API Tokens</h1>
+    <p>Use API tokens to authenticate CLI commands.</p>
+
+    {% if let Some(error) = error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if let Some(token) = new_token %}
+    <div class="alert alert-success">
+        <strong>New token created!</strong> Copy it now — it won't be shown again:
+        <pre class="token">{{ token }}</pre>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h3>Generate New Token</h3>
+        <form method="POST" action="/settings/api-tokens">
+            <div class="form-group">
+                <label for="name">Token Name</label>
+                <input type="text" id="name" name="name" required placeholder="e.g., CLI on laptop">
+            </div>
+            <button type="submit" class="btn btn-primary">Generate Token</button>
+        </form>
+    </div>
+
+    {% if tokens.len() > 0 %}
+    <h2 class="mt-2">Active Tokens</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tokens %}
+            <tr>
+                <td>{{ t.name }}</td>
+                <td>{{ t.created_at }}</td>
+                <td>{{ t.last_used_at }}</td>
+                <td>
+                    <form method="POST" action="/settings/api-tokens/{{ t.id }}/revoke"
+                          onsubmit="return confirm('Revoke token {{ t.name }}?')">
+                        <button type="submit" class="btn btn-small btn-danger">Revoke</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <div class="card mt-2">
+        <h3>Usage</h3>
+        <pre>export BIRTHDAY_API_TOKEN="your-token-here"
+birthday-reminders list --token "$BIRTHDAY_API_TOKEN"
+birthday-reminders add "John Doe" "1990-05-15" --token "$BIRTHDAY_API_TOKEN"</pre>
+    </div>
+</main>
+{% endblock %}

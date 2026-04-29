@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications" class="active">Notifications</a>
+        <a href="/settings/profile">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <h1>Notification Channels</h1>
+    <p>Configure how you want to receive birthday reminders.</p>
+
+    <div class="channels-grid">
+        {% for ch in available %}
+        <div class="channel-card {% if ch.configured %}configured{% endif %}">
+            <h3>{{ ch.display_name }}</h3>
+            {% if ch.configured %}
+            <span class="badge badge-success">Configured</span>
+            {% else %}
+            <span class="badge badge-muted">Not configured</span>
+            {% endif %}
+            <a href="/notifications/{{ ch.kind }}" class="btn btn-small mt-1">
+                {% if ch.configured %}Edit{% else %}Configure{% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if !channels.is_empty() %}
+    <h2 class="mt-2">Active Channels</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Channel</th>
+                <th>Enabled</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ch in channels %}
+            <tr>
+                <td>{{ ch.display_name }}</td>
+                <td>{% if ch.enabled %}✅{% else %}❌{% endif %}</td>
+                <td class="actions">
+                    <a href="/notifications/{{ ch.channel_type }}" class="btn btn-small">Edit</a>
+                    <form method="POST" action="/notifications/{{ ch.channel_type }}/test" class="inline">
+                        <button type="submit" class="btn btn-small btn-secondary">Test</button>
+                    </form>
+                    <form method="POST" action="/notifications/{{ ch.channel_type }}/delete" class="inline"
+                          onsubmit="return confirm('Remove {{ ch.display_name }} channel?')">
+                        <button type="submit" class="btn btn-small btn-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</main>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ channel_name }} - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications" class="active">Notifications</a>
+        <a href="/settings/profile">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <h1>Configure {{ channel_name }}</h1>
+
+    {% if let Some(error) = error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if let Some(success) = success %}
+    <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+
+    <form method="POST" action="/notifications/{{ channel_type }}">
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="enabled" value="true"
+                       {% if enabled %}checked{% endif %}>
+                Enabled
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label for="config_json">Configuration (JSON)</label>
+            <textarea id="config_json" name="config_json" rows="10" class="code">{{ config_json }}</textarea>
+        </div>
+
+        {% if channel_type == "gotify" %}
+        <details class="help-text">
+            <summary>Gotify configuration help</summary>
+            <pre>
+{
+  "url": "https://gotify.example.com",
+  "token": "your-app-token"
+}</pre>
+        </details>
+        {% endif %}
+
+        {% if channel_type == "email" %}
+        <details class="help-text">
+            <summary>Email configuration help</summary>
+            <p>Provider options: <code>gmail</code>, <code>proton</code>, <code>outlook</code>, <code>custom</code></p>
+            <pre>
+// Gmail
+{
+  "provider": "gmail",
+  "username": "you@gmail.com",
+  "password": "your-app-password",
+  "to": "you@gmail.com"
+}
+
+// Proton Bridge
+{
+  "provider": "proton",
+  "username": "you@proton.me",
+  "password": "bridge-password",
+  "to": "you@proton.me"
+}
+
+// Custom SMTP
+{
+  "provider": "custom",
+  "username": "you@example.com",
+  "password": "password",
+  "to": "you@example.com",
+  "smtp_host": "smtp.example.com",
+  "smtp_port": 587,
+  "security": "starttls"
+}</pre>
+        </details>
+        {% endif %}
+
+        {% if channel_type == "telegram" %}
+        <details class="help-text">
+            <summary>Telegram configuration help</summary>
+            <pre>
+{
+  "bot_token": "123456:ABC-DEF1234",
+  "chat_id": "12345678"
+}</pre>
+            <p>Create a bot via <a href="https://t.me/BotFather" target="_blank">@BotFather</a>,
+               get your chat_id by messaging the bot and checking
+               <code>https://api.telegram.org/bot&lt;token&gt;/getUpdates</code></p>
+        </details>
+        {% endif %}
+
+        {% if channel_type == "signal" || channel_type == "whatsapp" %}
+        <div class="alert alert-warning">
+            This channel is not yet fully implemented. Configuration can be saved for future use.
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/notifications" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+
+    {% if has_existing %}
+    <div class="mt-2">
+        <form method="POST" action="/notifications/{{ channel_type }}/test" class="inline">
+            <button type="submit" class="btn btn-secondary">Send Test Notification</button>
+        </form>
+    </div>
+    {% endif %}
+</main>
+{% endblock %}

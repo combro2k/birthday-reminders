@@ -1,0 +1,39 @@
+database:
+  url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
+
+server:
+  listen: "0.0.0.0:3000"
+  base_url: "http://localhost:3000"
+  session_secret: "change-me-to-a-random-64-character-string-in-production-please!"
+
+auth:
+  allow_registration: false
+  # oidc:
+  #   enabled: true
+  #   provider_name: "Keycloak"
+  #   issuer_url: "https://keycloak.example.com/realms/myrealm"
+  #   client_id: "birthday-reminders"
+  #   client_secret: "your-client-secret"
+  #   scopes: ["openid", "profile", "email"]
+  #   auto_provision: true
+  #   default_role: "user"
+  #
+  # # Authentik example:
+  # oidc:
+  #   enabled: true
+  #   provider_name: "Authentik"
+  #   issuer_url: "https://authentik.example.com/application/o/birthday-reminders/"
+  #   client_id: "birthday-reminders"
+  #   client_secret: "your-client-secret"
+  #
+  # # Zitadel example:
+  # oidc:
+  #   enabled: true
+  #   provider_name: "Zitadel"
+  #   issuer_url: "https://zitadel.example.com"
+  #   client_id: "123456@birthday-reminders"
+  #   client_secret: "your-client-secret"
+
+reminders:
+  schedule: "0 0 8 * * *"
+  default_days_before: [7, 3, 1, 0]

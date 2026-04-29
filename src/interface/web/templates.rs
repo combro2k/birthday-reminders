@@ -1,0 +1,184 @@
+use askama::Template;
+use chrono::NaiveDate;
+
+use crate::application::user_commands::ApiTokenInfo;
+use crate::domain::birthday::Birthday;
+use crate::domain::notification::ChannelKind;
+use crate::domain::repository::NotificationChannelRecord;
+use crate::domain::user::User;
+
+// ---- Auth Templates ----
+
+#[derive(Template)]
+#[template(path = "auth/login.html")]
+pub struct LoginTemplate {
+    pub error: Option<String>,
+    pub oidc_enabled: bool,
+    pub oidc_provider_name: String,
+    pub registration_enabled: bool,
+}
+
+#[derive(Template)]
+#[template(path = "auth/register.html")]
+pub struct RegisterTemplate {
+    pub error: Option<String>,
+}
+
+// ---- Birthday Templates ----
+
+#[derive(Template)]
+#[template(path = "birthdays/index.html")]
+pub struct DashboardTemplate {
+    pub user: User,
+    pub upcoming: Vec<BirthdayView>,
+}
+
+#[derive(Template)]
+#[template(path = "birthdays/list.html")]
+pub struct BirthdayListTemplate {
+    pub user: User,
+    pub birthdays: Vec<BirthdayView>,
+}
+
+#[derive(Template)]
+#[template(path = "birthdays/form.html")]
+pub struct BirthdayFormTemplate {
+    pub user: User,
+    pub birthday: Option<BirthdayView>,
+    pub edit_name: String,
+    pub edit_date: String,
+    pub edit_notes: String,
+    pub error: Option<String>,
+}
+
+// ---- Notification Templates ----
+
+#[derive(Template)]
+#[template(path = "notifications/channels.html")]
+pub struct ChannelsTemplate {
+    pub user: User,
+    pub channels: Vec<ChannelView>,
+    pub available: Vec<ChannelKindView>,
+}
+
+#[derive(Template)]
+#[template(path = "notifications/channel_form.html")]
+pub struct ChannelFormTemplate {
+    pub user: User,
+    pub channel_type: String,
+    pub channel_name: String,
+    pub config_json: String,
+    pub enabled: bool,
+    pub has_existing: bool,
+    pub error: Option<String>,
+    pub success: Option<String>,
+}
+
+// ---- Settings Templates ----
+
+#[derive(Template)]
+#[template(path = "settings/profile.html")]
+pub struct ProfileTemplate {
+    pub user: User,
+    pub error: Option<String>,
+    pub success: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "settings/api_tokens.html")]
+pub struct ApiTokensTemplate {
+    pub user: User,
+    pub tokens: Vec<ApiTokenView>,
+    pub new_token: Option<String>,
+    pub error: Option<String>,
+}
+
+// ---- Admin Templates ----
+
+#[derive(Template)]
+#[template(path = "admin/users.html")]
+pub struct AdminUsersTemplate {
+    pub user: User,
+    pub users: Vec<User>,
+    pub error: Option<String>,
+    pub success: Option<String>,
+}
+
+// ---- View Models ----
+
+#[derive(Debug, Clone)]
+pub struct BirthdayView {
+    pub id: uuid::Uuid,
+    pub name: String,
+    pub birth_date: NaiveDate,
+    pub birth_date_str: String,
+    pub notes: Option<String>,
+    pub age: u32,
+    pub turning_age: u32,
+    pub days_until: i64,
+}
+
+impl From<Birthday> for BirthdayView {
+    fn from(b: Birthday) -> Self {
+        let today = chrono::Local::now().date_naive();
+        Self {
+            id: b.id.0,
+            name: b.name.clone(),
+            birth_date: b.birth_date,
+            birth_date_str: b.birth_date.format("%B %d, %Y").to_string(),
+            notes: b.notes.clone(),
+            age: b.age_on(today),
+            turning_age: b.turning_age_on(today),
+            days_until: b.days_until_next_from(today),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ChannelView {
+    pub channel_type: String,
+    pub display_name: String,
+    pub enabled: bool,
+}
+
+impl From<NotificationChannelRecord> for ChannelView {
+    fn from(r: NotificationChannelRecord) -> Self {
+        let display_name = ChannelKind::from_str(&r.channel_type)
+            .map(|k| k.display_name().to_string())
+            .unwrap_or_else(|| r.channel_type.clone());
+        Self {
+            channel_type: r.channel_type,
+            display_name,
+            enabled: r.enabled,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ChannelKindView {
+    pub kind: String,
+    pub display_name: String,
+    pub configured: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct ApiTokenView {
+    pub id: uuid::Uuid,
+    pub name: String,
+    pub created_at: String,
+    pub last_used_at: String,
+}
+
+impl From<ApiTokenInfo> for ApiTokenView {
+    fn from(t: ApiTokenInfo) -> Self {
+        Self {
+            id: t.id,
+            name: t.name,
+            created_at: t.created_at.format("%Y-%m-%d %H:%M").to_string(),
+            last_used_at: t
+                .last_used_at
+                .map(|d| d.format("%Y-%m-%d %H:%M").to_string())
+                .unwrap_or_else(|| "Never".to_string()),
+        }
+    }
+}
