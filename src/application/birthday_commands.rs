@@ -22,6 +22,8 @@ impl BirthdayCommandService {
         birth_date: NaiveDate,
         notes: Option<String>,
     ) -> anyhow::Result<Birthday> {
+        validate_birthday_input(name, birth_date, notes.as_deref())?;
+
         let new = NewBirthday {
             user_id: user_id.clone(),
             name: name.to_string(),
@@ -42,6 +44,12 @@ impl BirthdayCommandService {
         birth_date: Option<NaiveDate>,
         notes: Option<Option<String>>,
     ) -> anyhow::Result<Birthday> {
+        // Validate provided fields
+        let effective_name = name.as_deref().unwrap_or("placeholder");
+        let effective_date = birth_date.unwrap_or(chrono::Local::now().date_naive());
+        let effective_notes = notes.as_ref().and_then(|n| n.as_deref());
+        validate_birthday_input(effective_name, effective_date, effective_notes)?;
+
         // Verify ownership
         let existing = self
             .repo
@@ -81,4 +89,27 @@ impl BirthdayCommandService {
         })?;
         Ok(())
     }
+}
+
+fn validate_birthday_input(name: &str, birth_date: NaiveDate, notes: Option<&str>) -> anyhow::Result<()> {
+    let name = name.trim();
+    if name.is_empty() {
+        anyhow::bail!("Name cannot be empty");
+    }
+    if name.len() > 200 {
+        anyhow::bail!("Name cannot exceed 200 characters");
+    }
+
+    let today = chrono::Local::now().date_naive();
+    if birth_date > today {
+        anyhow::bail!("Birth date cannot be in the future");
+    }
+
+    if let Some(n) = notes {
+        if n.len() > 2000 {
+            anyhow::bail!("Notes cannot exceed 2000 characters");
+        }
+    }
+
+    Ok(())
 }
