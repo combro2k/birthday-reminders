@@ -74,6 +74,7 @@ server:
   listen: "0.0.0.0:3000"
   base_url: "http://localhost:3000"
   session_secret: "generate-a-random-64-char-string-here"
+  static_dir: "static"  # path to static assets (CSS, JS, manifest)
 ```
 
 > **Important:** Generate a strong random `session_secret` for production. It must be at least 32 characters.
@@ -268,6 +269,57 @@ Users can configure one or more notification channels in the web UI under **Sett
 | **Telegram** | Messages via Telegram Bot API |
 | **Signal** | Messages via Signal messenger |
 | **WhatsApp** | Messages via WhatsApp Business API |
+
+## Installation
+
+### Using Make
+
+```bash
+# Build and install to /opt/birthday-reminders (default)
+make install
+
+# Or install to a custom prefix
+make install PREFIX=/usr/local
+```
+
+This installs:
+- Binary → `<prefix>/bin/birthday-reminders`
+- Config → `<prefix>/etc/config.yaml`
+- Migrations → `<prefix>/share/migrations/`
+- Static files → `<prefix>/share/static/`
+
+### systemd
+
+```bash
+# Create service user
+useradd -r -s /usr/sbin/nologin -d /opt/birthday-reminders birthday-reminders
+
+# Install and enable the service
+cp dist/birthday-reminders.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now birthday-reminders
+```
+
+### Alpine Linux (OpenRC)
+
+```bash
+# Create service user
+adduser -S -D -H -h /opt/birthday-reminders -s /sbin/nologin birthday-reminders
+addgroup -S birthday-reminders
+
+# Install and enable the service
+cp dist/birthday-reminders.openrc /etc/init.d/birthday-reminders
+chmod +x /etc/init.d/birthday-reminders
+rc-update add birthday-reminders default
+rc-service birthday-reminders start
+```
+
+When installed to `/opt/birthday-reminders`, set `static_dir` in your config:
+
+```yaml
+server:
+  static_dir: "/opt/birthday-reminders/share/static"
+```
 
 ## License
 
