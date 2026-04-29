@@ -1,9 +1,9 @@
 PREFIX ?= /opt/birthday-reminders
 BINDIR = $(PREFIX)/bin
 CONFDIR = $(PREFIX)/etc
-DATADIR = $(PREFIX)/share
-MIGRATIONSDIR = $(DATADIR)/migrations
-STATICDIR = $(DATADIR)/static
+DATADIR = $(PREFIX)/data
+MIGRATIONSDIR = $(PREFIX)/migrations
+STATICDIR = $(PREFIX)/static
 
 BINARY = target/release/birthday-reminders
 VERSION = $(shell grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
@@ -20,6 +20,7 @@ build:
 install: build
 	install -d $(DESTDIR)$(BINDIR)
 	install -d $(DESTDIR)$(CONFDIR)
+	install -d $(DESTDIR)$(DATADIR)
 	install -d $(DESTDIR)$(MIGRATIONSDIR)
 	install -d $(DESTDIR)$(STATICDIR)
 	install -m 755 $(BINARY) $(DESTDIR)$(BINDIR)/birthday-reminders
@@ -35,6 +36,7 @@ install: build
 	@echo "Installed to $(DESTDIR)$(PREFIX)"
 	@echo "  Binary:     $(DESTDIR)$(BINDIR)/birthday-reminders"
 	@echo "  Config:     $(DESTDIR)$(CONFDIR)/config.yaml"
+	@echo "  Data:       $(DESTDIR)$(DATADIR)/"
 	@echo "  Migrations: $(DESTDIR)$(MIGRATIONSDIR)/"
 	@echo "  Static:     $(DESTDIR)$(STATICDIR)/"
 

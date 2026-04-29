@@ -1,6 +1,6 @@
 database:
   # Database connection URL (supports sqlite:// and postgres://)
-  url: "sqlite://birthday_reminders.db"
+  url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db"
   # PostgreSQL example:
   # url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
   # Maximum number of connections in the database pool
@@ -14,7 +14,7 @@ server:
   # Secret key for signing session cookies (must be random, at least 64 chars in production)
   session_secret: "change-me-to-a-random-64-character-string-in-production-please!"
   # Path to static files directory
-  static_dir: "static"
+  static_dir: "/opt/birthday-reminders/static"
 
 auth:
   # Whether new users can self-register (set to true to allow open registration)
