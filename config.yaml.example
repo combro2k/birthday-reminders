@@ -19,6 +19,7 @@ server:
   encryption_key: "generate-a-random-key-for-encryption-here"
   # Path to static files directory (default: "/opt/birthday-reminders/static")
   # static_dir: "/opt/birthday-reminders/static"
+  # Migrations are now embedded in the binary for security and reliability.
   # User and group to run the app as (required, can be 'root' if desired)
   run_as_user: "birthday-reminders"
   run_as_group: "birthday-reminders"

@@ -1,5 +1,4 @@
 # Error handling
-anyhow = "1"
 [package]
 name = "birthday-reminders"
 version = "0.1.0"
