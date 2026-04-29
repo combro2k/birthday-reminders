@@ -74,6 +74,54 @@ database:
   max_connections: 10
 ```
 
+Database migrations run automatically on startup.
+
+### Migrating from SQLite to PostgreSQL
+
+If you started with SQLite and want to move to PostgreSQL:
+
+1. **Export data from SQLite:**
+
+   ```bash
+   sqlite3 birthday_reminders.db .dump > backup.sql
+   ```
+
+2. **Create the PostgreSQL database:**
+
+   ```bash
+   createdb birthday_reminders
+   ```
+
+3. **Start the app once with the new PostgreSQL URL** to run migrations:
+
+   ```bash
+   birthday-reminders -c config.yaml serve
+   # Stop after it starts successfully (Ctrl+C)
+   ```
+
+4. **Import your data.** SQLite's dump format isn't directly compatible with PostgreSQL. Use a tool like [pgloader](https://pgloader.io/) for automatic conversion:
+
+   ```bash
+   pgloader sqlite:///path/to/birthday_reminders.db \
+            postgresql://birthday:birthday@localhost/birthday_reminders
+   ```
+
+   Or manually export and transform the data using CSV:
+
+   ```bash
+   # Export each table from SQLite
+   sqlite3 -header -csv birthday_reminders.db "SELECT * FROM users;" > users.csv
+   sqlite3 -header -csv birthday_reminders.db "SELECT * FROM birthdays;" > birthdays.csv
+   sqlite3 -header -csv birthday_reminders.db "SELECT * FROM notification_channels;" > channels.csv
+
+   # Import into PostgreSQL (after migrations have run)
+   psql birthday_reminders -c "\copy users FROM 'users.csv' CSV HEADER"
+   psql birthday_reminders -c "\copy birthdays FROM 'birthdays.csv' CSV HEADER"
+   psql birthday_reminders -c "\copy notification_channels FROM 'channels.csv' CSV HEADER"
+   ```
+
+5. **Update `config.yaml`** to use the PostgreSQL URL and restart.
+
 ### Server
 
 ```yaml
