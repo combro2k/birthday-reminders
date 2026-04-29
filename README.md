@@ -75,10 +75,13 @@ server:
   listen: "0.0.0.0:3000"
   base_url: "http://localhost:3000"
   session_secret: "generate-a-random-64-char-string-here"
+  encryption_key: "generate-a-separate-key-for-encryption"  # optional, derives from session_secret if omitted
   static_dir: "static"  # path to static assets (CSS, JS, manifest)
 ```
 
 > **Important:** Generate a strong random `session_secret` for production. It must be at least 32 characters.
+>
+> The `encryption_key` is used to encrypt notification channel secrets at rest (XChaCha20-Poly1305). If not set, it defaults to the `session_secret`. For best security, set a dedicated key with: `openssl rand -base64 32`
 
 ### Reminders
 

@@ -59,7 +59,7 @@ async fn main() -> anyhow::Result<()> {
     let birthday_query_svc = BirthdayQueryService::new(birthday_repo.clone());
     let notification_svc = NotificationCommandService::new(
         notification_repo.clone(),
-        config.server.session_secret.clone(),
+        config.server.encryption_key().to_string(),
     );
 
     let reminder_svc = Arc::new(ReminderJobService::new(
@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
         birthday_repo.clone(),
         notification_repo.clone(),
         config.reminders.default_days_before.clone(),
-        config.server.session_secret.clone(),
+        config.server.encryption_key().to_string(),
     ));
 
     // Handle commands
