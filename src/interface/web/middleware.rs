@@ -12,9 +12,9 @@ use axum::{
 use tokio::sync::Mutex;
 use tower_sessions::Session;
 
-use crate::domain::user::{User, UserId};
+use crate::domain::user::User;
 use crate::domain::user_repository::UserRepository;
-use crate::infrastructure::auth::{api_token, session};
+use crate::infrastructure::auth::session;
 
 use super::server::AppState;
 
@@ -65,25 +65,12 @@ pub async fn auth_middleware(
 }
 
 async fn validate_bearer_token(token: &str, state: &AppState) -> Option<User> {
-    let token_hash = api_token::hash_token(token);
+    let user_id = state
+        .user_command_service
+        .resolve_api_token(token, &state.pool)
+        .await
+        .ok()?;
 
-    #[derive(sqlx::FromRow)]
-    struct TokenLookup {
-        user_id: uuid::Uuid,
-    }
-
-    let result = sqlx::query_as::<_, TokenLookup>(
-        "UPDATE api_tokens SET last_used_at = NOW()
-         WHERE token_hash = $1
-         RETURNING user_id",
-    )
-    .bind(&token_hash)
-    .fetch_optional(&state.pool)
-    .await
-    .ok()
-    .flatten()?;
-
-    let user_id = UserId(result.user_id);
     state.user_repo.find_by_id(&user_id).await.ok()
 }
 
