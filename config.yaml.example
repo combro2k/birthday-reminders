@@ -55,3 +55,9 @@ reminders:
   schedule: "0 0 8 * * *"
   # How many days before a birthday to send reminders (0 = on the day itself)
   default_days_before: [7, 3, 1, 0]
+
+logging:
+  # Log output: "stdout" (default) or "syslog"
+  output: "stdout"
+  # Log level filter (supports RUST_LOG syntax, e.g. "info", "debug", "birthday_reminders=debug,tower_http=info")
+  level: "info"

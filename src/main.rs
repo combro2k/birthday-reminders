@@ -23,16 +23,27 @@ use interface::web::server::{self, AppState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
-        .init();
-
     let cli = Cli::parse();
 
     // Load config
     let config = AppConfig::load(Path::new(&cli.config))?;
 
+    // Initialize logging based on config
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
+
+    if config.logging.output == "syslog" {
+        let syslog_writer = infrastructure::logging::SyslogMakeWriter::new()?;
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .with_writer(syslog_writer)
+            .with_ansi(false)
+            .init();
+    } else {
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .init();
+    }
     // Create database pool (auto-detects SQLite or PostgreSQL from URL)
     let db = DatabasePool::connect(&config.database.url, config.database.max_connections).await?;
 
