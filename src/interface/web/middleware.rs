@@ -14,7 +14,6 @@ use tokio::sync::Mutex;
 use tower_sessions::Session;
 
 use crate::domain::user::User;
-use crate::domain::user_repository::UserRepository;
 use crate::infrastructure::auth::session;
 
 use super::server::AppState;
@@ -73,11 +72,6 @@ async fn validate_bearer_token(token: &str, state: &AppState) -> Option<User> {
         .ok()?;
 
     state.user_repo.find_by_id(&user_id).await.ok()
-}
-
-/// Extract the current user from request extensions
-pub fn get_current_user(request: &Request) -> Option<&User> {
-    request.extensions().get::<User>()
 }
 
 /// CSRF protection middleware for POST requests.

@@ -5,6 +5,7 @@ use uuid::Uuid;
 pub struct UserId(pub Uuid);
 
 impl UserId {
+    #[cfg(test)]
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
@@ -64,10 +65,6 @@ impl AuthMethod {
 
     pub fn can_login_with_password(&self) -> bool {
         matches!(self, AuthMethod::Local | AuthMethod::Both)
-    }
-
-    pub fn can_login_with_oidc(&self) -> bool {
-        matches!(self, AuthMethod::Oidc | AuthMethod::Both)
     }
 }
 

@@ -17,7 +17,6 @@ use crate::application::auth_service::AuthService;
 use crate::application::birthday_commands::BirthdayCommandService;
 use crate::application::birthday_queries::BirthdayQueryService;
 use crate::application::notification_commands::NotificationCommandService;
-use crate::application::reminder_job::ReminderJobService;
 use crate::application::user_commands::UserCommandService;
 use crate::domain::user_repository::UserRepository;
 use crate::infrastructure::auth::oidc::OidcClient;
@@ -34,7 +33,6 @@ pub struct AppState {
     pub birthday_command_service: BirthdayCommandService,
     pub birthday_query_service: BirthdayQueryService,
     pub notification_service: NotificationCommandService,
-    pub reminder_service: Arc<ReminderJobService>,
     pub user_repo: Arc<dyn UserRepository>,
     pub oidc_client: Option<Arc<OidcClient>>,
 }

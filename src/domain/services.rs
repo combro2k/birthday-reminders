@@ -14,14 +14,12 @@ pub fn compute_due_reminders(
     for birthday in birthdays {
         let days_until = birthday.days_until_next_from(today);
         let turning_age = birthday.turning_age_on(today);
-        let next_birthday_date = birthday.next_birthday_from(today);
 
         for &days_before in &policy.days_before {
             if days_until == days_before as i64 {
                 due.push(PendingReminder {
                     birthday: birthday.clone(),
                     days_before,
-                    next_birthday_date,
                     turning_age,
                 });
             }

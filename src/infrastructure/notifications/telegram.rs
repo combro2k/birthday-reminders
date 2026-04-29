@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Client;
 
-use crate::domain::notification::{ChannelKind, NotificationError, NotificationSender};
+use crate::domain::notification::{NotificationError, NotificationSender};
 use crate::domain::notification_config::TelegramConfig;
 use crate::domain::reminder::PendingReminder;
 
@@ -21,10 +21,6 @@ impl TelegramSender {
 
 #[async_trait]
 impl NotificationSender for TelegramSender {
-    fn channel_kind(&self) -> ChannelKind {
-        ChannelKind::Telegram
-    }
-
     async fn send(&self, reminder: &PendingReminder) -> Result<(), NotificationError> {
         let text = format!("{}\n\n{}", reminder.title(), reminder.message());
         self.send_message(&text).await

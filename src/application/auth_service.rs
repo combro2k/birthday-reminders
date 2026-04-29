@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use crate::domain::repository::RepositoryError;
-use crate::domain::user::{AuthMethod, Role, User, UserId};
+use crate::domain::user::{AuthMethod, Role, User};
 use crate::domain::user_repository::{NewUser, UserRepository};
-use crate::infrastructure::auth::api_token;
 use crate::infrastructure::auth::oidc::{OidcClient, OidcFlowState, OidcUserInfo};
 use crate::infrastructure::auth::password;
 
@@ -118,35 +117,5 @@ impl AuthService {
         })?;
 
         Ok(user)
-    }
-
-    /// Link OIDC identity to an existing local user
-    pub async fn link_oidc_to_user(
-        &self,
-        user_id: &UserId,
-        oidc_subject: &str,
-    ) -> anyhow::Result<User> {
-        use crate::domain::user_repository::UpdateUser;
-
-        let user = self.user_repo.find_by_id(user_id).await.map_err(|e| {
-            anyhow::anyhow!("User not found: {}", e)
-        })?;
-
-        let new_auth_method = match user.auth_method {
-            AuthMethod::Local => AuthMethod::Both,
-            other => other,
-        };
-
-        let update = UpdateUser {
-            auth_method: Some(new_auth_method),
-            oidc_subject: Some(Some(oidc_subject.to_string())),
-            ..Default::default()
-        };
-
-        let updated = self.user_repo.update(user_id, update).await.map_err(|e| {
-            anyhow::anyhow!("Failed to link OIDC: {}", e)
-        })?;
-
-        Ok(updated)
     }
 }

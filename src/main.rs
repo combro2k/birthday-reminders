@@ -125,7 +125,6 @@ async fn main() -> anyhow::Result<()> {
             birthday_command_service: birthday_cmd_svc,
             birthday_query_service: birthday_query_svc,
             notification_service: notification_svc,
-            reminder_service: reminder_svc.clone(),
             user_repo: user_repo.clone(),
             oidc_client,
         });

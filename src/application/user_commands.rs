@@ -47,17 +47,6 @@ impl UserCommandService {
         Ok(())
     }
 
-    pub async fn update_role(&self, user_id: &UserId, role: Role) -> anyhow::Result<User> {
-        let update = UpdateUser {
-            role: Some(role),
-            ..Default::default()
-        };
-        let user = self.user_repo.update(user_id, update).await.map_err(|e| {
-            anyhow::anyhow!("Failed to update role: {}", e)
-        })?;
-        Ok(user)
-    }
-
     pub async fn delete_user(&self, user_id: &UserId) -> anyhow::Result<()> {
         self.user_repo.delete(user_id).await.map_err(|e| {
             anyhow::anyhow!("Failed to delete user: {}", e)

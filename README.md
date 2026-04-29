@@ -9,6 +9,7 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 - **Notifications** — Email, Gotify, Telegram, Signal, and WhatsApp
 - **Scheduled reminders** — configurable cron schedule with customizable lead days
 - **Authentication** — local accounts with Argon2 password hashing, or OIDC (Keycloak, Authentik, Zitadel, and others)
+- **Encryption** — notification channel secrets encrypted at rest using XChaCha20-Poly1305
 - **API tokens** — programmatic access for automation
 - **PWA support** — installable as a progressive web app
 

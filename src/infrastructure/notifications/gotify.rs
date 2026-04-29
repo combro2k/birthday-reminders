@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Client;
 
-use crate::domain::notification::{ChannelKind, NotificationError, NotificationSender};
+use crate::domain::notification::{NotificationError, NotificationSender};
 use crate::domain::notification_config::GotifyConfig;
 use crate::domain::reminder::PendingReminder;
 
@@ -21,10 +21,6 @@ impl GotifySender {
 
 #[async_trait]
 impl NotificationSender for GotifySender {
-    fn channel_kind(&self) -> ChannelKind {
-        ChannelKind::Gotify
-    }
-
     async fn send(&self, reminder: &PendingReminder) -> Result<(), NotificationError> {
         let url = format!("{}/message", self.config.url.trim_end_matches('/'));
 

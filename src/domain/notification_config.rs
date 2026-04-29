@@ -58,15 +58,6 @@ impl EmailProvider {
             EmailProvider::Custom => SmtpSecurity::Starttls,
         }
     }
-
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            EmailProvider::Gmail => "Gmail",
-            EmailProvider::Proton => "Proton (Bridge)",
-            EmailProvider::Outlook => "Outlook",
-            EmailProvider::Custom => "Custom SMTP",
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

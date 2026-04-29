@@ -1,5 +1,3 @@
-use chrono::NaiveDate;
-
 use super::birthday::Birthday;
 
 /// Policy defining when reminders should be sent
@@ -12,12 +10,6 @@ impl ReminderPolicy {
     pub fn new(days_before: Vec<u32>) -> Self {
         Self { days_before }
     }
-
-    pub fn default_policy() -> Self {
-        Self {
-            days_before: vec![7, 3, 1, 0],
-        }
-    }
 }
 
 /// A reminder that is due to be sent
@@ -25,7 +17,6 @@ impl ReminderPolicy {
 pub struct PendingReminder {
     pub birthday: Birthday,
     pub days_before: u32,
-    pub next_birthday_date: NaiveDate,
     pub turning_age: u32,
 }
 

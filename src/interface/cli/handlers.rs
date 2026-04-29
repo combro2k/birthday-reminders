@@ -15,8 +15,8 @@ use super::commands::Commands;
 pub async fn handle_command(
     cmd: Commands,
     pool: &PgPool,
-    user_repo: &Arc<dyn UserRepository>,
-    birthday_repo: &Arc<dyn BirthdayRepository>,
+    _user_repo: &Arc<dyn UserRepository>,
+    _birthday_repo: &Arc<dyn BirthdayRepository>,
     user_cmd_svc: &UserCommandService,
     birthday_cmd_svc: &BirthdayCommandService,
     birthday_query_svc: &BirthdayQueryService,

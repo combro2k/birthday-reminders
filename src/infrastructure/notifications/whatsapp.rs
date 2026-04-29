@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::domain::notification::{ChannelKind, NotificationError, NotificationSender};
+use crate::domain::notification::{NotificationError, NotificationSender};
 use crate::domain::notification_config::WhatsappConfig;
 use crate::domain::reminder::PendingReminder;
 
@@ -17,10 +17,6 @@ impl WhatsappSender {
 
 #[async_trait]
 impl NotificationSender for WhatsappSender {
-    fn channel_kind(&self) -> ChannelKind {
-        ChannelKind::Whatsapp
-    }
-
     async fn send(&self, _reminder: &PendingReminder) -> Result<(), NotificationError> {
         Err(NotificationError::NotImplemented(
             "WhatsApp notifications are not yet implemented".to_string(),
