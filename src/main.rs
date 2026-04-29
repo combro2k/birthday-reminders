@@ -44,13 +44,8 @@ async fn main() -> anyhow::Result<()> {
             .with_env_filter(env_filter)
             .init();
     }
-    // Create database pool (auto-detects SQLite or PostgreSQL from URL)
-    let db = DatabasePool::connect(&config.database.url, config.database.max_connections).await?;
 
-    // Run migrations
-    db.run_migrations().await?;
-
-    // Drop privileges if running as root and configured
+    // Drop privileges if running as root and configured (before DB connection)
     #[cfg(unix)]
     {
         use nix::unistd::{Uid, Gid, setgid, setuid};
@@ -81,6 +76,12 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     }
+
+    // Create database pool (auto-detects SQLite or PostgreSQL from URL)
+    let db = DatabasePool::connect(&config.database.url, config.database.max_connections).await?;
+
+    // Run migrations
+    db.run_migrations().await?;
 
     // Create repositories
     let repos = Repositories::new(&db);
