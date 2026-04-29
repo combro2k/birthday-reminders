@@ -147,16 +147,43 @@ impl BirthdayRepository for PgBirthdayRepo {
         user_id: &UserId,
         within_days: u32,
     ) -> Result<Vec<Birthday>, RepositoryError> {
-        // Fetch all user's birthdays and filter in application logic
-        // (date arithmetic for recurring birthdays is complex in SQL)
-        let all = self.find_all_for_user(user_id).await?;
-        let today = chrono::Local::now().date_naive();
-        let mut upcoming: Vec<Birthday> = all
-            .into_iter()
-            .filter(|b| b.days_until_next_from(today) <= within_days as i64)
-            .collect();
-        upcoming.sort_by_key(|b| b.days_until_next_from(today));
-        Ok(upcoming)
+        // Use SQL to compute next birthday occurrence and filter within range
+        let rows = sqlx::query_as::<_, BirthdayRow>(
+            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
+             FROM birthdays
+             WHERE user_id = $1
+               AND (
+                 -- This year's birthday hasn't passed yet
+                 (MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE)::int,
+                            EXTRACT(MONTH FROM birth_date)::int,
+                            EXTRACT(DAY FROM birth_date)::int) - CURRENT_DATE
+                  BETWEEN 0 AND $2)
+                 OR
+                 -- Next year's birthday is within range
+                 (MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE)::int + 1,
+                            EXTRACT(MONTH FROM birth_date)::int,
+                            EXTRACT(DAY FROM birth_date)::int) - CURRENT_DATE
+                  BETWEEN 0 AND $2)
+               )
+             ORDER BY
+               CASE
+                 WHEN MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE)::int,
+                                EXTRACT(MONTH FROM birth_date)::int,
+                                EXTRACT(DAY FROM birth_date)::int) >= CURRENT_DATE
+                 THEN MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE)::int,
+                                EXTRACT(MONTH FROM birth_date)::int,
+                                EXTRACT(DAY FROM birth_date)::int) - CURRENT_DATE
+                 ELSE MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE)::int + 1,
+                                EXTRACT(MONTH FROM birth_date)::int,
+                                EXTRACT(DAY FROM birth_date)::int) - CURRENT_DATE
+               END",
+        )
+        .bind(user_id.0)
+        .bind(within_days as i32)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        Ok(rows.into_iter().map(Into::into).collect())
     }
 
     async fn has_been_reminded(
