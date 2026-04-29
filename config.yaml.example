@@ -11,8 +11,8 @@ server:
   listen: "0.0.0.0:3000"
   # Public URL used for generating links (e.g. in emails)
   base_url: "http://localhost:3000"
-  # Secret key for signing session cookies (must be random, at least 64 chars in production)
-  session_secret: "change-me-to-a-random-64-character-string-in-production-please!"
+  # Secret key for signing session cookies (must be random, at least 32 chars in production)
+  session_secret: "change-me-to-a-random-string-in-production!"
   # Encryption key for notification channel secrets (optional, derives from session_secret if not set)
   # Generate with: openssl rand -base64 32
   # encryption_key: "generate-a-random-key-for-encryption-here"
