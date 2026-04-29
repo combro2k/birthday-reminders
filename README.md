@@ -128,7 +128,7 @@ If you started with SQLite and want to move to PostgreSQL:
 server:
   listen: "0.0.0.0:3000"
   base_url: "http://localhost:3000"
-  session_secret: "generate-a-random-64-char-string-here"
+  session_secret: "generate-a-random-string-at-least-32-chars"
   encryption_key: "generate-a-separate-key-for-encryption"  # optional, derives from session_secret if omitted
   static_dir: "static"  # path to static assets (CSS, JS, manifest)
 ```
@@ -327,6 +327,13 @@ Options:
   -c, --config <PATH>  Path to config file [default: config.yaml]
 ```
 
+Commands that require `--token` also accept the `BIRTHDAY_API_TOKEN` environment variable:
+
+```bash
+export BIRTHDAY_API_TOKEN=your-api-token
+birthday-reminders list
+```
+
 The `serve` command accepts a `--port` (`-p`) flag to override the listen port from the config:
 
 ```bash
@@ -340,7 +347,10 @@ birthday-reminders -c config.yaml serve --port 8080
 # Add a birthday
 birthday-reminders add "Jane Doe" 1990-05-15 --token your-api-token
 
-# List upcoming birthdays in the next 14 days
+# Add a birthday with notes
+birthday-reminders add "John Smith" 1985-12-25 --notes "Likes chocolate" --token your-api-token
+
+# List upcoming birthdays in the next 14 days (default: 30)
 birthday-reminders upcoming --days 14 --token your-api-token
 
 # Manually trigger reminders (useful for testing)
@@ -411,6 +421,17 @@ services:
 volumes:
   app-data:
   pg-data:
+```
+
+After starting the containers, create your first admin user:
+
+```bash
+docker compose exec app /app/bin/birthday-reminders \
+  -c /app/etc/config.yaml create-user \
+  --username admin \
+  --email admin@example.com \
+  --password changeme \
+  --admin
 ```
 
 ### Using Make
