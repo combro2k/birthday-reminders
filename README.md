@@ -327,11 +327,25 @@ rc-update add birthday-reminders default
 rc-service birthday-reminders start
 ```
 
-When installed to `/opt/birthday-reminders`, set `static_dir` in your config:
+When installed to `/opt/birthday-reminders`, the default config uses absolute paths:
 
 ```yaml
+database:
+  url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db"
+
 server:
-  static_dir: "/opt/birthday-reminders/share/static"
+  static_dir: "/opt/birthday-reminders/static"
+```
+
+### Directory Layout
+
+```
+/opt/birthday-reminders/
+├── bin/            # Binary
+├── etc/            # Configuration (config.yaml)
+├── data/           # Runtime data (SQLite database)
+├── migrations/     # SQL migration files
+└── static/         # Static assets (CSS, JS, manifest)
 ```
 
 ## License

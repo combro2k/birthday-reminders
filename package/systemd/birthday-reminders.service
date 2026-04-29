@@ -22,6 +22,7 @@ ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
 ReadOnlyPaths=/opt/birthday-reminders
+ReadWritePaths=/opt/birthday-reminders/data
 
 [Install]
 WantedBy=multi-user.target

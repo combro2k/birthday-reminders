@@ -4,15 +4,16 @@ set -e
 PREFIX="${PREFIX:-/opt/birthday-reminders}"
 BINDIR="$PREFIX/bin"
 CONFDIR="$PREFIX/etc"
-DATADIR="$PREFIX/share"
-MIGRATIONSDIR="$DATADIR/migrations"
-STATICDIR="$DATADIR/static"
+DATADIR="$PREFIX/data"
+MIGRATIONSDIR="$PREFIX/migrations"
+STATICDIR="$PREFIX/static"
 
 echo "Installing birthday-reminders to $PREFIX ..."
 
 # Create directories
 install -d "$BINDIR"
 install -d "$CONFDIR"
+install -d "$DATADIR"
 install -d "$MIGRATIONSDIR"
 install -d "$STATICDIR"
 
@@ -62,6 +63,7 @@ echo ""
 echo "Installation complete!"
 echo "  Binary:     $BINDIR/birthday-reminders"
 echo "  Config:     $CONFDIR/config.yaml"
+echo "  Data:       $DATADIR/"
 echo "  Migrations: $MIGRATIONSDIR/"
 echo "  Static:     $STATICDIR/"
 echo ""
