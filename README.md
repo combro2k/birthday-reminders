@@ -158,6 +158,20 @@ reminders:
 
 The `default_days_before` setting is the global default. Each user can override this from **Settings → Profile → Reminder Preferences** in the web UI, choosing from 14, 7, 3, or 1 day(s) before and/or on the day itself.
 
+### Logging
+
+```yaml
+logging:
+  # "stdout" (default) or "syslog"
+  output: "stdout"
+  # Log level filter (supports RUST_LOG syntax)
+  level: "info"
+```
+
+Set `output: "syslog"` to send logs to the system's syslog daemon (via Unix socket). This is useful for systemd/journald or traditional syslog setups.
+
+The `level` field accepts [RUST_LOG-style](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html) directives, e.g. `"birthday_reminders=debug,tower_http=info"`. The `RUST_LOG` environment variable takes precedence if set.
+
 ## OIDC Authentication
 
 Birthday Reminders supports OpenID Connect for single sign-on. When configured, a "Sign in with {provider_name}" button appears on the login page.

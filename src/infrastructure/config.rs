@@ -7,6 +7,8 @@ pub struct AppConfig {
     pub server: ServerConfig,
     pub auth: AuthConfig,
     pub reminders: RemindersConfig,
+    #[serde(default)]
+    pub logging: LoggingConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -63,6 +65,24 @@ pub struct RemindersConfig {
     pub schedule: String,
     #[serde(default = "default_days_before")]
     pub default_days_before: Vec<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct LoggingConfig {
+    /// Log output: "stdout" (default) or "syslog"
+    #[serde(default = "default_log_output")]
+    pub output: String,
+    /// Log level filter (default: "info"). Supports RUST_LOG syntax.
+    #[serde(default = "default_log_level")]
+    pub level: String,
+}
+
+fn default_log_output() -> String {
+    "stdout".to_string()
+}
+
+fn default_log_level() -> String {
+    "info".to_string()
 }
 
 fn default_scopes() -> Vec<String> {
