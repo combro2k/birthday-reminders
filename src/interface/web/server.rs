@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
 use axum::{
+    extract::State,
     middleware,
     routing::{get, post},
     Router,
+    http::StatusCode,
+    Json,
 };
 use sqlx::PgPool;
 use tower_http::services::ServeDir;
@@ -47,6 +50,7 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
 
     // Public routes (no auth required)
     let public = Router::new()
+        .route("/health", get(health_check))
         .route("/auth/login", get(auth::login_page).post(auth::login_submit))
         .route("/auth/logout", post(auth::logout))
         .route(
@@ -113,4 +117,18 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
         .with_state(state);
 
     Ok(app)
+}
+
+async fn health_check(State(state): State<Arc<AppState>>) -> impl axum::response::IntoResponse {
+    // Verify DB connectivity
+    match sqlx::query_scalar::<_, i32>("SELECT 1")
+        .fetch_one(&state.pool)
+        .await
+    {
+        Ok(_) => (StatusCode::OK, Json(serde_json::json!({"status": "ok"}))),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"status": "unhealthy", "reason": "database unreachable"})),
+        ),
+    }
 }
