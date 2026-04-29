@@ -55,6 +55,15 @@ impl ChannelKind {
             ChannelKind::Whatsapp,
         ]
     }
+
+    /// Returns only channel kinds that have a working implementation
+    pub fn implemented() -> &'static [ChannelKind] {
+        &[
+            ChannelKind::Gotify,
+            ChannelKind::Email,
+            ChannelKind::Telegram,
+        ]
+    }
 }
 
 /// Port trait for sending notifications

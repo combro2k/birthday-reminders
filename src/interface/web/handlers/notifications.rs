@@ -26,7 +26,7 @@ pub async fn list_channels(
 
     let channels: Vec<ChannelView> = records.into_iter().map(ChannelView::from).collect();
 
-    let available: Vec<ChannelKindView> = ChannelKind::all()
+    let available: Vec<ChannelKindView> = ChannelKind::implemented()
         .iter()
         .map(|k| ChannelKindView {
             kind: k.as_str().to_string(),
