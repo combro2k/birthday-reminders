@@ -1,4 +1,4 @@
-use chrono::{Datelike, Local, NaiveDate};
+use chrono::{Datelike, NaiveDate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -6,6 +6,7 @@ use uuid::Uuid;
 pub struct BirthdayId(pub Uuid);
 
 impl BirthdayId {
+    #[cfg(test)]
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
@@ -29,20 +30,12 @@ pub struct Birthday {
 }
 
 impl Birthday {
-    pub fn age(&self) -> u32 {
-        self.age_on(Local::now().date_naive())
-    }
-
     pub fn age_on(&self, today: NaiveDate) -> u32 {
         let mut age = today.year() - self.birth_date.year();
         if today.ordinal() < self.birth_date.ordinal() {
             age -= 1;
         }
         age.max(0) as u32
-    }
-
-    pub fn next_birthday(&self) -> NaiveDate {
-        self.next_birthday_from(Local::now().date_naive())
     }
 
     pub fn next_birthday_from(&self, today: NaiveDate) -> NaiveDate {
@@ -69,18 +62,9 @@ impl Birthday {
         }
     }
 
-    pub fn days_until_next(&self) -> i64 {
-        self.days_until_next_from(Local::now().date_naive())
-    }
-
     pub fn days_until_next_from(&self, today: NaiveDate) -> i64 {
         let next = self.next_birthday_from(today);
         (next - today).num_days()
-    }
-
-    /// The age they will turn on their next birthday
-    pub fn turning_age(&self) -> u32 {
-        self.turning_age_on(Local::now().date_naive())
     }
 
     pub fn turning_age_on(&self, today: NaiveDate) -> u32 {

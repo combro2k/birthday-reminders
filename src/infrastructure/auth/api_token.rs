@@ -16,8 +16,3 @@ pub fn hash_token(token: &str) -> String {
     hasher.update(token.as_bytes());
     hex::encode(hasher.finalize())
 }
-
-/// Verify a plain token against a stored hash
-pub fn verify_token(plain: &str, stored_hash: &str) -> bool {
-    hash_token(plain) == stored_hash
-}

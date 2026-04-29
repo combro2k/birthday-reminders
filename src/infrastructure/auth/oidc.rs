@@ -1,7 +1,7 @@
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreProviderMetadata},
     AuthorizationCode, ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce,
-    OAuth2TokenResponse, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope,
+    PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope,
     TokenResponse,
 };
 use openidconnect::reqwest;

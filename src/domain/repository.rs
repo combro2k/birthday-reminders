@@ -34,7 +34,6 @@ pub struct UpdateBirthday {
 
 #[async_trait]
 pub trait BirthdayRepository: Send + Sync {
-    async fn save(&self, birthday: &Birthday) -> Result<(), RepositoryError>;
     async fn create(&self, new: NewBirthday) -> Result<Birthday, RepositoryError>;
     async fn find_by_id(&self, id: &BirthdayId) -> Result<Birthday, RepositoryError>;
     async fn find_all_for_user(&self, user_id: &UserId) -> Result<Vec<Birthday>, RepositoryError>;
@@ -76,6 +75,7 @@ pub trait BirthdayRepository: Send + Sync {
 
 /// Notification channel persistence
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct NotificationChannelRecord {
     pub id: Uuid,
     pub user_id: UserId,

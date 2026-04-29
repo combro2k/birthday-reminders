@@ -99,19 +99,6 @@ impl UserRepository for PgUserRepo {
         Ok(row.into())
     }
 
-    async fn find_by_email(&self, email: &str) -> Result<User, RepositoryError> {
-        let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
-             FROM users WHERE email = $1",
-        )
-        .bind(email)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| RepositoryError::Database(e.to_string()))?
-        .ok_or(RepositoryError::NotFound)?;
-        Ok(row.into())
-    }
-
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
             "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
@@ -181,14 +168,6 @@ impl UserRepository for PgUserRepo {
             return Err(RepositoryError::NotFound);
         }
         Ok(())
-    }
-
-    async fn count(&self) -> Result<i64, RepositoryError> {
-        let count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users")
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| RepositoryError::Database(e.to_string()))?;
-        Ok(count)
     }
 
     async fn get_reminder_days(&self, user_id: &UserId) -> Result<Option<Vec<i32>>, RepositoryError> {

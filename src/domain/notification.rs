@@ -46,16 +46,6 @@ impl ChannelKind {
         }
     }
 
-    pub fn all() -> &'static [ChannelKind] {
-        &[
-            ChannelKind::Gotify,
-            ChannelKind::Email,
-            ChannelKind::Telegram,
-            ChannelKind::Signal,
-            ChannelKind::Whatsapp,
-        ]
-    }
-
     /// Returns only channel kinds that have a working implementation
     pub fn implemented() -> &'static [ChannelKind] {
         &[
@@ -69,8 +59,6 @@ impl ChannelKind {
 /// Port trait for sending notifications
 #[async_trait]
 pub trait NotificationSender: Send + Sync {
-    fn channel_kind(&self) -> ChannelKind;
-
     async fn send(&self, reminder: &PendingReminder) -> Result<(), NotificationError>;
 
     /// Send a test message to verify the channel is configured correctly
@@ -79,9 +67,6 @@ pub trait NotificationSender: Send + Sync {
 
 #[derive(Debug, thiserror::Error)]
 pub enum NotificationError {
-    #[error("Channel not configured")]
-    NotConfigured,
-
     #[error("Channel not implemented: {0}")]
     NotImplemented(String),
 

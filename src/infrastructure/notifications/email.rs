@@ -4,7 +4,7 @@ use lettre::{
     AsyncTransport, Message, Tokio1Executor,
 };
 
-use crate::domain::notification::{ChannelKind, NotificationError, NotificationSender};
+use crate::domain::notification::{NotificationError, NotificationSender};
 use crate::domain::notification_config::{EmailConfig, SmtpSecurity};
 use crate::domain::reminder::PendingReminder;
 
@@ -75,10 +75,6 @@ impl EmailSender {
 
 #[async_trait]
 impl NotificationSender for EmailSender {
-    fn channel_kind(&self) -> ChannelKind {
-        ChannelKind::Email
-    }
-
     async fn send(&self, reminder: &PendingReminder) -> Result<(), NotificationError> {
         let subject = format!("Birthday Reminder: {}", reminder.birthday.name);
         let body = reminder.message();

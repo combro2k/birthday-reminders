@@ -43,21 +43,6 @@ impl From<BirthdayRow> for Birthday {
 
 #[async_trait]
 impl BirthdayRepository for PgBirthdayRepo {
-    async fn save(&self, birthday: &Birthday) -> Result<(), RepositoryError> {
-        sqlx::query(
-            "UPDATE birthdays SET name = $1, birth_date = $2, notes = $3, updated_at = NOW()
-             WHERE id = $4",
-        )
-        .bind(&birthday.name)
-        .bind(birthday.birth_date)
-        .bind(&birthday.notes)
-        .bind(birthday.id.0)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| RepositoryError::Database(e.to_string()))?;
-        Ok(())
-    }
-
     async fn create(&self, new: NewBirthday) -> Result<Birthday, RepositoryError> {
         let id = Uuid::new_v4();
         let row = sqlx::query_as::<_, BirthdayRow>(
