@@ -87,7 +87,7 @@ impl ReminderJobService {
         for reminder in &due {
             for channel in &channels {
                 // Check if already reminded
-                let already = self
+                let already = match self
                     .birthday_repo
                     .has_been_reminded(
                         &reminder.birthday.id,
@@ -96,7 +96,16 @@ impl ReminderJobService {
                         year,
                     )
                     .await
-                    .unwrap_or(false);
+                {
+                    Ok(val) => val,
+                    Err(e) => {
+                        error!(
+                            "Failed to check reminder status for {} on {}: {}",
+                            reminder.birthday.name, channel.channel_type, e
+                        );
+                        continue;
+                    }
+                };
 
                 if already {
                     continue;
