@@ -6,15 +6,19 @@ use axum::{
     Form,
 };
 use serde::Deserialize;
+use tower_sessions::Session;
 
 use crate::domain::user::User;
+use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::{BirthdayFormTemplate, BirthdayListTemplate, BirthdayView, DashboardTemplate};
 
 pub async fn dashboard(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let upcoming = state
         .birthday_query_service
         .get_upcoming(&user.id, 30)
@@ -24,6 +28,7 @@ pub async fn dashboard(
     let template = DashboardTemplate {
         user,
         upcoming: upcoming.into_iter().map(BirthdayView::from).collect(),
+        csrf_token,
     };
     Html(template.to_string())
 }
@@ -31,7 +36,9 @@ pub async fn dashboard(
 pub async fn list_birthdays(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let birthdays = state
         .birthday_query_service
         .list_all(&user.id)
@@ -41,11 +48,16 @@ pub async fn list_birthdays(
     let template = BirthdayListTemplate {
         user,
         birthdays: birthdays.into_iter().map(BirthdayView::from).collect(),
+        csrf_token,
     };
     Html(template.to_string())
 }
 
-pub async fn new_birthday_form(Extension(user): Extension<User>) -> impl IntoResponse {
+pub async fn new_birthday_form(
+    Extension(user): Extension<User>,
+    session: Session,
+) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let template = BirthdayFormTemplate {
         user,
         birthday: None,
@@ -53,6 +65,7 @@ pub async fn new_birthday_form(Extension(user): Extension<User>) -> impl IntoRes
         edit_date: String::new(),
         edit_notes: String::new(),
         error: None,
+        csrf_token,
     };
     Html(template.to_string())
 }
@@ -68,8 +81,10 @@ pub struct BirthdayForm {
 pub async fn create_birthday(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Form(form): Form<BirthdayForm>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let birth_date = match chrono::NaiveDate::parse_from_str(&form.birth_date, "%Y-%m-%d") {
         Ok(d) => d,
         Err(_) => {
@@ -81,6 +96,7 @@ pub async fn create_birthday(
                     edit_date: form.birth_date,
                     edit_notes: String::new(),
                     error: Some("Invalid date format. Use YYYY-MM-DD.".to_string()),
+                    csrf_token,
                 }
                 .to_string(),
             )
@@ -104,6 +120,7 @@ pub async fn create_birthday(
                 edit_date: String::new(),
                 edit_notes: String::new(),
                 error: Some(e.to_string()),
+                csrf_token,
             }
             .to_string(),
         )
@@ -114,8 +131,10 @@ pub async fn create_birthday(
 pub async fn edit_birthday_form(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Path(id): Path<uuid::Uuid>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     match state.birthday_query_service.get_by_id(id, &user.id).await {
         Ok(birthday) => {
             let bv = BirthdayView::from(birthday);
@@ -126,6 +145,7 @@ pub async fn edit_birthday_form(
                 user,
                 birthday: Some(bv),
                 error: None,
+                csrf_token,
             };
             Html(template.to_string()).into_response()
         }
@@ -136,6 +156,7 @@ pub async fn edit_birthday_form(
 pub async fn update_birthday(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Path(id): Path<uuid::Uuid>,
     Form(form): Form<BirthdayForm>,
 ) -> impl IntoResponse {
@@ -153,6 +174,7 @@ pub async fn update_birthday(
     {
         Ok(_) => Redirect::to("/birthdays").into_response(),
         Err(e) => {
+            let csrf_token = get_csrf_token(&session).await;
             let birthday = state
                 .birthday_query_service
                 .get_by_id(id, &user.id)
@@ -170,6 +192,7 @@ pub async fn update_birthday(
                     edit_date,
                     edit_notes,
                     error: Some(e.to_string()),
+                    csrf_token,
                 }
                 .to_string(),
             )

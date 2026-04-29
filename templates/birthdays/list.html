@@ -12,6 +12,7 @@
         <a href="/settings/profile">Settings</a>
         {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
         <form method="POST" action="/auth/logout" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn-link">Logout</button>
         </form>
     </div>
@@ -56,6 +57,7 @@
                     <a href="/birthdays/{{ b.id }}/edit" class="btn btn-small">Edit</a>
                     <form method="POST" action="/birthdays/{{ b.id }}/delete" class="inline"
                           onsubmit="return confirm('Delete {{ b.name }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-small btn-danger">Delete</button>
                     </form>
                 </td>

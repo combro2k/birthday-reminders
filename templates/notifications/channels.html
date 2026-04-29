@@ -12,6 +12,7 @@
         <a href="/settings/profile">Settings</a>
         {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
         <form method="POST" action="/auth/logout" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn-link">Logout</button>
         </form>
     </div>
@@ -55,10 +56,12 @@
                 <td class="actions">
                     <a href="/notifications/{{ ch.channel_type }}" class="btn btn-small">Edit</a>
                     <form method="POST" action="/notifications/{{ ch.channel_type }}/test" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-small btn-secondary">Test</button>
                     </form>
                     <form method="POST" action="/notifications/{{ ch.channel_type }}/delete" class="inline"
                           onsubmit="return confirm('Remove {{ ch.display_name }} channel?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-small btn-danger">Remove</button>
                     </form>
                 </td>

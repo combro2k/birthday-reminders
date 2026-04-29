@@ -8,7 +8,7 @@ use axum::{
 use serde::Deserialize;
 use tower_sessions::Session;
 
-use crate::infrastructure::auth::session::{clear_session, set_user_id};
+use crate::infrastructure::auth::session::{clear_session, get_csrf_token, set_user_id};
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::{LoginTemplate, RegisterTemplate};
 
@@ -18,22 +18,27 @@ pub struct LoginForm {
     pub password: String,
 }
 
-pub async fn login_page(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let oidc_enabled = state.oidc_client.is_some();
-    let oidc_provider_name = state
-        .config
-        .auth
-        .oidc
-        .as_ref()
-        .map(|o| o.provider_name.clone())
-        .unwrap_or_default();
-
-    let template = LoginTemplate {
-        error: None,
-        oidc_enabled,
-        oidc_provider_name,
+async fn build_login_template(state: &AppState, session: &Session, error: Option<String>) -> LoginTemplate {
+    LoginTemplate {
+        error,
+        oidc_enabled: state.oidc_client.is_some(),
+        oidc_provider_name: state
+            .config
+            .auth
+            .oidc
+            .as_ref()
+            .map(|o| o.provider_name.clone())
+            .unwrap_or_default(),
         registration_enabled: state.config.auth.allow_registration,
-    };
+        csrf_token: get_csrf_token(session).await,
+    }
+}
+
+pub async fn login_page(
+    State(state): State<Arc<AppState>>,
+    session: Session,
+) -> impl IntoResponse {
+    let template = build_login_template(&state, &session, None).await;
     Html(template.to_string())
 }
 
@@ -50,18 +55,7 @@ pub async fn login_submit(
             Redirect::to("/").into_response()
         }
         Err(e) => {
-            let template = LoginTemplate {
-                error: Some(e.to_string()),
-                oidc_enabled: state.oidc_client.is_some(),
-                oidc_provider_name: state
-                    .config
-                    .auth
-                    .oidc
-                    .as_ref()
-                    .map(|o| o.provider_name.clone())
-                    .unwrap_or_default(),
-                registration_enabled: state.config.auth.allow_registration,
-            };
+            let template = build_login_template(&state, &session, Some(e.to_string())).await;
             Html(template.to_string()).into_response()
         }
     }
@@ -87,18 +81,7 @@ pub async fn oidc_login(
             Redirect::to(&url).into_response()
         }
         Err(e) => {
-            let template = LoginTemplate {
-                error: Some(format!("OIDC error: {}", e)),
-                oidc_enabled: state.oidc_client.is_some(),
-                oidc_provider_name: state
-                    .config
-                    .auth
-                    .oidc
-                    .as_ref()
-                    .map(|o| o.provider_name.clone())
-                    .unwrap_or_default(),
-                registration_enabled: state.config.auth.allow_registration,
-            };
+            let template = build_login_template(&state, &session, Some(format!("OIDC error: {}", e))).await;
             Html(template.to_string()).into_response()
         }
     }
@@ -147,18 +130,7 @@ pub async fn oidc_callback(
             Redirect::to("/").into_response()
         }
         Err(e) => {
-            let template = LoginTemplate {
-                error: Some(e.to_string()),
-                oidc_enabled: state.oidc_client.is_some(),
-                oidc_provider_name: state
-                    .config
-                    .auth
-                    .oidc
-                    .as_ref()
-                    .map(|o| o.provider_name.clone())
-                    .unwrap_or_default(),
-                registration_enabled: state.config.auth.allow_registration,
-            };
+            let template = build_login_template(&state, &session, Some(e.to_string())).await;
             Html(template.to_string()).into_response()
         }
     }
@@ -174,11 +146,15 @@ pub struct RegisterForm {
     pub password_confirm: String,
 }
 
-pub async fn register_page(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+pub async fn register_page(
+    State(state): State<Arc<AppState>>,
+    session: Session,
+) -> impl IntoResponse {
     if !state.config.auth.allow_registration {
         return Redirect::to("/auth/login").into_response();
     }
-    Html(RegisterTemplate { error: None }.to_string()).into_response()
+    let csrf_token = get_csrf_token(&session).await;
+    Html(RegisterTemplate { error: None, csrf_token }.to_string()).into_response()
 }
 
 pub async fn register_submit(
@@ -190,10 +166,13 @@ pub async fn register_submit(
         return Redirect::to("/auth/login").into_response();
     }
 
+    let csrf_token = get_csrf_token(&session).await;
+
     if form.password != form.password_confirm {
         return Html(
             RegisterTemplate {
                 error: Some("Passwords do not match".to_string()),
+                csrf_token,
             }
             .to_string(),
         )
@@ -204,6 +183,7 @@ pub async fn register_submit(
         return Html(
             RegisterTemplate {
                 error: Some(msg.to_string()),
+                csrf_token,
             }
             .to_string(),
         )
@@ -229,6 +209,7 @@ pub async fn register_submit(
         Err(e) => Html(
             RegisterTemplate {
                 error: Some(e.to_string()),
+                csrf_token,
             }
             .to_string(),
         )

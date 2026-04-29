@@ -6,19 +6,23 @@ use axum::{
     Form,
 };
 use serde::Deserialize;
+use tower_sessions::Session;
 
 use crate::domain::user::{Role, User};
+use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::AdminUsersTemplate;
 
 pub async fn users_page(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
 ) -> impl IntoResponse {
     if !user.is_admin() {
         return Redirect::to("/").into_response();
     }
 
+    let csrf_token = get_csrf_token(&session).await;
     let users = state
         .user_repo
         .find_all()
@@ -30,6 +34,7 @@ pub async fn users_page(
         users,
         error: None,
         success: None,
+        csrf_token,
     };
     Html(template.to_string()).into_response()
 }
@@ -45,6 +50,7 @@ pub struct CreateUserForm {
 pub async fn create_user(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
+    session: Session,
     Form(form): Form<CreateUserForm>,
 ) -> impl IntoResponse {
     if !user.is_admin() {
@@ -60,6 +66,7 @@ pub async fn create_user(
     {
         Ok(_) => Redirect::to("/admin/users").into_response(),
         Err(e) => {
+            let csrf_token = get_csrf_token(&session).await;
             let users = state.user_repo.find_all().await.unwrap_or_default();
             Html(
                 AdminUsersTemplate {
@@ -67,6 +74,7 @@ pub async fn create_user(
                     users,
                     error: Some(e.to_string()),
                     success: None,
+                    csrf_token,
                 }
                 .to_string(),
             )
