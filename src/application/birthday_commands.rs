@@ -113,3 +113,54 @@ fn validate_birthday_input(name: &str, birth_date: NaiveDate, notes: Option<&str
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_rejects_empty_name() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        assert!(validate_birthday_input("", date, None).is_err());
+        assert!(validate_birthday_input("   ", date, None).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_long_name() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let long_name = "a".repeat(201);
+        assert!(validate_birthday_input(&long_name, date, None).is_err());
+    }
+
+    #[test]
+    fn validate_accepts_max_length_name() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let name = "a".repeat(200);
+        assert!(validate_birthday_input(&name, date, None).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_future_date() {
+        let future = chrono::Local::now().date_naive() + chrono::Duration::days(1);
+        assert!(validate_birthday_input("Test", future, None).is_err());
+    }
+
+    #[test]
+    fn validate_accepts_past_date() {
+        let past = NaiveDate::from_ymd_opt(1990, 6, 15).unwrap();
+        assert!(validate_birthday_input("Test", past, None).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_long_notes() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let long_notes = "x".repeat(2001);
+        assert!(validate_birthday_input("Test", date, Some(&long_notes)).is_err());
+    }
+
+    #[test]
+    fn validate_accepts_valid_notes() {
+        let date = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        assert!(validate_birthday_input("Test", date, Some("A note")).is_ok());
+    }
+}
