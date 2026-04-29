@@ -140,7 +140,7 @@ pub async fn api_tokens_page(
     let csrf_token = get_csrf_token(&session).await;
     let tokens = state
         .user_command_service
-        .list_api_tokens(&user.id, &state.pool)
+        .list_api_tokens(&user.id, &state.db)
         .await
         .unwrap_or_default();
 
@@ -168,13 +168,13 @@ pub async fn create_api_token(
     let csrf_token = get_csrf_token(&session).await;
     match state
         .user_command_service
-        .generate_api_token(&user.id, &form.name, &state.pool)
+        .generate_api_token(&user.id, &form.name, &state.db)
         .await
     {
         Ok(plain_token) => {
             let tokens = state
                 .user_command_service
-                .list_api_tokens(&user.id, &state.pool)
+                .list_api_tokens(&user.id, &state.db)
                 .await
                 .unwrap_or_default();
             Html(
@@ -192,7 +192,7 @@ pub async fn create_api_token(
         Err(e) => {
             let tokens = state
                 .user_command_service
-                .list_api_tokens(&user.id, &state.pool)
+                .list_api_tokens(&user.id, &state.db)
                 .await
                 .unwrap_or_default();
             Html(
@@ -217,7 +217,7 @@ pub async fn revoke_api_token(
 ) -> impl IntoResponse {
     let _ = state
         .user_command_service
-        .revoke_api_token(token_id, &user.id, &state.pool)
+        .revoke_api_token(token_id, &user.id, &state.db)
         .await;
     Redirect::to("/settings/api-tokens")
 }

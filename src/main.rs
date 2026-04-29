@@ -7,7 +7,6 @@ use std::path::Path;
 use std::sync::Arc;
 
 use clap::Parser;
-use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::EnvFilter;
 
 use application::auth_service::AuthService;
@@ -16,13 +15,9 @@ use application::birthday_queries::BirthdayQueryService;
 use application::notification_commands::NotificationCommandService;
 use application::reminder_job::ReminderJobService;
 use application::user_commands::UserCommandService;
-use domain::repository::{BirthdayRepository, NotificationChannelRepository};
-use domain::user_repository::UserRepository;
 use infrastructure::auth::oidc::OidcClient;
 use infrastructure::config::AppConfig;
-use infrastructure::persistence::pg_birthday_repo::PgBirthdayRepo;
-use infrastructure::persistence::pg_notification_repo::PgNotificationRepo;
-use infrastructure::persistence::pg_user_repo::PgUserRepo;
+use infrastructure::database::{DatabasePool, Repositories};
 use interface::cli::commands::{Cli, Commands};
 use interface::web::server::{self, AppState};
 
@@ -38,20 +33,17 @@ async fn main() -> anyhow::Result<()> {
     // Load config
     let config = AppConfig::load(Path::new(&cli.config))?;
 
-    // Create database pool
-    let pool = PgPoolOptions::new()
-        .max_connections(config.database.max_connections)
-        .connect(&config.database.url)
-        .await?;
+    // Create database pool (auto-detects SQLite or PostgreSQL from URL)
+    let db = DatabasePool::connect(&config.database.url, config.database.max_connections).await?;
 
     // Run migrations
-    sqlx::migrate!("./migrations").run(&pool).await?;
+    db.run_migrations().await?;
 
     // Create repositories
-    let user_repo: Arc<dyn UserRepository> = Arc::new(PgUserRepo::new(pool.clone()));
-    let birthday_repo: Arc<dyn BirthdayRepository> = Arc::new(PgBirthdayRepo::new(pool.clone()));
-    let notification_repo: Arc<dyn NotificationChannelRepository> =
-        Arc::new(PgNotificationRepo::new(pool.clone()));
+    let repos = Repositories::new(&db);
+    let user_repo = repos.user_repo;
+    let birthday_repo = repos.birthday_repo;
+    let notification_repo = repos.notification_repo;
 
     // Create services
     let user_cmd_svc = UserCommandService::new(user_repo.clone());
@@ -118,7 +110,7 @@ async fn main() -> anyhow::Result<()> {
         );
 
         let state = Arc::new(AppState {
-            pool: pool.clone(),
+            db: db.clone(),
             config: config.clone(),
             auth_service,
             user_command_service: user_cmd_svc,
@@ -143,7 +135,7 @@ async fn main() -> anyhow::Result<()> {
             config.server.listen.clone()
         };
 
-        let router = server::create_router(state, pool).await?;
+        let router = server::create_router(state, db.clone()).await?;
 
         tracing::info!("Starting server on {}", listen);
         let listener = tokio::net::TcpListener::bind(&listen).await?;
@@ -151,7 +143,7 @@ async fn main() -> anyhow::Result<()> {
     } else {
         interface::cli::handlers::handle_command(
             cli.command,
-            &pool,
+            &db,
             &user_repo,
             &birthday_repo,
             &user_cmd_svc,

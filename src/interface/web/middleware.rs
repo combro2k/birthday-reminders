@@ -67,7 +67,7 @@ pub async fn auth_middleware(
 async fn validate_bearer_token(token: &str, state: &AppState) -> Option<User> {
     let user_id = state
         .user_command_service
-        .resolve_api_token(token, &state.pool)
+        .resolve_api_token(token, &state.db)
         .await
         .ok()?;
 

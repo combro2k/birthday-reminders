@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use sqlx::PgPool;
-
 use crate::application::birthday_commands::BirthdayCommandService;
 use crate::application::birthday_queries::BirthdayQueryService;
 use crate::application::reminder_job::ReminderJobService;
@@ -9,12 +7,13 @@ use crate::application::user_commands::UserCommandService;
 use crate::domain::repository::BirthdayRepository;
 use crate::domain::user::Role;
 use crate::domain::user_repository::UserRepository;
+use crate::infrastructure::database::DatabasePool;
 
 use super::commands::Commands;
 
 pub async fn handle_command(
     cmd: Commands,
-    pool: &PgPool,
+    db: &DatabasePool,
     _user_repo: &Arc<dyn UserRepository>,
     _birthday_repo: &Arc<dyn BirthdayRepository>,
     user_cmd_svc: &UserCommandService,
@@ -46,7 +45,7 @@ pub async fn handle_command(
             notes,
             token,
         } => {
-            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, db).await?;
             let birth_date = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d")?;
             let birthday = birthday_cmd_svc
                 .add(&user_id, &name, birth_date, notes)
@@ -55,7 +54,7 @@ pub async fn handle_command(
             Ok(())
         }
         Commands::List { token } => {
-            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, db).await?;
             let birthdays = birthday_query_svc.list_all(&user_id).await?;
 
             if birthdays.is_empty() {
@@ -83,7 +82,7 @@ pub async fn handle_command(
             Ok(())
         }
         Commands::Upcoming { days, token } => {
-            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, db).await?;
             let birthdays = birthday_query_svc.get_upcoming(&user_id, days).await?;
 
             if birthdays.is_empty() {
@@ -110,7 +109,7 @@ pub async fn handle_command(
             Ok(())
         }
         Commands::Remove { id, token } => {
-            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, db).await?;
             let uuid = uuid::Uuid::parse_str(&id)?;
             birthday_cmd_svc.delete(uuid, &user_id).await?;
             println!("Deleted birthday {}", id);
