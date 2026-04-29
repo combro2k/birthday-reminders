@@ -13,18 +13,33 @@ use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::{ApiTokensTemplate, ApiTokenView, ProfileTemplate};
 
+fn days_to_csv(days: &[i32]) -> String {
+    days.iter().map(|d| d.to_string()).collect::<Vec<_>>().join(",")
+}
+
+async fn get_user_reminder_days(state: &AppState, user: &User) -> Vec<i32> {
+    state
+        .user_repo
+        .get_reminder_days(&user.id)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| state.config.reminders.default_days_before.iter().map(|&d| d as i32).collect())
+}
+
+fn profile_template(user: User, error: Option<String>, success: Option<String>, csrf_token: String, reminder_days: Vec<i32>) -> ProfileTemplate {
+    let reminder_days_csv = days_to_csv(&reminder_days);
+    ProfileTemplate { user, error, success, csrf_token, reminder_days, reminder_days_csv }
+}
+
 pub async fn profile_page(
+    State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
     session: Session,
 ) -> impl IntoResponse {
     let csrf_token = get_csrf_token(&session).await;
-    let template = ProfileTemplate {
-        user,
-        error: None,
-        success: None,
-        csrf_token,
-    };
-    Html(template.to_string())
+    let reminder_days = get_user_reminder_days(&state, &user).await;
+    Html(profile_template(user, None, None, csrf_token, reminder_days).to_string())
 }
 
 #[derive(Deserialize)]
@@ -41,74 +56,79 @@ pub async fn update_password(
     Form(form): Form<PasswordForm>,
 ) -> impl IntoResponse {
     let csrf_token = get_csrf_token(&session).await;
+    let reminder_days = get_user_reminder_days(&state, &user).await;
 
     if form.new_password != form.confirm_password {
         return Html(
-            ProfileTemplate {
-                user,
-                error: Some("New passwords do not match".to_string()),
-                success: None,
-                csrf_token,
-            }
-            .to_string(),
-        )
-        .into_response();
+            profile_template(user, Some("New passwords do not match".to_string()), None, csrf_token, reminder_days).to_string()
+        ).into_response();
     }
 
     if let Err(msg) = crate::infrastructure::auth::password::validate_password(&form.new_password) {
         return Html(
-            ProfileTemplate {
-                user,
-                error: Some(msg.to_string()),
-                success: None,
-                csrf_token,
-            }
-            .to_string(),
-        )
-        .into_response();
+            profile_template(user, Some(msg.to_string()), None, csrf_token, reminder_days).to_string()
+        ).into_response();
     }
 
     // Verify current password
     if let Some(ref hash) = user.password_hash {
         if !crate::infrastructure::auth::password::verify_password(&form.current_password, hash) {
             return Html(
-                ProfileTemplate {
-                    user,
-                    error: Some("Current password is incorrect".to_string()),
-                    success: None,
-                    csrf_token,
-                }
-                .to_string(),
-            )
-            .into_response();
+                profile_template(user, Some("Current password is incorrect".to_string()), None, csrf_token, reminder_days).to_string()
+            ).into_response();
         }
     }
 
-    match state
-        .user_command_service
-        .update_password(&user.id, &form.new_password)
-        .await
-    {
+    match state.user_command_service.update_password(&user.id, &form.new_password).await {
         Ok(()) => Html(
-            ProfileTemplate {
-                user,
-                error: None,
-                success: Some("Password updated successfully".to_string()),
-                csrf_token,
-            }
-            .to_string(),
-        )
-        .into_response(),
+            profile_template(user, None, Some("Password updated successfully".to_string()), csrf_token, reminder_days).to_string()
+        ).into_response(),
         Err(e) => Html(
-            ProfileTemplate {
-                user,
-                error: Some(e.to_string()),
-                success: None,
-                csrf_token,
-            }
-            .to_string(),
-        )
-        .into_response(),
+            profile_template(user, Some(e.to_string()), None, csrf_token, reminder_days).to_string()
+        ).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ReminderDaysForm {
+    pub days_before: String,
+}
+
+pub async fn update_reminder_days(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<User>,
+    session: Session,
+    Form(form): Form<ReminderDaysForm>,
+) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
+
+    // Parse comma-separated days, filter to allowed values
+    let allowed: &[i32] = &[0, 1, 3, 7, 14];
+    let mut days: Vec<i32> = form
+        .days_before
+        .split(',')
+        .filter_map(|s| s.trim().parse::<i32>().ok())
+        .filter(|d| allowed.contains(d))
+        .collect();
+
+    days.sort_unstable();
+    days.dedup();
+    days.reverse();
+
+    if days.is_empty() {
+        let reminder_days = get_user_reminder_days(&state, &user).await;
+        return Html(
+            profile_template(user, Some("Please select at least one reminder day".to_string()), None, csrf_token, reminder_days).to_string()
+        ).into_response();
+    }
+
+    match state.user_repo.set_reminder_days(&user.id, days.clone()).await {
+        Ok(()) => Html(
+            profile_template(user, None, Some("Reminder preferences updated".to_string()), csrf_token, days).to_string()
+        ).into_response(),
+        Err(e) => Html(
+            profile_template(user, Some(format!("Failed to save preferences: {}", e)), None, csrf_token, days).to_string()
+        ).into_response(),
     }
 }
 

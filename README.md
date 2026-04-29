@@ -87,6 +87,8 @@ reminders:
   default_days_before: [7, 3, 1, 0]  # Remind 7, 3, and 1 day(s) before + on the day
 ```
 
+The `default_days_before` setting is the global default. Each user can override this from **Settings → Profile → Reminder Preferences** in the web UI, choosing from 14, 7, 3, or 1 day(s) before and/or on the day itself.
+
 ## OIDC Authentication
 
 Birthday Reminders supports OpenID Connect for single sign-on. When configured, a "Sign in with {provider_name}" button appears on the login page.

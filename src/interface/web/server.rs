@@ -101,6 +101,7 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
         // Settings
         .route("/settings/profile", get(settings::profile_page))
         .route("/settings/password", post(settings::update_password))
+        .route("/settings/reminders", post(settings::update_reminder_days))
         .route(
             "/settings/api-tokens",
             get(settings::api_tokens_page).post(settings::create_api_token),
