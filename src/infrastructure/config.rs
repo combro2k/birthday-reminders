@@ -95,7 +95,7 @@ fn default_role() -> String {
 }
 
 fn default_static_dir() -> String {
-    "static".to_string()
+    "/opt/birthday-reminders/static".to_string()
 }
 
 fn default_max_connections() -> u32 {

@@ -551,3 +551,25 @@ The binary, static files, and migrations can be rebuilt from source.
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Configuration Defaults
+
+The following configuration fields have defaults and are optional unless marked as required:
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `database.max_connections` | `10` | Max DB connections |
+| `server.static_dir` | `/opt/birthday-reminders/static` | Path to static files |
+| `auth.allow_registration` | `false` | Allow user self-registration |
+| `auth.oidc.enabled` | `false` | Enable OIDC authentication |
+| `auth.oidc.scopes` | `["openid", "profile", "email"]` | OIDC scopes |
+| `auth.oidc.auto_provision` | `true` | Auto-provision OIDC users |
+| `auth.oidc.default_role` | `"user"` | Default OIDC user role |
+| `reminders.schedule` | `"0 0 8 * * *"` | Reminder cron schedule |
+| `reminders.default_days_before` | `[7, 3, 1, 0]` | Days before birthday to remind |
+| `logging.output` | `"stdout"` | Log output target |
+| `logging.level` | `"info"` | Log level filter |
+
+All path defaults (such as `static_dir`) are now absolute by default, e.g. `/opt/birthday-reminders/static`.
+
+See [`config.yaml.example`](config.yaml.example) for a fully commented example with all defaults and required fields clearly marked.
