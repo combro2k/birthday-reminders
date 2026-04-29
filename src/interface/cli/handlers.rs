@@ -7,9 +7,8 @@ use crate::application::birthday_queries::BirthdayQueryService;
 use crate::application::reminder_job::ReminderJobService;
 use crate::application::user_commands::UserCommandService;
 use crate::domain::repository::BirthdayRepository;
-use crate::domain::user::{Role, UserId};
+use crate::domain::user::Role;
 use crate::domain::user_repository::UserRepository;
-use crate::infrastructure::auth::api_token;
 
 use super::commands::Commands;
 
@@ -47,7 +46,7 @@ pub async fn handle_command(
             notes,
             token,
         } => {
-            let user_id = resolve_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
             let birth_date = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d")?;
             let birthday = birthday_cmd_svc
                 .add(&user_id, &name, birth_date, notes)
@@ -56,7 +55,7 @@ pub async fn handle_command(
             Ok(())
         }
         Commands::List { token } => {
-            let user_id = resolve_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
             let birthdays = birthday_query_svc.list_all(&user_id).await?;
 
             if birthdays.is_empty() {
@@ -84,7 +83,7 @@ pub async fn handle_command(
             Ok(())
         }
         Commands::Upcoming { days, token } => {
-            let user_id = resolve_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
             let birthdays = birthday_query_svc.get_upcoming(&user_id, days).await?;
 
             if birthdays.is_empty() {
@@ -111,7 +110,7 @@ pub async fn handle_command(
             Ok(())
         }
         Commands::Remove { id, token } => {
-            let user_id = resolve_token(&token, pool).await?;
+            let user_id = user_cmd_svc.resolve_api_token(&token, pool).await?;
             let uuid = uuid::Uuid::parse_str(&id)?;
             birthday_cmd_svc.delete(uuid, &user_id).await?;
             println!("Deleted birthday {}", id);
@@ -124,23 +123,4 @@ pub async fn handle_command(
             Ok(())
         }
     }
-}
-
-async fn resolve_token(token: &str, pool: &PgPool) -> anyhow::Result<UserId> {
-    let token_hash = api_token::hash_token(token);
-
-    #[derive(sqlx::FromRow)]
-    struct TokenLookup {
-        user_id: uuid::Uuid,
-    }
-
-    let result = sqlx::query_as::<_, TokenLookup>(
-        "UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = $1 RETURNING user_id",
-    )
-    .bind(&token_hash)
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
-
-    Ok(UserId(result.user_id))
 }

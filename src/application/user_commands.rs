@@ -125,6 +125,25 @@ impl UserCommandService {
             last_used_at: r.last_used_at,
         }).collect())
     }
+
+    /// Resolve an API token to a UserId, updating last_used_at.
+    pub async fn resolve_api_token(
+        &self,
+        token: &str,
+        pool: &sqlx::PgPool,
+    ) -> anyhow::Result<UserId> {
+        let token_hash = api_token::hash_token(token);
+
+        let row = sqlx::query_scalar::<_, uuid::Uuid>(
+            "UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = $1 RETURNING user_id",
+        )
+        .bind(&token_hash)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
+
+        Ok(UserId(row))
+    }
 }
 
 #[derive(Debug, sqlx::FromRow)]
