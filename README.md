@@ -482,6 +482,44 @@ server:
 └── static/         # Static assets (CSS, JS, manifest)
 ```
 
+## Backup & Restore
+
+### SQLite
+
+```bash
+# Backup (while the app is running — SQLite WAL mode allows safe reads)
+cp /opt/birthday-reminders/data/birthday_reminders.db /backups/birthday_reminders_$(date +%F).db
+
+# Or use the SQLite backup command for a consistent snapshot
+sqlite3 /opt/birthday-reminders/data/birthday_reminders.db ".backup /backups/birthday_reminders_$(date +%F).db"
+
+# Restore
+systemctl stop birthday-reminders
+cp /backups/birthday_reminders_2026-04-29.db /opt/birthday-reminders/data/birthday_reminders.db
+systemctl start birthday-reminders
+```
+
+### PostgreSQL
+
+```bash
+# Backup
+pg_dump birthday_reminders > /backups/birthday_reminders_$(date +%F).sql
+
+# Restore
+systemctl stop birthday-reminders
+dropdb birthday_reminders
+createdb birthday_reminders
+psql birthday_reminders < /backups/birthday_reminders_2026-04-29.sql
+systemctl start birthday-reminders
+```
+
+### What to back up
+
+- **Database** — contains all user data, birthdays, and notification configs
+- **`config.yaml`** — contains your secrets (session_secret, encryption_key, OIDC credentials)
+
+The binary, static files, and migrations can be rebuilt from source.
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
