@@ -4,10 +4,11 @@ use chrono::{Datelike, Local};
 use tracing::{error, info, warn};
 
 use crate::domain::reminder::ReminderPolicy;
-use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
+use crate::domain::repository::{BirthdayRepository, NotificationChannelRecord, NotificationChannelRepository};
 use crate::domain::services::compute_due_reminders;
 use crate::domain::user::UserId;
 use crate::domain::user_repository::UserRepository;
+use crate::infrastructure::auth::crypto;
 use crate::infrastructure::notifications::dispatcher;
 
 pub struct ReminderJobService {
@@ -15,6 +16,7 @@ pub struct ReminderJobService {
     birthday_repo: Arc<dyn BirthdayRepository>,
     notification_repo: Arc<dyn NotificationChannelRepository>,
     default_days_before: Vec<u32>,
+    encryption_key: String,
 }
 
 impl ReminderJobService {
@@ -23,12 +25,30 @@ impl ReminderJobService {
         birthday_repo: Arc<dyn BirthdayRepository>,
         notification_repo: Arc<dyn NotificationChannelRepository>,
         default_days_before: Vec<u32>,
+        encryption_key: String,
     ) -> Self {
         Self {
             user_repo,
             birthday_repo,
             notification_repo,
             default_days_before,
+            encryption_key,
+        }
+    }
+
+    /// Decrypt a channel record's config
+    fn decrypt_record(&self, mut record: NotificationChannelRecord) -> Option<NotificationChannelRecord> {
+        if let Some(encrypted) = record.config.get("_encrypted").and_then(|v| v.as_str()) {
+            match crypto::decrypt(encrypted, &self.encryption_key) {
+                Ok(json_str) => match serde_json::from_str(&json_str) {
+                    Ok(config) => { record.config = config; Some(record) }
+                    Err(e) => { error!("Failed to parse decrypted config: {}", e); None }
+                },
+                Err(e) => { error!("Failed to decrypt channel config: {}", e); None }
+            }
+        } else {
+            // Not encrypted (legacy data), return as-is
+            Some(record)
         }
     }
 
@@ -79,10 +99,15 @@ impl ReminderJobService {
             return Ok(());
         }
 
-        // Get enabled notification channels
-        let channels = self.notification_repo.find_enabled_for_user(user_id).await.map_err(|e| {
+        // Get enabled notification channels and decrypt their configs
+        let raw_channels = self.notification_repo.find_enabled_for_user(user_id).await.map_err(|e| {
             anyhow::anyhow!("Failed to fetch channels: {}", e)
         })?;
+
+        let channels: Vec<NotificationChannelRecord> = raw_channels
+            .into_iter()
+            .filter_map(|r| self.decrypt_record(r))
+            .collect();
 
         if channels.is_empty() {
             info!("User has no enabled notification channels, skipping");
