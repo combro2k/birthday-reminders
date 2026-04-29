@@ -200,10 +200,10 @@ pub async fn register_submit(
         .into_response();
     }
 
-    if form.password.len() < 8 {
+    if let Err(msg) = crate::infrastructure::auth::password::validate_password(&form.password) {
         return Html(
             RegisterTemplate {
-                error: Some("Password must be at least 8 characters".to_string()),
+                error: Some(msg.to_string()),
             }
             .to_string(),
         )

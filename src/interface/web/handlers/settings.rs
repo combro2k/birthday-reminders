@@ -44,11 +44,11 @@ pub async fn update_password(
         .into_response();
     }
 
-    if form.new_password.len() < 8 {
+    if let Err(msg) = crate::infrastructure::auth::password::validate_password(&form.new_password) {
         return Html(
             ProfileTemplate {
                 user,
-                error: Some("Password must be at least 8 characters".to_string()),
+                error: Some(msg.to_string()),
                 success: None,
             }
             .to_string(),
