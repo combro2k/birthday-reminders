@@ -2,7 +2,6 @@ PREFIX ?= /opt/birthday-reminders
 BINDIR = $(PREFIX)/bin
 CONFDIR = $(PREFIX)/etc
 DATADIR = $(PREFIX)/data
-MIGRATIONSDIR = $(PREFIX)/migrations
 STATICDIR = $(PREFIX)/static
 
 BINARY = target/release/birthday-reminders
@@ -21,7 +20,6 @@ install: build
 	install -d $(DESTDIR)$(BINDIR)
 	install -d $(DESTDIR)$(CONFDIR)
 	install -d $(DESTDIR)$(DATADIR)
-	install -d $(DESTDIR)$(MIGRATIONSDIR)
 	install -d $(DESTDIR)$(STATICDIR)
 	install -m 755 $(BINARY) $(DESTDIR)$(BINDIR)/birthday-reminders
 	@if [ ! -f $(DESTDIR)$(CONFDIR)/config.yaml ]; then \
@@ -30,14 +28,12 @@ install: build
 		echo "Config already exists, installing as config.yaml.new"; \
 		install -m 640 config.yaml.example $(DESTDIR)$(CONFDIR)/config.yaml.new; \
 	fi
-	cp -r migrations/* $(DESTDIR)$(MIGRATIONSDIR)/
 	cp -r static/* $(DESTDIR)$(STATICDIR)/
 	@echo ""
 	@echo "Installed to $(DESTDIR)$(PREFIX)"
 	@echo "  Binary:     $(DESTDIR)$(BINDIR)/birthday-reminders"
 	@echo "  Config:     $(DESTDIR)$(CONFDIR)/config.yaml"
 	@echo "  Data:       $(DESTDIR)$(DATADIR)/"
-	@echo "  Migrations: $(DESTDIR)$(MIGRATIONSDIR)/"
 	@echo "  Static:     $(DESTDIR)$(STATICDIR)/"
 
 package: build
@@ -45,7 +41,6 @@ package: build
 	mkdir -p $(PACKAGE_DIR)
 	cp $(BINARY) $(PACKAGE_DIR)/
 	cp config.yaml.example $(PACKAGE_DIR)/
-	cp -r migrations $(PACKAGE_DIR)/
 	cp -r static $(PACKAGE_DIR)/
 	cp -r package $(PACKAGE_DIR)/
 	cp package/install.sh $(PACKAGE_DIR)/install.sh
