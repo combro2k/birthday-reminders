@@ -125,7 +125,7 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
     let app = Router::new()
         .merge(public)
         .merge(protected)
-        .nest_service("/static", ServeDir::new("static"))
+        .nest_service("/static", ServeDir::new(&state.config.server.static_dir))
         .layer(session_layer)
         .with_state(state);
 

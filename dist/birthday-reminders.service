@@ -1,0 +1,27 @@
+[Unit]
+Description=Birthday Reminders
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=birthday-reminders
+Group=birthday-reminders
+ExecStart=/opt/birthday-reminders/bin/birthday-reminders --config /opt/birthday-reminders/etc/config.yaml serve
+WorkingDirectory=/opt/birthday-reminders
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadOnlyPaths=/opt/birthday-reminders
+
+[Install]
+WantedBy=multi-user.target

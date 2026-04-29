@@ -13,6 +13,8 @@ server:
   base_url: "http://localhost:3000"
   # Secret key for signing session cookies (must be random, at least 64 chars in production)
   session_secret: "change-me-to-a-random-64-character-string-in-production-please!"
+  # Path to static files directory
+  static_dir: "static"
 
 auth:
   # Whether new users can self-register (set to true to allow open registration)

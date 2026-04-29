@@ -21,6 +21,8 @@ pub struct ServerConfig {
     pub listen: String,
     pub base_url: String,
     pub session_secret: String,
+    #[serde(default = "default_static_dir")]
+    pub static_dir: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -68,6 +70,10 @@ fn default_true() -> bool {
 
 fn default_role() -> String {
     "user".to_string()
+}
+
+fn default_static_dir() -> String {
+    "static".to_string()
 }
 
 fn default_max_connections() -> u32 {
