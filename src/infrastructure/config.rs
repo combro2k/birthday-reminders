@@ -12,6 +12,8 @@ pub struct AppConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct DatabaseConfig {
     pub url: String,
+    #[serde(default = "default_max_connections")]
+    pub max_connections: u32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -66,6 +68,10 @@ fn default_true() -> bool {
 
 fn default_role() -> String {
     "user".to_string()
+}
+
+fn default_max_connections() -> u32 {
+    10
 }
 
 fn default_schedule() -> String {
