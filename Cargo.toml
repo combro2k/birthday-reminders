@@ -11,7 +11,7 @@ tower = "0.5"
 tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "chrono", "migrate", "uuid"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "sqlite", "chrono", "migrate", "uuid"] }
 
 # Templates
 askama = "0.13"
@@ -42,7 +42,7 @@ base64 = "0.22"
 
 # Sessions
 tower-sessions = "0.14"
-tower-sessions-sqlx-store = { version = "0.15", features = ["postgres"] }
+tower-sessions-sqlx-store = { version = "0.15", features = ["postgres", "sqlite"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

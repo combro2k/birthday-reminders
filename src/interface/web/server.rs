@@ -8,10 +8,10 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use sqlx::PgPool;
 use tower_http::services::ServeDir;
 use tower_sessions::SessionManagerLayer;
 use tower_sessions_sqlx_store::PostgresStore;
+use tower_sessions_sqlx_store::SqliteStore;
 
 use crate::application::auth_service::AuthService;
 use crate::application::birthday_commands::BirthdayCommandService;
@@ -21,12 +21,13 @@ use crate::application::user_commands::UserCommandService;
 use crate::domain::user_repository::UserRepository;
 use crate::infrastructure::auth::oidc::OidcClient;
 use crate::infrastructure::config::AppConfig;
+use crate::infrastructure::database::DatabasePool;
 
 use super::handlers::{admin, auth, birthdays, notifications, settings};
 use super::middleware::{auth_middleware, csrf_middleware, rate_limit_middleware, RateLimiter};
 
 pub struct AppState {
-    pub pool: PgPool,
+    pub db: DatabasePool,
     pub config: AppConfig,
     pub auth_service: AuthService,
     pub user_command_service: UserCommandService,
@@ -37,15 +38,31 @@ pub struct AppState {
     pub oidc_client: Option<Arc<OidcClient>>,
 }
 
-pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result<Router> {
-    // Session store
-    let session_store = PostgresStore::new(pool.clone());
-    session_store.migrate().await?;
+pub async fn create_router(state: Arc<AppState>, db: DatabasePool) -> anyhow::Result<Router> {
+    match &db {
+        DatabasePool::Postgres(pool) => {
+            let session_store = PostgresStore::new(pool.clone());
+            session_store.migrate().await?;
+            let session_layer = SessionManagerLayer::new(session_store)
+                .with_secure(state.config.server.base_url.starts_with("https"))
+                .with_http_only(true);
+            Ok(build_app(state, session_layer))
+        }
+        DatabasePool::Sqlite(pool) => {
+            let session_store = SqliteStore::new(pool.clone());
+            session_store.migrate().await?;
+            let session_layer = SessionManagerLayer::new(session_store)
+                .with_secure(state.config.server.base_url.starts_with("https"))
+                .with_http_only(true);
+            Ok(build_app(state, session_layer))
+        }
+    }
+}
 
-    let session_layer = SessionManagerLayer::new(session_store)
-        .with_secure(state.config.server.base_url.starts_with("https"))
-        .with_http_only(true);
-
+fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
+    state: Arc<AppState>,
+    session_layer: SessionManagerLayer<S>,
+) -> Router {
     // Rate limiter for auth routes: max 5 requests per 60 seconds per IP
     let auth_rate_limiter = Arc::new(RateLimiter::new(5, 60));
 
@@ -127,15 +144,24 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
         .layer(session_layer)
         .with_state(state);
 
-    Ok(app)
+    app
 }
 
 async fn health_check(State(state): State<Arc<AppState>>) -> impl axum::response::IntoResponse {
     // Verify DB connectivity
-    match sqlx::query_scalar::<_, i32>("SELECT 1")
-        .fetch_one(&state.pool)
-        .await
-    {
+    let result = match &state.db {
+        DatabasePool::Postgres(pool) => {
+            sqlx::query_scalar::<_, i32>("SELECT 1")
+                .fetch_one(pool)
+                .await
+        }
+        DatabasePool::Sqlite(pool) => {
+            sqlx::query_scalar::<_, i32>("SELECT 1")
+                .fetch_one(pool)
+                .await
+        }
+    };
+    match result {
         Ok(_) => (StatusCode::OK, Json(serde_json::json!({"status": "ok"}))),
         Err(_) => (
             StatusCode::SERVICE_UNAVAILABLE,

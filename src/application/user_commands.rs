@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::domain::user::{AuthMethod, Role, User, UserId};
 use crate::domain::user_repository::{NewUser, UpdateUser, UserRepository};
 use crate::infrastructure::auth::{api_token, password};
+use crate::infrastructure::database::DatabasePool;
 
 pub struct UserCommandService {
     user_repo: Arc<dyn UserRepository>,
@@ -60,19 +61,35 @@ impl UserCommandService {
         &self,
         user_id: &UserId,
         name: &str,
-        pool: &sqlx::PgPool,
+        db: &DatabasePool,
     ) -> anyhow::Result<String> {
         let (plain, hash) = api_token::generate_api_token();
+        let id = uuid::Uuid::new_v4();
 
-        sqlx::query(
-            "INSERT INTO api_tokens (id, user_id, token_hash, name) VALUES ($1, $2, $3, $4)",
-        )
-        .bind(uuid::Uuid::new_v4())
-        .bind(user_id.0)
-        .bind(&hash)
-        .bind(name)
-        .execute(pool)
-        .await?;
+        match db {
+            DatabasePool::Postgres(pool) => {
+                sqlx::query(
+                    "INSERT INTO api_tokens (id, user_id, token_hash, name) VALUES ($1, $2, $3, $4)",
+                )
+                .bind(id)
+                .bind(user_id.0)
+                .bind(&hash)
+                .bind(name)
+                .execute(pool)
+                .await?;
+            }
+            DatabasePool::Sqlite(pool) => {
+                sqlx::query(
+                    "INSERT INTO api_tokens (id, user_id, token_hash, name) VALUES (?, ?, ?, ?)",
+                )
+                .bind(id.to_string())
+                .bind(user_id.0.to_string())
+                .bind(&hash)
+                .bind(name)
+                .execute(pool)
+                .await?;
+            }
+        }
 
         Ok(plain)
     }
@@ -81,15 +98,27 @@ impl UserCommandService {
         &self,
         token_id: uuid::Uuid,
         user_id: &UserId,
-        pool: &sqlx::PgPool,
+        db: &DatabasePool,
     ) -> anyhow::Result<()> {
-        let result =
-            sqlx::query("DELETE FROM api_tokens WHERE id = $1 AND user_id = $2")
-                .bind(token_id)
-                .bind(user_id.0)
-                .execute(pool)
-                .await?;
-        if result.rows_affected() == 0 {
+        let rows_affected = match db {
+            DatabasePool::Postgres(pool) => {
+                sqlx::query("DELETE FROM api_tokens WHERE id = $1 AND user_id = $2")
+                    .bind(token_id)
+                    .bind(user_id.0)
+                    .execute(pool)
+                    .await?
+                    .rows_affected()
+            }
+            DatabasePool::Sqlite(pool) => {
+                sqlx::query("DELETE FROM api_tokens WHERE id = ? AND user_id = ?")
+                    .bind(token_id.to_string())
+                    .bind(user_id.0.to_string())
+                    .execute(pool)
+                    .await?
+                    .rows_affected()
+            }
+        };
+        if rows_affected == 0 {
             anyhow::bail!("Token not found");
         }
         Ok(())
@@ -98,49 +127,109 @@ impl UserCommandService {
     pub async fn list_api_tokens(
         &self,
         user_id: &UserId,
-        pool: &sqlx::PgPool,
+        db: &DatabasePool,
     ) -> anyhow::Result<Vec<ApiTokenInfo>> {
-        let rows = sqlx::query_as::<_, ApiTokenRow>(
-            "SELECT id, name, created_at, last_used_at FROM api_tokens WHERE user_id = $1 ORDER BY created_at DESC",
-        )
-        .bind(user_id.0)
-        .fetch_all(pool)
-        .await?;
+        match db {
+            DatabasePool::Postgres(pool) => {
+                let rows = sqlx::query_as::<_, PgApiTokenRow>(
+                    "SELECT id, name, created_at, last_used_at FROM api_tokens WHERE user_id = $1 ORDER BY created_at DESC",
+                )
+                .bind(user_id.0)
+                .fetch_all(pool)
+                .await?;
 
-        Ok(rows.into_iter().map(|r| ApiTokenInfo {
-            id: r.id,
-            name: r.name,
-            created_at: r.created_at,
-            last_used_at: r.last_used_at,
-        }).collect())
+                Ok(rows.into_iter().map(|r| ApiTokenInfo {
+                    id: r.id,
+                    name: r.name,
+                    created_at: r.created_at,
+                    last_used_at: r.last_used_at,
+                }).collect())
+            }
+            DatabasePool::Sqlite(pool) => {
+                let rows = sqlx::query_as::<_, SqliteApiTokenRow>(
+                    "SELECT id, name, created_at, last_used_at FROM api_tokens WHERE user_id = ? ORDER BY created_at DESC",
+                )
+                .bind(user_id.0.to_string())
+                .fetch_all(pool)
+                .await?;
+
+                Ok(rows.into_iter().filter_map(|r| {
+                    Some(ApiTokenInfo {
+                        id: uuid::Uuid::parse_str(&r.id).ok()?,
+                        name: r.name,
+                        created_at: chrono::DateTime::parse_from_rfc3339(&r.created_at)
+                            .map(|dt| dt.with_timezone(&chrono::Utc))
+                            .unwrap_or_else(|_| chrono::Utc::now()),
+                        last_used_at: r.last_used_at.and_then(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .map(|dt| dt.with_timezone(&chrono::Utc))
+                                .ok()
+                        }),
+                    })
+                }).collect())
+            }
+        }
     }
 
     /// Resolve an API token to a UserId, updating last_used_at.
     pub async fn resolve_api_token(
         &self,
         token: &str,
-        pool: &sqlx::PgPool,
+        db: &DatabasePool,
     ) -> anyhow::Result<UserId> {
         let token_hash = api_token::hash_token(token);
 
-        let row = sqlx::query_scalar::<_, uuid::Uuid>(
-            "UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = $1 RETURNING user_id",
-        )
-        .bind(&token_hash)
-        .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
+        match db {
+            DatabasePool::Postgres(pool) => {
+                let row = sqlx::query_scalar::<_, uuid::Uuid>(
+                    "UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = $1 RETURNING user_id",
+                )
+                .bind(&token_hash)
+                .fetch_optional(pool)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
 
-        Ok(UserId(row))
+                Ok(UserId(row))
+            }
+            DatabasePool::Sqlite(pool) => {
+                // SQLite doesn't support UPDATE ... RETURNING in older versions,
+                // so we do it in two steps
+                let user_id_str = sqlx::query_scalar::<_, String>(
+                    "SELECT user_id FROM api_tokens WHERE token_hash = ?",
+                )
+                .bind(&token_hash)
+                .fetch_optional(pool)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
+
+                sqlx::query(
+                    "UPDATE api_tokens SET last_used_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE token_hash = ?",
+                )
+                .bind(&token_hash)
+                .execute(pool)
+                .await?;
+
+                let uuid = uuid::Uuid::parse_str(&user_id_str)?;
+                Ok(UserId(uuid))
+            }
+        }
     }
 }
 
 #[derive(Debug, sqlx::FromRow)]
-struct ApiTokenRow {
+struct PgApiTokenRow {
     id: uuid::Uuid,
     name: String,
     created_at: chrono::DateTime<chrono::Utc>,
     last_used_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct SqliteApiTokenRow {
+    id: String,
+    name: String,
+    created_at: String,
+    last_used_at: Option<String>,
 }
 
 #[derive(Debug, Clone)]
