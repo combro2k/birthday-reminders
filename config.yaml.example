@@ -1,37 +1,39 @@
 database:
-  # Database connection URL (supports sqlite:// and postgres://)
+  # Database connection URL (supports sqlite:// and postgres://) [required]
   url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db"
   # PostgreSQL example:
   # url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
-  # Maximum number of connections in the database pool
-  max_connections: 10
+  # Maximum number of connections in the database pool (default: 10)
+  # max_connections: 10
 
 server:
-  # Address and port to bind the HTTP server to
+  # Address and port to bind the HTTP server to [required]
   listen: "0.0.0.0:3000"
-  # Public URL used for generating links (e.g. in emails)
+  # Public URL used for generating links (e.g. in emails) [required]
   base_url: "http://localhost:3000"
-  # Secret key for signing session cookies (must be random, at least 32 chars in production)
+  # Secret key for signing session cookies (must be random, at least 32 chars in production) [required]
   session_secret: "change-me-to-a-random-string-in-production!"
-  # Encryption key for notification channel secrets (required)
+  # Encryption key for notification channel secrets [required]
   # Generate with: openssl rand -base64 32
   encryption_key: "generate-a-random-key-for-encryption-here"
-  # Path to static files directory
-  static_dir: "/opt/birthday-reminders/static"
+  # Path to static files directory (default: "/opt/birthday-reminders/static")
+  # static_dir: "/opt/birthday-reminders/static"
 
 auth:
-  # Whether new users can self-register (set to true to allow open registration)
-  allow_registration: false
+  # Whether new users can self-register (default: false)
+  # allow_registration: false
   # oidc:
+  #   # Whether OIDC is enabled (default: false)
   #   enabled: true
   #   provider_name: "Keycloak"
   #   issuer_url: "https://keycloak.example.com/realms/myrealm"
   #   client_id: "birthday-reminders"
   #   client_secret: "your-client-secret"
+  #   # Scopes to request (default: ["openid", "profile", "email"])
   #   scopes: ["openid", "profile", "email"]
-  #   # Automatically create local user accounts on first OIDC login
+  #   # Automatically create local user accounts on first OIDC login (default: true)
   #   auto_provision: true
-  #   # Default role assigned to auto-provisioned users
+  #   # Default role assigned to auto-provisioned users (default: "user")
   #   default_role: "user"
   #
   # # Authentik example:
@@ -50,14 +52,17 @@ auth:
   #   client_id: "123456@birthday-reminders"
   #   client_secret: "your-client-secret"
 
+# The entire reminders section is optional (all fields have defaults)
 reminders:
-  # Cron expression for when to check and send reminders (default: daily at 08:00)
-  schedule: "0 0 8 * * *"
-  # How many days before a birthday to send reminders (0 = on the day itself)
-  default_days_before: [7, 3, 1, 0]
+  # Cron expression for when to check and send reminders (default: "0 0 8 * * *" = daily at 08:00)
+  # schedule: "0 0 8 * * *"
+  # How many days before a birthday to send reminders (default: [7, 3, 1, 0])
+  # default_days_before: [7, 3, 1, 0]
 
+# The entire logging section is optional (all fields have defaults)
 logging:
-  # Log output: "stdout" (default) or "syslog"
-  output: "stdout"
-  # Log level filter (supports RUST_LOG syntax, e.g. "info", "debug", "birthday_reminders=debug,tower_http=info")
-  level: "info"
+  # Log output: "stdout" or "syslog" (default: "stdout")
+  # output: "stdout"
+  # Log level filter, supports RUST_LOG syntax (default: "info")
+  # E.g. "debug", "birthday_reminders=debug,tower_http=info"
+  # level: "info"
