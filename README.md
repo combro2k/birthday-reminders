@@ -13,6 +13,12 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 - **API tokens** — programmatic access for automation
 - **PWA support** — installable as a progressive web app
 
+## Prerequisites
+
+- **Rust** 1.85+ (edition 2024)
+- **PostgreSQL** 13+ or **SQLite** 3.35+
+- A running database instance (for PostgreSQL)
+
 ## Quick Start
 
 ### 1. Build
