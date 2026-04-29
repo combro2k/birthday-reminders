@@ -22,7 +22,7 @@ pub struct EmailConfig {
     pub security: Option<SmtpSecurity>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum EmailProvider {
     Gmail,
@@ -69,7 +69,7 @@ impl EmailProvider {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum SmtpSecurity {
     Starttls,
@@ -96,7 +96,7 @@ impl EmailConfig {
 
     pub fn resolved_security(&self) -> SmtpSecurity {
         if self.provider == EmailProvider::Custom {
-            self.security.clone().unwrap_or(SmtpSecurity::Starttls)
+            self.security.unwrap_or(SmtpSecurity::Starttls)
         } else {
             self.provider.security()
         }
