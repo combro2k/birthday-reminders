@@ -39,6 +39,7 @@ impl From<UserRow> for User {
             role: Role::from_str(&row.role),
             auth_method: AuthMethod::from_str(&row.auth_method),
             oidc_subject: row.oidc_subject,
+            date_format: "%d-%m-%Y".to_string(), // Default date format
             created_at: row.created_at,
             updated_at: row.updated_at,
         }

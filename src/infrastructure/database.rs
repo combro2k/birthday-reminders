@@ -8,6 +8,7 @@ use sqlx::sqlite::SqlitePoolOptions;
 use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
 use crate::domain::user_repository::UserRepository;
 use crate::infrastructure::persistence::pg_birthday_repo::PgBirthdayRepo;
+// use crate::infrastructure::persistence::sqlite_migration_util;
 use crate::infrastructure::persistence::pg_notification_repo::PgNotificationRepo;
 use crate::infrastructure::persistence::pg_user_repo::PgUserRepo;
 use crate::infrastructure::persistence::sqlite_birthday_repo::SqliteBirthdayRepo;
@@ -66,9 +67,7 @@ impl DatabasePool {
                 sqlx::migrate!("./migrations").run(pool).await?;
             }
             Self::Sqlite(pool) => {
-                // Run SQLite-specific migrations manually
-                let sql = include_str!("../../migrations/sqlite/001_init.sql");
-                sqlx::query(sql).execute(pool).await?;
+                sqlx::migrate!("./migrations").run(pool).await?;
             }
         }
         Ok(())

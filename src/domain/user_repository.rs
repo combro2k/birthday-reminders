@@ -11,6 +11,7 @@ pub struct NewUser {
     pub role: super::user::Role,
     pub auth_method: super::user::AuthMethod,
     pub oidc_subject: Option<String>,
+    pub date_format: String,
 }
 
 #[derive(Debug, Clone, Default)]
