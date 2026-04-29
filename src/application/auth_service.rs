@@ -149,15 +149,4 @@ impl AuthService {
 
         Ok(updated)
     }
-
-    /// Validate an API token and return the associated user
-    pub async fn validate_api_token(&self, token: &str) -> anyhow::Result<User> {
-        let token_hash = api_token::hash_token(token);
-
-        // We need to look up by hash - this requires a query through the user repo
-        // For now, we'll look up the token in a simpler way
-        // The token lookup is done at the web layer via direct DB query
-        let _ = token_hash;
-        anyhow::bail!("Token validation should be done via middleware")
-    }
 }
