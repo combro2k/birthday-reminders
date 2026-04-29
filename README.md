@@ -354,6 +354,58 @@ Users can configure one or more notification channels in the web UI under **Sett
 
 ## Installation
 
+### Docker
+
+```bash
+# Build the image
+docker build -t birthday-reminders .
+
+# Run with SQLite (simplest)
+docker run -d \
+  --name birthday-reminders \
+  -p 3000:3000 \
+  -v birthday-data:/app/data \
+  -v ./config.yaml:/app/etc/config.yaml:ro \
+  birthday-reminders
+
+# Run with PostgreSQL
+docker run -d \
+  --name birthday-reminders \
+  -p 3000:3000 \
+  -v ./config.yaml:/app/etc/config.yaml:ro \
+  birthday-reminders
+```
+
+Or with Docker Compose:
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config.yaml:/app/etc/config.yaml:ro
+      - app-data:/app/data
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: birthday
+      POSTGRES_PASSWORD: birthday
+      POSTGRES_DB: birthday_reminders
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  app-data:
+  pg-data:
+```
+
 ### Using Make
 
 ```bash
