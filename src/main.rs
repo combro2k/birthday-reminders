@@ -50,6 +50,38 @@ async fn main() -> anyhow::Result<()> {
     // Run migrations
     db.run_migrations().await?;
 
+    // Drop privileges if running as root and configured
+    #[cfg(unix)]
+    {
+        use nix::unistd::{Uid, Gid, setgid, setuid};
+        use std::process;
+        if Uid::effective().is_root() {
+            let user = &config.server.run_as_user;
+            let group = &config.server.run_as_group;
+            match users::get_user_by_name(user) {
+                Some(u) => {
+                    let target_uid = Uid::from_raw(u.uid());
+                    let target_gid = users::get_group_by_name(group)
+                        .map(|g| Gid::from_raw(g.gid()))
+                        .unwrap_or(Gid::from_raw(u.primary_group_id()));
+                    if let Err(e) = setgid(target_gid) {
+                        eprintln!("Failed to setgid: {e}");
+                        process::exit(1);
+                    }
+                    if let Err(e) = setuid(target_uid) {
+                        eprintln!("Failed to setuid: {e}");
+                        process::exit(1);
+                    }
+                    println!("Dropped privileges to user '{}' (uid={}, gid={})", user, target_uid, target_gid);
+                }
+                None => {
+                    eprintln!("Configured run_as_user '{}' not found", user);
+                    process::exit(1);
+                }
+            }
+        }
+    }
+
     // Create repositories
     let repos = Repositories::new(&db);
     let user_repo = repos.user_repo;
