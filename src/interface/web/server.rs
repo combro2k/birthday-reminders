@@ -24,7 +24,7 @@ use crate::infrastructure::auth::oidc::OidcClient;
 use crate::infrastructure::config::AppConfig;
 
 use super::handlers::{admin, auth, birthdays, notifications, settings};
-use super::middleware::auth_middleware;
+use super::middleware::{auth_middleware, rate_limit_middleware, RateLimiter};
 
 pub struct AppState {
     pub pool: PgPool,
@@ -48,9 +48,11 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
         .with_secure(state.config.server.base_url.starts_with("https"))
         .with_http_only(true);
 
+    // Rate limiter for auth routes: max 5 requests per 60 seconds per IP
+    let auth_rate_limiter = Arc::new(RateLimiter::new(5, 60));
+
     // Public routes (no auth required)
-    let public = Router::new()
-        .route("/health", get(health_check))
+    let auth_routes = Router::new()
         .route("/auth/login", get(auth::login_page).post(auth::login_submit))
         .route("/auth/logout", post(auth::logout))
         .route(
@@ -58,7 +60,15 @@ pub async fn create_router(state: Arc<AppState>, pool: PgPool) -> anyhow::Result
             get(auth::register_page).post(auth::register_submit),
         )
         .route("/auth/oidc", get(auth::oidc_login))
-        .route("/auth/oidc/callback", get(auth::oidc_callback));
+        .route("/auth/oidc/callback", get(auth::oidc_callback))
+        .layer(middleware::from_fn(move |req, next| {
+            let limiter = auth_rate_limiter.clone();
+            rate_limit_middleware(limiter, req, next)
+        }));
+
+    let public = Router::new()
+        .route("/health", get(health_check))
+        .merge(auth_routes);
 
     // Protected routes (auth required)
     let protected = Router::new()

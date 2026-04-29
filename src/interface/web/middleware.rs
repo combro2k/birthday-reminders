@@ -1,11 +1,15 @@
+use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::Arc;
+use std::time::Instant;
 
 use axum::{
-    extract::{Request, State},
+    extract::{ConnectInfo, Request, State},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
+use tokio::sync::Mutex;
 use tower_sessions::Session;
 
 use crate::domain::user::{User, UserId};
@@ -86,4 +90,65 @@ async fn validate_bearer_token(token: &str, state: &AppState) -> Option<User> {
 /// Extract the current user from request extensions
 pub fn get_current_user(request: &Request) -> Option<&User> {
     request.extensions().get::<User>()
+}
+
+/// Simple IP-based rate limiter using a sliding window
+pub struct RateLimiter {
+    max_requests: u32,
+    window_secs: u64,
+    requests: Mutex<HashMap<IpAddr, Vec<Instant>>>,
+}
+
+impl RateLimiter {
+    pub fn new(max_requests: u32, window_secs: u64) -> Self {
+        Self {
+            max_requests,
+            window_secs,
+            requests: Mutex::new(HashMap::new()),
+        }
+    }
+
+    async fn check(&self, ip: IpAddr) -> bool {
+        let mut map = self.requests.lock().await;
+        let now = Instant::now();
+        let window = std::time::Duration::from_secs(self.window_secs);
+
+        let timestamps = map.entry(ip).or_default();
+        timestamps.retain(|t| now.duration_since(*t) < window);
+
+        if timestamps.len() >= self.max_requests as usize {
+            false
+        } else {
+            timestamps.push(now);
+            true
+        }
+    }
+}
+
+/// Rate limiting middleware
+pub async fn rate_limit_middleware(
+    limiter: Arc<RateLimiter>,
+    request: Request,
+    next: Next,
+) -> Response {
+    // Extract client IP from X-Forwarded-For or connection info
+    let ip = request
+        .headers()
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .and_then(|s| s.trim().parse::<IpAddr>().ok())
+        .or_else(|| {
+            request
+                .extensions()
+                .get::<ConnectInfo<std::net::SocketAddr>>()
+                .map(|ci| ci.0.ip())
+        })
+        .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+
+    if limiter.check(ip).await {
+        next.run(request).await
+    } else {
+        (StatusCode::TOO_MANY_REQUESTS, "Too many requests. Please try again later.").into_response()
+    }
 }
