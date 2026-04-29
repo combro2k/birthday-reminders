@@ -76,6 +76,14 @@ database:
 
 Database migrations run automatically on startup.
 
+- For SQLite, use a URL like:
+
+  ```yaml
+  database:
+    url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db?mode=rwc"
+  ```
+  The `?mode=rwc` ensures the database file is created if it does not exist.
+
 ### Migrating from SQLite to PostgreSQL
 
 If you started with SQLite and want to move to PostgreSQL:

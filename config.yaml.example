@@ -1,6 +1,7 @@
 database:
   # Database connection URL (supports sqlite:// and postgres://) [required]
-  url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db"
+  # For SQLite, add ?mode=rwc to create the file if it does not exist
+  url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db?mode=rwc"
   # PostgreSQL example:
   # url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
   # Maximum number of connections in the database pool (default: 10)

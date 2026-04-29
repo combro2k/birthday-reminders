@@ -50,16 +50,23 @@ package: build
 	cp -r package $(PACKAGE_DIR)/
 	cp package/install.sh $(PACKAGE_DIR)/install.sh
 	chmod +x $(PACKAGE_DIR)/install.sh
+	cp package/uninstall.sh $(PACKAGE_DIR)/uninstall.sh
+	chmod +x $(PACKAGE_DIR)/uninstall.sh
 	tar -czf target/package/$(PACKAGE_NAME).tar.gz -C target/package $(PACKAGE_NAME)
 	@echo ""
 	@echo "Package created: target/package/$(PACKAGE_NAME).tar.gz"
 	@echo "Copy to target server and run: tar xzf $(PACKAGE_NAME).tar.gz && cd $(PACKAGE_NAME) && ./install.sh"
 
+# Uninstall everything installed by 'make install'.
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/birthday-reminders
 	rm -rf $(DESTDIR)$(MIGRATIONSDIR)
 	rm -rf $(DESTDIR)$(STATICDIR)
-	@echo "NOTE: Config at $(DESTDIR)$(CONFDIR) was preserved. Remove manually if desired."
+	rm -rf $(DESTDIR)$(DATADIR)
+	if [ -d $(DESTDIR)$(CONFDIR) ]; then \
+	  echo "NOTE: Config at $(DESTDIR)$(CONFDIR) was preserved. Remove manually if desired."; \
+	fi
+	@echo "Uninstall complete."
 
 clean:
 	cargo clean
