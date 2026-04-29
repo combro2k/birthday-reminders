@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/settings/profile" class="active">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <h1>Profile Settings</h1>
+
+    {% if let Some(error) = error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if let Some(success) = success %}
+    <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+
+    <div class="card">
+        <h3>Account Info</h3>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.role.as_str() }}</p>
+        <p><strong>Auth:</strong> {{ user.auth_method.as_str() }}</p>
+    </div>
+
+    {% if user.auth_method.can_login_with_password() %}
+    <div class="card mt-2">
+        <h3>Change Password</h3>
+        <form method="POST" action="/settings/password">
+            <div class="form-group">
+                <label for="current_password">Current Password</label>
+                <input type="password" id="current_password" name="current_password" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" required minlength="8">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+            </div>
+            <button type="submit" class="btn btn-primary">Update Password</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="mt-2">
+        <a href="/settings/api-tokens" class="btn btn-secondary">Manage API Tokens</a>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}All Birthdays - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays" class="active">All Birthdays</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/settings/profile">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="header-row">
+        <h1>All Birthdays</h1>
+        <a href="/birthdays/new" class="btn btn-primary">+ Add Birthday</a>
+    </div>
+
+    {% if birthdays.is_empty() %}
+    <div class="empty-state">
+        <p>No birthdays yet.</p>
+        <a href="/birthdays/new" class="btn btn-secondary">Add your first birthday</a>
+    </div>
+    {% else %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Birth Date</th>
+                <th>Age</th>
+                <th>Days Until Next</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in birthdays %}
+            <tr>
+                <td>{{ b.name }}</td>
+                <td>{{ b.birth_date_str }}</td>
+                <td>{{ b.age }}</td>
+                <td>
+                    {% if b.days_until == 0 %}🎉 Today!
+                    {% elif b.days_until == 1 %}Tomorrow
+                    {% else %}{{ b.days_until }} days{% endif %}
+                </td>
+                <td>{{ b.notes.as_deref().unwrap_or("-") }}</td>
+                <td class="actions">
+                    <a href="/birthdays/{{ b.id }}/edit" class="btn btn-small">Edit</a>
+                    <form method="POST" action="/birthdays/{{ b.id }}/delete" class="inline"
+                          onsubmit="return confirm('Delete {{ b.name }}?')">
+                        <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</main>
+{% endblock %}

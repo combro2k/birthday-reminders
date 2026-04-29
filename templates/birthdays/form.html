@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{% if birthday.is_some() %}Edit{% else %}Add{% endif %} Birthday - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/settings/profile">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <h1>{% if birthday.is_some() %}Edit{% else %}Add{% endif %} Birthday</h1>
+
+    {% if let Some(error) = error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if let Some(b) = birthday %}
+    <form method="POST" action="/birthdays/{{ b.id }}/edit">
+    {% else %}
+    <form method="POST" action="/birthdays/new">
+    {% endif %}
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required
+                   value="{{ edit_name }}">
+        </div>
+        <div class="form-group">
+            <label for="birth_date">Birth Date</label>
+            <input type="date" id="birth_date" name="birth_date" required
+                   value="{{ edit_date }}">
+        </div>
+        <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" rows="3">{{ edit_notes }}</textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if birthday.is_some() %}Update{% else %}Add{% endif %} Birthday
+            </button>
+            <a href="/birthdays" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</main>
+{% endblock %}

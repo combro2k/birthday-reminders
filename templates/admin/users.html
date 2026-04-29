@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Users{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/settings/profile">Settings</a>
+        <a href="/admin/users" class="active">Admin</a>
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <h1>User Management</h1>
+
+    {% if let Some(error) = error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if let Some(success) = success %}
+    <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+
+    <div class="card">
+        <h3>Create User</h3>
+        <form method="POST" action="/admin/users">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create User</button>
+        </form>
+    </div>
+
+    <h2 class="mt-2">All Users</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Auth</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.username }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.role.as_str() }}</td>
+                <td>{{ u.auth_method.as_str() }}</td>
+                <td>{{ u.created_at.format("%Y-%m-%d") }}</td>
+                <td>
+                    {% if u.id != user.id %}
+                    <form method="POST" action="/admin/users/{{ u.id.0 }}/delete" class="inline"
+                          onsubmit="return confirm('Delete user {{ u.username }}?')">
+                        <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                    </form>
+                    {% else %}
+                    <em>You</em>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</main>
+{% endblock %}

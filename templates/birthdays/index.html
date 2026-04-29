@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Birthday Reminders{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎂 Birthdays</a>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/birthdays">All Birthdays</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/settings/profile">Settings</a>
+        {% if user.is_admin() %}<a href="/admin/users">Admin</a>{% endif %}
+        <form method="POST" action="/auth/logout" class="inline">
+            <button type="submit" class="btn-link">Logout</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="header-row">
+        <h1>Upcoming Birthdays</h1>
+        <a href="/birthdays/new" class="btn btn-primary">+ Add Birthday</a>
+    </div>
+
+    {% if upcoming.is_empty() %}
+    <div class="empty-state">
+        <p>No upcoming birthdays in the next 30 days.</p>
+        <a href="/birthdays/new" class="btn btn-secondary">Add your first birthday</a>
+    </div>
+    {% else %}
+    <div class="birthday-cards">
+        {% for b in upcoming %}
+        <div class="birthday-card {% if b.days_until == 0 %}today{% elif b.days_until <= 3 %}soon{% endif %}">
+            <div class="card-header">
+                <h3>{{ b.name }}</h3>
+                <span class="badge">
+                    {% if b.days_until == 0 %}Today! 🎉
+                    {% elif b.days_until == 1 %}Tomorrow
+                    {% else %}In {{ b.days_until }} days{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <p>{{ b.birth_date_str }}</p>
+                <p>Turning <strong>{{ b.turning_age }}</strong></p>
+                {% if let Some(notes) = b.notes %}
+                <p class="notes">{{ notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</main>
+{% endblock %}

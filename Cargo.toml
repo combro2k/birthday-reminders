@@ -1,0 +1,69 @@
+[package]
+name = "birthday-reminders"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Web framework
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "chrono", "migrate", "uuid"] }
+
+# Templates
+askama = "0.13"
+askama_axum = "0.4"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Scheduler
+tokio-cron-scheduler = "0.13"
+
+# HTTP Client (Gotify, Telegram)
+reqwest = { version = "0.12", features = ["json"] }
+
+# Email
+lettre = { version = "0.11", features = ["tokio1-native-tls", "builder", "smtp-transport"] }
+
+# OIDC
+openidconnect = "4"
+
+# Auth
+argon2 = "0.5"
+rand = "0.8"
+sha2 = "0.10"
+hex = "0.4"
+
+# Sessions
+tower-sessions = "0.14"
+tower-sessions-sqlx-store = { version = "0.15", features = ["postgres"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+anyhow = "1"
+thiserror = "2"
+uuid = { version = "1", features = ["v4", "serde"] }
+async-trait = "0.1"
+
+[profile.dev]
+# Reduce memory usage during compilation
+codegen-units = 8
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
