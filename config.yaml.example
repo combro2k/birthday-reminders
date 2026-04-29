@@ -13,9 +13,9 @@ server:
   base_url: "http://localhost:3000"
   # Secret key for signing session cookies (must be random, at least 32 chars in production)
   session_secret: "change-me-to-a-random-string-in-production!"
-  # Encryption key for notification channel secrets (optional, derives from session_secret if not set)
+  # Encryption key for notification channel secrets (required)
   # Generate with: openssl rand -base64 32
-  # encryption_key: "generate-a-random-key-for-encryption-here"
+  encryption_key: "generate-a-random-key-for-encryption-here"
   # Path to static files directory
   static_dir: "/opt/birthday-reminders/static"
 

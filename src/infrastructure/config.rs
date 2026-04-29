@@ -23,17 +23,10 @@ pub struct ServerConfig {
     pub listen: String,
     pub base_url: String,
     pub session_secret: String,
-    /// Encryption key for notification channel secrets. If not set, derives from session_secret.
-    pub encryption_key: Option<String>,
+    /// Encryption key for notification channel secrets (required).
+    pub encryption_key: String,
     #[serde(default = "default_static_dir")]
     pub static_dir: String,
-}
-
-impl ServerConfig {
-    /// Returns the encryption key, falling back to session_secret if not explicitly set.
-    pub fn encryption_key(&self) -> &str {
-        self.encryption_key.as_deref().unwrap_or(&self.session_secret)
-    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
