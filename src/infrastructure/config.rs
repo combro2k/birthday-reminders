@@ -27,6 +27,10 @@ pub struct ServerConfig {
     pub encryption_key: String,
     #[serde(default = "default_static_dir")]
     pub static_dir: String,
+    /// User to drop privileges to after startup (required)
+    pub run_as_user: String,
+    /// Group to drop privileges to after startup (required)
+    pub run_as_group: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -134,6 +138,14 @@ impl AppConfig {
                 "server.session_secret is still set to the example value. \
                  Please generate a random secret for production use."
             );
+        }
+
+        // run_as_user and run_as_group must not be empty
+        if self.server.run_as_user.trim().is_empty() {
+            anyhow::bail!("server.run_as_user must be set (can be 'root' if desired)");
+        }
+        if self.server.run_as_group.trim().is_empty() {
+            anyhow::bail!("server.run_as_group must be set (can be 'root' if desired)");
         }
 
         Ok(())

@@ -64,6 +64,10 @@ uuid = { version = "1", features = ["v4", "serde"] }
 async-trait = "0.1"
 url = "2"
 
+# Privilege dropping
+nix = { version = "0.27", default-features = false, features = ["user"] }
+users = "0.11"
+
 [profile.dev]
 # Reduce memory usage during compilation
 codegen-units = 8

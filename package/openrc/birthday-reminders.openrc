@@ -5,7 +5,7 @@ description="Birthday Reminders"
 
 command="/opt/birthday-reminders/bin/birthday-reminders"
 command_args="--config /opt/birthday-reminders/etc/config.yaml serve"
-command_user="birthday-reminders:birthday-reminders"
+command_user="root:root"
 command_background=true
 
 pidfile="/run/${RC_SVCNAME}.pid"
@@ -17,5 +17,5 @@ depend() {
 }
 
 start_pre() {
-	checkpath --directory --owner birthday-reminders:birthday-reminders /run
+	checkpath --directory --owner root:root /run
 }

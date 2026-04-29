@@ -3,10 +3,12 @@ Description=Birthday Reminders
 After=network-online.target postgresql.service
 Wants=network-online.target
 
+
 [Service]
 Type=simple
-User=birthday-reminders
-Group=birthday-reminders
+# Run as root, app will drop privileges itself
+User=root
+Group=root
 ExecStart=/opt/birthday-reminders/bin/birthday-reminders --config /opt/birthday-reminders/etc/config.yaml serve
 WorkingDirectory=/opt/birthday-reminders
 Restart=on-failure
@@ -21,7 +23,8 @@ PrivateDevices=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
-ReadOnlyPaths=/opt/birthday-reminders
+# Allow read access to etc and static, write to data
+ReadOnlyPaths=/opt/birthday-reminders/etc /opt/birthday-reminders/static
 ReadWritePaths=/opt/birthday-reminders/data
 
 [Install]
