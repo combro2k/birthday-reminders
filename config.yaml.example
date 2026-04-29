@@ -1,13 +1,21 @@
 database:
-  url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
+  # Database connection URL (supports sqlite:// and postgres://)
+  url: "sqlite://birthday_reminders.db"
+  # PostgreSQL example:
+  # url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
+  # Maximum number of connections in the database pool
   max_connections: 10
 
 server:
+  # Address and port to bind the HTTP server to
   listen: "0.0.0.0:3000"
+  # Public URL used for generating links (e.g. in emails)
   base_url: "http://localhost:3000"
+  # Secret key for signing session cookies (must be random, at least 64 chars in production)
   session_secret: "change-me-to-a-random-64-character-string-in-production-please!"
 
 auth:
+  # Whether new users can self-register (set to true to allow open registration)
   allow_registration: false
   # oidc:
   #   enabled: true
@@ -16,7 +24,9 @@ auth:
   #   client_id: "birthday-reminders"
   #   client_secret: "your-client-secret"
   #   scopes: ["openid", "profile", "email"]
+  #   # Automatically create local user accounts on first OIDC login
   #   auto_provision: true
+  #   # Default role assigned to auto-provisioned users
   #   default_role: "user"
   #
   # # Authentik example:
@@ -36,5 +46,7 @@ auth:
   #   client_secret: "your-client-secret"
 
 reminders:
+  # Cron expression for when to check and send reminders (default: daily at 08:00)
   schedule: "0 0 8 * * *"
+  # How many days before a birthday to send reminders (0 = on the day itself)
   default_days_before: [7, 3, 1, 0]
