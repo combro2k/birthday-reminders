@@ -107,11 +107,7 @@ pub trait NotificationChannelRepository: Send + Sync {
         config: serde_json::Value,
     ) -> Result<NotificationChannelRecord, RepositoryError>;
 
-    async fn delete(
-        &self,
-        user_id: &UserId,
-        channel_type: &str,
-    ) -> Result<(), RepositoryError>;
+    async fn delete(&self, user_id: &UserId, channel_type: &str) -> Result<(), RepositoryError>;
 
     async fn find_enabled_for_user(
         &self,

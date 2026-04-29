@@ -2,7 +2,9 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::domain::repository::{NotificationChannelRecord, NotificationChannelRepository, RepositoryError};
+use crate::domain::repository::{
+    NotificationChannelRecord, NotificationChannelRepository, RepositoryError,
+};
 use crate::domain::user::UserId;
 
 pub struct PgNotificationRepo {
@@ -100,11 +102,7 @@ impl NotificationChannelRepository for PgNotificationRepo {
         Ok(row.into())
     }
 
-    async fn delete(
-        &self,
-        user_id: &UserId,
-        channel_type: &str,
-    ) -> Result<(), RepositoryError> {
+    async fn delete(&self, user_id: &UserId, channel_type: &str) -> Result<(), RepositoryError> {
         let result = sqlx::query(
             "DELETE FROM notification_channels WHERE user_id = $1 AND channel_type = $2",
         )

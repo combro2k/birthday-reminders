@@ -34,7 +34,10 @@ pub trait UserRepository: Send + Sync {
     async fn delete(&self, id: &UserId) -> Result<(), RepositoryError>;
 
     /// Get user's reminder day preferences (None = use global default)
-    async fn get_reminder_days(&self, user_id: &UserId) -> Result<Option<Vec<i32>>, RepositoryError>;
+    async fn get_reminder_days(
+        &self,
+        user_id: &UserId,
+    ) -> Result<Option<Vec<i32>>, RepositoryError>;
     async fn set_reminder_days(
         &self,
         user_id: &UserId,

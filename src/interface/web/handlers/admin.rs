@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use axum::{
+    Form,
     extract::{Extension, Path, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::Deserialize;
 use tower_sessions::Session;
@@ -23,11 +23,7 @@ pub async fn users_page(
     }
 
     let csrf_token = get_csrf_token(&session).await;
-    let users = state
-        .user_repo
-        .find_all()
-        .await
-        .unwrap_or_default();
+    let users = state.user_repo.find_all().await.unwrap_or_default();
 
     let template = AdminUsersTemplate {
         user,

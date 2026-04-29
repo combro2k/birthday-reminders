@@ -2,7 +2,9 @@ use async_trait::async_trait;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::domain::repository::{NotificationChannelRecord, NotificationChannelRepository, RepositoryError};
+use crate::domain::repository::{
+    NotificationChannelRecord, NotificationChannelRepository, RepositoryError,
+};
 use crate::domain::user::UserId;
 
 pub struct SqliteNotificationRepo {
@@ -31,8 +33,7 @@ impl TryFrom<ChannelRow> for NotificationChannelRecord {
 
     fn try_from(row: ChannelRow) -> Result<Self, Self::Error> {
         Ok(NotificationChannelRecord {
-            id: Uuid::parse_str(&row.id)
-                .map_err(|e| RepositoryError::Database(e.to_string()))?,
+            id: Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
             user_id: UserId(
                 Uuid::parse_str(&row.user_id)
                     .map_err(|e| RepositoryError::Database(e.to_string()))?,
@@ -94,8 +95,8 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
     ) -> Result<NotificationChannelRecord, RepositoryError> {
         let id = Uuid::new_v4().to_string();
         let user_id_str = user_id.0.to_string();
-        let config_str = serde_json::to_string(&config)
-            .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        let config_str =
+            serde_json::to_string(&config).map_err(|e| RepositoryError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
 
         sqlx::query(
@@ -121,19 +122,14 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             .ok_or(RepositoryError::Database("Upsert failed".to_string()))
     }
 
-    async fn delete(
-        &self,
-        user_id: &UserId,
-        channel_type: &str,
-    ) -> Result<(), RepositoryError> {
-        let result = sqlx::query(
-            "DELETE FROM notification_channels WHERE user_id = ? AND channel_type = ?",
-        )
-        .bind(user_id.0.to_string())
-        .bind(channel_type)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| RepositoryError::Database(e.to_string()))?;
+    async fn delete(&self, user_id: &UserId, channel_type: &str) -> Result<(), RepositoryError> {
+        let result =
+            sqlx::query("DELETE FROM notification_channels WHERE user_id = ? AND channel_type = ?")
+                .bind(user_id.0.to_string())
+                .bind(channel_type)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| RepositoryError::Database(e.to_string()))?;
         if result.rows_affected() == 0 {
             return Err(RepositoryError::NotFound);
         }

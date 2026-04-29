@@ -16,9 +16,7 @@ pub async fn set_user_id(session: &Session, user_id: &UserId) -> anyhow::Result<
 
 pub async fn get_user_id(session: &Session) -> Option<UserId> {
     let value: Option<String> = session.get(USER_ID_KEY).await.ok().flatten();
-    value
-        .and_then(|s| Uuid::parse_str(&s).ok())
-        .map(UserId)
+    value.and_then(|s| Uuid::parse_str(&s).ok()).map(UserId)
 }
 
 pub async fn clear_session(session: &Session) {

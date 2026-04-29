@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use axum::{
+    Form,
     extract::{Extension, Path, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::Deserialize;
 use tower_sessions::Session;
@@ -11,7 +11,9 @@ use tower_sessions::Session;
 use crate::domain::user::User;
 use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
-use crate::interface::web::templates::{BirthdayFormTemplate, BirthdayListTemplate, BirthdayView, DashboardTemplate};
+use crate::interface::web::templates::{
+    BirthdayFormTemplate, BirthdayListTemplate, BirthdayView, DashboardTemplate,
+};
 
 pub async fn dashboard(
     State(state): State<Arc<AppState>>,
@@ -181,9 +183,18 @@ pub async fn update_birthday(
                 .await
                 .ok()
                 .map(BirthdayView::from);
-            let edit_name = birthday.as_ref().map(|b| b.name.clone()).unwrap_or_default();
-            let edit_date = birthday.as_ref().map(|b| b.birth_date.format("%Y-%m-%d").to_string()).unwrap_or_default();
-            let edit_notes = birthday.as_ref().and_then(|b| b.notes.clone()).unwrap_or_default();
+            let edit_name = birthday
+                .as_ref()
+                .map(|b| b.name.clone())
+                .unwrap_or_default();
+            let edit_date = birthday
+                .as_ref()
+                .map(|b| b.birth_date.format("%Y-%m-%d").to_string())
+                .unwrap_or_default();
+            let edit_notes = birthday
+                .as_ref()
+                .and_then(|b| b.notes.clone())
+                .unwrap_or_default();
             Html(
                 BirthdayFormTemplate {
                     user,

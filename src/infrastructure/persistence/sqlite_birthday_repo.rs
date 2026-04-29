@@ -33,8 +33,7 @@ impl TryFrom<BirthdayRow> for Birthday {
     fn try_from(row: BirthdayRow) -> Result<Self, Self::Error> {
         Ok(Birthday {
             id: BirthdayId(
-                Uuid::parse_str(&row.id)
-                    .map_err(|e| RepositoryError::Database(e.to_string()))?,
+                Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
             ),
             user_id: UserId(
                 Uuid::parse_str(&row.user_id)
@@ -168,10 +167,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             .into_iter()
             .filter(|b| {
                 let this_year = today.year();
-                let next_birthday = b
-                    .birth_date
-                    .with_year(this_year)
-                    .unwrap_or(b.birth_date);
+                let next_birthday = b.birth_date.with_year(this_year).unwrap_or(b.birth_date);
                 let next_birthday = if next_birthday < today {
                     b.birth_date
                         .with_year(this_year + 1)

@@ -170,7 +170,10 @@ impl UserRepository for PgUserRepo {
         Ok(())
     }
 
-    async fn get_reminder_days(&self, user_id: &UserId) -> Result<Option<Vec<i32>>, RepositoryError> {
+    async fn get_reminder_days(
+        &self,
+        user_id: &UserId,
+    ) -> Result<Option<Vec<i32>>, RepositoryError> {
         let row = sqlx::query_scalar::<_, Vec<i32>>(
             "SELECT days_before FROM user_reminder_settings WHERE user_id = $1",
         )

@@ -4,7 +4,9 @@ use chrono::{Datelike, Local};
 use tracing::{error, info, warn};
 
 use crate::domain::reminder::ReminderPolicy;
-use crate::domain::repository::{BirthdayRepository, NotificationChannelRecord, NotificationChannelRepository};
+use crate::domain::repository::{
+    BirthdayRepository, NotificationChannelRecord, NotificationChannelRepository,
+};
 use crate::domain::services::compute_due_reminders;
 use crate::domain::user::UserId;
 use crate::domain::user_repository::UserRepository;
@@ -37,14 +39,26 @@ impl ReminderJobService {
     }
 
     /// Decrypt a channel record's config
-    fn decrypt_record(&self, mut record: NotificationChannelRecord) -> Option<NotificationChannelRecord> {
+    fn decrypt_record(
+        &self,
+        mut record: NotificationChannelRecord,
+    ) -> Option<NotificationChannelRecord> {
         if let Some(encrypted) = record.config.get("_encrypted").and_then(|v| v.as_str()) {
             match crypto::decrypt(encrypted, &self.encryption_key) {
                 Ok(json_str) => match serde_json::from_str(&json_str) {
-                    Ok(config) => { record.config = config; Some(record) }
-                    Err(e) => { error!("Failed to parse decrypted config: {}", e); None }
+                    Ok(config) => {
+                        record.config = config;
+                        Some(record)
+                    }
+                    Err(e) => {
+                        error!("Failed to parse decrypted config: {}", e);
+                        None
+                    }
                 },
-                Err(e) => { error!("Failed to decrypt channel config: {}", e); None }
+                Err(e) => {
+                    error!("Failed to decrypt channel config: {}", e);
+                    None
+                }
             }
         } else {
             // Not encrypted (legacy data), return as-is
@@ -54,9 +68,11 @@ impl ReminderJobService {
 
     /// Run reminder check for all users
     pub async fn run_for_all_users(&self) -> anyhow::Result<()> {
-        let users = self.user_repo.find_all().await.map_err(|e| {
-            anyhow::anyhow!("Failed to fetch users: {}", e)
-        })?;
+        let users = self
+            .user_repo
+            .find_all()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to fetch users: {}", e))?;
 
         for user in &users {
             if let Err(e) = self.run_for_user(&user.id).await {
@@ -84,9 +100,11 @@ impl ReminderJobService {
         let policy = ReminderPolicy::new(days_before);
 
         // Get all user's birthdays
-        let birthdays = self.birthday_repo.find_all_for_user(user_id).await.map_err(|e| {
-            anyhow::anyhow!("Failed to fetch birthdays: {}", e)
-        })?;
+        let birthdays = self
+            .birthday_repo
+            .find_all_for_user(user_id)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to fetch birthdays: {}", e))?;
 
         if birthdays.is_empty() {
             return Ok(());
@@ -100,9 +118,11 @@ impl ReminderJobService {
         }
 
         // Get enabled notification channels and decrypt their configs
-        let raw_channels = self.notification_repo.find_enabled_for_user(user_id).await.map_err(|e| {
-            anyhow::anyhow!("Failed to fetch channels: {}", e)
-        })?;
+        let raw_channels = self
+            .notification_repo
+            .find_enabled_for_user(user_id)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to fetch channels: {}", e))?;
 
         let channels: Vec<NotificationChannelRecord> = raw_channels
             .into_iter()
@@ -173,10 +193,7 @@ impl ReminderJobService {
                         }
                     },
                     Err(e) => {
-                        error!(
-                            "Failed to build {} sender: {}",
-                            channel.channel_type, e
-                        );
+                        error!("Failed to build {} sender: {}", channel.channel_type, e);
                     }
                 }
             }
