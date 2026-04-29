@@ -1,0 +1,6 @@
+target/
+*.db
+*.sqlite
+config.yaml
+.env
+.git/
