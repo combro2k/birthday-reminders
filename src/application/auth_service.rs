@@ -75,7 +75,11 @@ impl AuthService {
         let user_info = client.exchange_code(code, flow_state).await?;
 
         // Try to find existing user by OIDC subject
-        match self.user_repo.find_by_oidc_subject(&user_info.subject).await {
+        match self
+            .user_repo
+            .find_by_oidc_subject(&user_info.subject)
+            .await
+        {
             Ok(user) => Ok(user),
             Err(RepositoryError::NotFound) => {
                 if !self.auto_provision {
@@ -112,9 +116,11 @@ impl AuthService {
             oidc_subject: Some(info.subject.clone()),
         };
 
-        let user = self.user_repo.create(new_user).await.map_err(|e| {
-            anyhow::anyhow!("Failed to create OIDC user: {}", e)
-        })?;
+        let user = self
+            .user_repo
+            .create(new_user)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create OIDC user: {}", e))?;
 
         Ok(user)
     }

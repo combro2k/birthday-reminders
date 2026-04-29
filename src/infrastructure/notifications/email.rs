@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use lettre::{
-    message::header::ContentType, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
-    AsyncTransport, Message, Tokio1Executor,
+    AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor, message::header::ContentType,
+    transport::smtp::authentication::Credentials,
 };
 
 use crate::domain::notification::{NotificationError, NotificationSender};
@@ -22,10 +22,7 @@ impl EmailSender {
         let port = self.config.resolved_port();
         let security = self.config.resolved_security();
 
-        let creds = Credentials::new(
-            self.config.username.clone(),
-            self.config.password.clone(),
-        );
+        let creds = Credentials::new(self.config.username.clone(), self.config.password.clone());
 
         let transport = match security {
             SmtpSecurity::Starttls => AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(host)

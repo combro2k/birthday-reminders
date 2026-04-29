@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use axum::{
+    Form,
     extract::{Extension, Path, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::Deserialize;
 use tower_sessions::Session;
@@ -12,7 +12,9 @@ use crate::domain::notification::ChannelKind;
 use crate::domain::user::User;
 use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
-use crate::interface::web::templates::{ChannelFormTemplate, ChannelKindView, ChannelView, ChannelsTemplate};
+use crate::interface::web::templates::{
+    ChannelFormTemplate, ChannelKindView, ChannelView, ChannelsTemplate,
+};
 
 pub async fn list_channels(
     State(state): State<Arc<AppState>>,
@@ -72,7 +74,10 @@ pub async fn channel_form(
         user,
         channel_type: channel_type.clone(),
         channel_name: kind.display_name().to_string(),
-        config_json: existing.as_ref().map(|r| serde_json::to_string_pretty(&r.config).unwrap_or_default()).unwrap_or_default(),
+        config_json: existing
+            .as_ref()
+            .map(|r| serde_json::to_string_pretty(&r.config).unwrap_or_default())
+            .unwrap_or_default(),
         has_existing: existing.is_some(),
         enabled: existing.as_ref().map(|r| r.enabled).unwrap_or(true),
         error: None,
@@ -182,7 +187,10 @@ pub async fn test_channel(
         .test_channel(&user.id, &channel_type)
         .await
     {
-        Ok(()) => (None, Some("Test notification sent successfully!".to_string())),
+        Ok(()) => (
+            None,
+            Some("Test notification sent successfully!".to_string()),
+        ),
         Err(e) => (Some(format!("Test failed: {}", e)), None),
     };
 
@@ -190,7 +198,10 @@ pub async fn test_channel(
         user,
         channel_type,
         channel_name: kind.display_name().to_string(),
-        config_json: existing.as_ref().map(|r| serde_json::to_string_pretty(&r.config).unwrap_or_default()).unwrap_or_default(),
+        config_json: existing
+            .as_ref()
+            .map(|r| serde_json::to_string_pretty(&r.config).unwrap_or_default())
+            .unwrap_or_default(),
         has_existing: existing.is_some(),
         enabled: existing.as_ref().map(|r| r.enabled).unwrap_or(true),
         error,

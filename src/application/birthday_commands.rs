@@ -30,9 +30,11 @@ impl BirthdayCommandService {
             birth_date,
             notes,
         };
-        let birthday = self.repo.create(new).await.map_err(|e| {
-            anyhow::anyhow!("Failed to create birthday: {}", e)
-        })?;
+        let birthday = self
+            .repo
+            .create(new)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create birthday: {}", e))?;
         Ok(birthday)
     }
 
@@ -66,9 +68,11 @@ impl BirthdayCommandService {
             birth_date,
             notes,
         };
-        let birthday = self.repo.update(&id.into(), update).await.map_err(|e| {
-            anyhow::anyhow!("Failed to update birthday: {}", e)
-        })?;
+        let birthday = self
+            .repo
+            .update(&id.into(), update)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to update birthday: {}", e))?;
         Ok(birthday)
     }
 
@@ -84,14 +88,19 @@ impl BirthdayCommandService {
             anyhow::bail!("Not authorized to delete this birthday");
         }
 
-        self.repo.delete(&id.into()).await.map_err(|e| {
-            anyhow::anyhow!("Failed to delete birthday: {}", e)
-        })?;
+        self.repo
+            .delete(&id.into())
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to delete birthday: {}", e))?;
         Ok(())
     }
 }
 
-fn validate_birthday_input(name: &str, birth_date: NaiveDate, notes: Option<&str>) -> anyhow::Result<()> {
+fn validate_birthday_input(
+    name: &str,
+    birth_date: NaiveDate,
+    notes: Option<&str>,
+) -> anyhow::Result<()> {
     let name = name.trim();
     if name.is_empty() {
         anyhow::bail!("Name cannot be empty");

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use axum::{
+    Form,
     extract::{Query, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::Deserialize;
 use tower_sessions::Session;
@@ -18,7 +18,11 @@ pub struct LoginForm {
     pub password: String,
 }
 
-async fn build_login_template(state: &AppState, session: &Session, error: Option<String>) -> LoginTemplate {
+async fn build_login_template(
+    state: &AppState,
+    session: &Session,
+    error: Option<String>,
+) -> LoginTemplate {
     LoginTemplate {
         error,
         oidc_enabled: state.oidc_client.is_some(),
@@ -34,10 +38,7 @@ async fn build_login_template(state: &AppState, session: &Session, error: Option
     }
 }
 
-pub async fn login_page(
-    State(state): State<Arc<AppState>>,
-    session: Session,
-) -> impl IntoResponse {
+pub async fn login_page(State(state): State<Arc<AppState>>, session: Session) -> impl IntoResponse {
     let template = build_login_template(&state, &session, None).await;
     Html(template.to_string())
 }
@@ -47,7 +48,11 @@ pub async fn login_submit(
     session: Session,
     Form(form): Form<LoginForm>,
 ) -> impl IntoResponse {
-    match state.auth_service.login_local(&form.username, &form.password).await {
+    match state
+        .auth_service
+        .login_local(&form.username, &form.password)
+        .await
+    {
         Ok(user) => {
             if set_user_id(&session, &user.id).await.is_err() {
                 return Redirect::to("/auth/login").into_response();
@@ -70,10 +75,7 @@ pub async fn logout(session: Session) -> impl IntoResponse {
 
 const OIDC_STATE_KEY: &str = "oidc_flow_state";
 
-pub async fn oidc_login(
-    State(state): State<Arc<AppState>>,
-    session: Session,
-) -> impl IntoResponse {
+pub async fn oidc_login(State(state): State<Arc<AppState>>, session: Session) -> impl IntoResponse {
     match state.auth_service.initiate_oidc() {
         Ok((url, flow_state)) => {
             let state_json = serde_json::to_string(&flow_state).unwrap_or_default();
@@ -81,7 +83,8 @@ pub async fn oidc_login(
             Redirect::to(&url).into_response()
         }
         Err(e) => {
-            let template = build_login_template(&state, &session, Some(format!("OIDC error: {}", e))).await;
+            let template =
+                build_login_template(&state, &session, Some(format!("OIDC error: {}", e))).await;
             Html(template.to_string()).into_response()
         }
     }
@@ -154,7 +157,14 @@ pub async fn register_page(
         return Redirect::to("/auth/login").into_response();
     }
     let csrf_token = get_csrf_token(&session).await;
-    Html(RegisterTemplate { error: None, csrf_token }.to_string()).into_response()
+    Html(
+        RegisterTemplate {
+            error: None,
+            csrf_token,
+        }
+        .to_string(),
+    )
+    .into_response()
 }
 
 pub async fn register_submit(

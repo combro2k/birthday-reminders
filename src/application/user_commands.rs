@@ -30,28 +30,36 @@ impl UserCommandService {
             auth_method: AuthMethod::Local,
             oidc_subject: None,
         };
-        let user = self.user_repo.create(new_user).await.map_err(|e| {
-            anyhow::anyhow!("Failed to create user: {}", e)
-        })?;
+        let user = self
+            .user_repo
+            .create(new_user)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create user: {}", e))?;
         Ok(user)
     }
 
-    pub async fn update_password(&self, user_id: &UserId, new_password: &str) -> anyhow::Result<()> {
+    pub async fn update_password(
+        &self,
+        user_id: &UserId,
+        new_password: &str,
+    ) -> anyhow::Result<()> {
         let hash = password::hash_password(new_password)?;
         let update = UpdateUser {
             password_hash: Some(Some(hash)),
             ..Default::default()
         };
-        self.user_repo.update(user_id, update).await.map_err(|e| {
-            anyhow::anyhow!("Failed to update password: {}", e)
-        })?;
+        self.user_repo
+            .update(user_id, update)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to update password: {}", e))?;
         Ok(())
     }
 
     pub async fn delete_user(&self, user_id: &UserId) -> anyhow::Result<()> {
-        self.user_repo.delete(user_id).await.map_err(|e| {
-            anyhow::anyhow!("Failed to delete user: {}", e)
-        })?;
+        self.user_repo
+            .delete(user_id)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to delete user: {}", e))?;
         Ok(())
     }
 
@@ -138,12 +146,15 @@ impl UserCommandService {
                 .fetch_all(pool)
                 .await?;
 
-                Ok(rows.into_iter().map(|r| ApiTokenInfo {
-                    id: r.id,
-                    name: r.name,
-                    created_at: r.created_at,
-                    last_used_at: r.last_used_at,
-                }).collect())
+                Ok(rows
+                    .into_iter()
+                    .map(|r| ApiTokenInfo {
+                        id: r.id,
+                        name: r.name,
+                        created_at: r.created_at,
+                        last_used_at: r.last_used_at,
+                    })
+                    .collect())
             }
             DatabasePool::Sqlite(pool) => {
                 let rows = sqlx::query_as::<_, SqliteApiTokenRow>(
@@ -153,20 +164,23 @@ impl UserCommandService {
                 .fetch_all(pool)
                 .await?;
 
-                Ok(rows.into_iter().filter_map(|r| {
-                    Some(ApiTokenInfo {
-                        id: uuid::Uuid::parse_str(&r.id).ok()?,
-                        name: r.name,
-                        created_at: chrono::DateTime::parse_from_rfc3339(&r.created_at)
-                            .map(|dt| dt.with_timezone(&chrono::Utc))
-                            .unwrap_or_else(|_| chrono::Utc::now()),
-                        last_used_at: r.last_used_at.and_then(|s| {
-                            chrono::DateTime::parse_from_rfc3339(&s)
+                Ok(rows
+                    .into_iter()
+                    .filter_map(|r| {
+                        Some(ApiTokenInfo {
+                            id: uuid::Uuid::parse_str(&r.id).ok()?,
+                            name: r.name,
+                            created_at: chrono::DateTime::parse_from_rfc3339(&r.created_at)
                                 .map(|dt| dt.with_timezone(&chrono::Utc))
-                                .ok()
-                        }),
+                                .unwrap_or_else(|_| chrono::Utc::now()),
+                            last_used_at: r.last_used_at.and_then(|s| {
+                                chrono::DateTime::parse_from_rfc3339(&s)
+                                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                                    .ok()
+                            }),
+                        })
                     })
-                }).collect())
+                    .collect())
             }
         }
     }

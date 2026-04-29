@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use axum::{
+    Json, Router,
     extract::State,
+    http::StatusCode,
     middleware,
     routing::{get, post},
-    Router,
-    http::StatusCode,
-    Json,
 };
 use tower_http::services::ServeDir;
 use tower_sessions::SessionManagerLayer;
@@ -24,7 +23,7 @@ use crate::infrastructure::config::AppConfig;
 use crate::infrastructure::database::DatabasePool;
 
 use super::handlers::{admin, auth, birthdays, notifications, settings};
-use super::middleware::{auth_middleware, csrf_middleware, rate_limit_middleware, RateLimiter};
+use super::middleware::{RateLimiter, auth_middleware, csrf_middleware, rate_limit_middleware};
 
 pub struct AppState {
     pub db: DatabasePool,
@@ -68,7 +67,10 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
 
     // Public routes (no auth required)
     let auth_routes = Router::new()
-        .route("/auth/login", get(auth::login_page).post(auth::login_submit))
+        .route(
+            "/auth/login",
+            get(auth::login_page).post(auth::login_submit),
+        )
         .route("/auth/logout", post(auth::logout))
         .route(
             "/auth/register",

@@ -27,8 +27,10 @@ impl NotificationSender for TelegramSender {
     }
 
     async fn test(&self) -> Result<(), NotificationError> {
-        self.send_message("🎂 Birthday Reminders - Test notification. Your Telegram configuration is working!")
-            .await
+        self.send_message(
+            "🎂 Birthday Reminders - Test notification. Your Telegram configuration is working!",
+        )
+        .await
     }
 }
 

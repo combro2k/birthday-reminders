@@ -50,7 +50,10 @@ pub async fn handle_command(
             let birthday = birthday_cmd_svc
                 .add(&user_id, &name, birth_date, notes)
                 .await?;
-            println!("Added birthday: {} ({})", birthday.name, birthday.birth_date);
+            println!(
+                "Added birthday: {} ({})",
+                birthday.name, birthday.birth_date
+            );
             Ok(())
         }
         Commands::List { token } => {

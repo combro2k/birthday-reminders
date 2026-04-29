@@ -29,8 +29,8 @@ async fn main() -> anyhow::Result<()> {
     let config = AppConfig::load(Path::new(&cli.config))?;
 
     // Initialize logging based on config
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
+    let env_filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&config.logging.level));
 
     if config.logging.output == "syslog" {
         let syslog_writer = infrastructure::logging::SyslogMakeWriter::new()?;
@@ -40,15 +40,13 @@ async fn main() -> anyhow::Result<()> {
             .with_ansi(false)
             .init();
     } else {
-        tracing_subscriber::fmt()
-            .with_env_filter(env_filter)
-            .init();
+        tracing_subscriber::fmt().with_env_filter(env_filter).init();
     }
 
     // Drop privileges if running as root and configured (before DB connection)
     #[cfg(unix)]
     {
-        use nix::unistd::{Uid, Gid, setgid, setuid};
+        use nix::unistd::{Gid, Uid, setgid, setuid};
         use std::process;
         if Uid::effective().is_root() {
             let user = &config.server.run_as_user;
@@ -67,7 +65,10 @@ async fn main() -> anyhow::Result<()> {
                         eprintln!("Failed to setuid: {e}");
                         process::exit(1);
                     }
-                    println!("Dropped privileges to user '{}' (uid={}, gid={})", user, target_uid, target_gid);
+                    println!(
+                        "Dropped privileges to user '{}' (uid={}, gid={})",
+                        user, target_uid, target_gid
+                    );
                 }
                 None => {
                     eprintln!("Configured run_as_user '{}' not found", user);
@@ -118,11 +119,17 @@ async fn main() -> anyhow::Result<()> {
             if oidc_config.enabled {
                 match OidcClient::new(oidc_config, &config.server.base_url).await {
                     Ok(client) => {
-                        tracing::info!("OIDC configured with provider: {}", oidc_config.provider_name);
+                        tracing::info!(
+                            "OIDC configured with provider: {}",
+                            oidc_config.provider_name
+                        );
                         Some(Arc::new(client))
                     }
                     Err(e) => {
-                        tracing::warn!("Failed to initialize OIDC: {}. Continuing without OIDC.", e);
+                        tracing::warn!(
+                            "Failed to initialize OIDC: {}. Continuing without OIDC.",
+                            e
+                        );
                         None
                     }
                 }
@@ -200,4 +207,3 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-

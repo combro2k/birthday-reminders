@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::domain::notification::ChannelKind;
-use crate::domain::repository::{NotificationChannelRecord, NotificationChannelRepository, RepositoryError};
+use crate::domain::repository::{
+    NotificationChannelRecord, NotificationChannelRepository, RepositoryError,
+};
 use crate::domain::user::UserId;
 use crate::infrastructure::auth::crypto;
 use crate::infrastructure::notifications::dispatcher;
@@ -13,11 +15,17 @@ pub struct NotificationCommandService {
 
 impl NotificationCommandService {
     pub fn new(repo: Arc<dyn NotificationChannelRepository>, encryption_key: String) -> Self {
-        Self { repo, encryption_key }
+        Self {
+            repo,
+            encryption_key,
+        }
     }
 
     /// Decrypt config in a channel record
-    fn decrypt_record(&self, mut record: NotificationChannelRecord) -> anyhow::Result<NotificationChannelRecord> {
+    fn decrypt_record(
+        &self,
+        mut record: NotificationChannelRecord,
+    ) -> anyhow::Result<NotificationChannelRecord> {
         if let Some(encrypted) = record.config.get("_encrypted").and_then(|v| v.as_str()) {
             let decrypted_json = crypto::decrypt(encrypted, &self.encryption_key)?;
             record.config = serde_json::from_str(&decrypted_json)?;
@@ -36,19 +44,22 @@ impl NotificationCommandService {
         &self,
         user_id: &UserId,
     ) -> anyhow::Result<Vec<NotificationChannelRecord>> {
-        let records = self.repo.find_for_user(user_id).await.map_err(|e| {
-            anyhow::anyhow!("Failed to list channels: {}", e)
-        })?;
+        let records = self
+            .repo
+            .find_for_user(user_id)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to list channels: {}", e))?;
         // Decrypt configs - skip records that fail decryption (log warning)
-        Ok(records.into_iter().filter_map(|r| {
-            match self.decrypt_record(r) {
+        Ok(records
+            .into_iter()
+            .filter_map(|r| match self.decrypt_record(r) {
                 Ok(rec) => Some(rec),
                 Err(e) => {
                     tracing::warn!("Failed to decrypt channel config: {}", e);
                     None
                 }
-            }
-        }).collect())
+            })
+            .collect())
     }
 
     pub async fn upsert_channel(
@@ -64,7 +75,8 @@ impl NotificationCommandService {
 
         let encrypted_config = self.encrypt_config(&config)?;
 
-        let record = self.repo
+        let record = self
+            .repo
             .upsert(user_id, channel_type, enabled, encrypted_config)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to save channel: {}", e))?;
@@ -75,11 +87,7 @@ impl NotificationCommandService {
         Ok(decrypted)
     }
 
-    pub async fn delete_channel(
-        &self,
-        user_id: &UserId,
-        channel_type: &str,
-    ) -> anyhow::Result<()> {
+    pub async fn delete_channel(&self, user_id: &UserId, channel_type: &str) -> anyhow::Result<()> {
         self.repo
             .delete(user_id, channel_type)
             .await
@@ -89,11 +97,7 @@ impl NotificationCommandService {
             })
     }
 
-    pub async fn test_channel(
-        &self,
-        user_id: &UserId,
-        channel_type: &str,
-    ) -> anyhow::Result<()> {
+    pub async fn test_channel(&self, user_id: &UserId, channel_type: &str) -> anyhow::Result<()> {
         let record = self
             .repo
             .find_by_type(user_id, channel_type)

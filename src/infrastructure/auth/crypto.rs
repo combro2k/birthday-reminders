@@ -1,6 +1,6 @@
 use chacha20poly1305::{
-    aead::{Aead, KeyInit},
     XChaCha20Poly1305,
+    aead::{Aead, KeyInit},
 };
 use rand::RngCore;
 use sha2::{Digest, Sha256};
@@ -42,18 +42,16 @@ pub fn decrypt(encrypted: &str, secret: &str) -> anyhow::Result<String> {
     let cipher = XChaCha20Poly1305::new_from_slice(&key)
         .map_err(|e| anyhow::anyhow!("Failed to create cipher: {}", e))?;
 
-    let combined = base64::Engine::decode(
-        &base64::engine::general_purpose::STANDARD,
-        encrypted,
-    )
-    .map_err(|e| anyhow::anyhow!("Base64 decode failed: {}", e))?;
+    let combined = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, encrypted)
+        .map_err(|e| anyhow::anyhow!("Base64 decode failed: {}", e))?;
 
     if combined.len() < 24 {
         anyhow::bail!("Encrypted data too short");
     }
 
     let (nonce_bytes, ciphertext) = combined.split_at(24);
-    let nonce: [u8; 24] = nonce_bytes.try_into()
+    let nonce: [u8; 24] = nonce_bytes
+        .try_into()
         .map_err(|_| anyhow::anyhow!("Invalid nonce length"))?;
 
     let plaintext = cipher

@@ -1,10 +1,9 @@
-use openidconnect::{
-    core::{CoreAuthenticationFlow, CoreProviderMetadata},
-    AuthorizationCode, ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce,
-    PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope,
-    TokenResponse,
-};
 use openidconnect::reqwest;
+use openidconnect::{
+    AuthorizationCode, ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce, PkceCodeChallenge,
+    PkceCodeVerifier, RedirectUrl, Scope, TokenResponse,
+    core::{CoreAuthenticationFlow, CoreProviderMetadata},
+};
 
 use crate::infrastructure::config::OidcConfig;
 
@@ -42,13 +41,9 @@ impl OidcClient {
             .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {}", e))?;
 
         let issuer_url = IssuerUrl::new(config.issuer_url.clone())?;
-        let metadata =
-            CoreProviderMetadata::discover_async(issuer_url, &http_client).await?;
+        let metadata = CoreProviderMetadata::discover_async(issuer_url, &http_client).await?;
 
-        let redirect_url = RedirectUrl::new(format!(
-            "{}/auth/oidc/callback",
-            base_url
-        ))?;
+        let redirect_url = RedirectUrl::new(format!("{}/auth/oidc/callback", base_url))?;
 
         Ok(Self {
             metadata,
@@ -81,9 +76,7 @@ impl OidcClient {
             auth_request = auth_request.add_scope(Scope::new(scope.clone()));
         }
 
-        let (auth_url, csrf_token, nonce) = auth_request
-            .set_pkce_challenge(pkce_challenge)
-            .url();
+        let (auth_url, csrf_token, nonce) = auth_request.set_pkce_challenge(pkce_challenge).url();
 
         let flow_state = OidcFlowState {
             csrf_token: csrf_token.secret().clone(),
@@ -130,9 +123,7 @@ impl OidcClient {
 
         let subject = claims.subject().to_string();
         let email = claims.email().map(|e| e.as_str().to_string());
-        let preferred_username = claims
-            .preferred_username()
-            .map(|u| u.as_str().to_string());
+        let preferred_username = claims.preferred_username().map(|u| u.as_str().to_string());
         let name = claims
             .name()
             .and_then(|n| n.get(None))

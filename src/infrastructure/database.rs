@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use sqlx::SqlitePool;
-use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use sqlx::SqlitePool;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::sqlite::SqlitePoolOptions;
 
 use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
 use crate::domain::user_repository::UserRepository;

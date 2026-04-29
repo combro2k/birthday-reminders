@@ -35,8 +35,7 @@ impl TryFrom<UserRow> for User {
     fn try_from(row: UserRow) -> Result<Self, Self::Error> {
         Ok(User {
             id: UserId(
-                Uuid::parse_str(&row.id)
-                    .map_err(|e| RepositoryError::Database(e.to_string()))?,
+                Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
             ),
             username: row.username,
             email: row.email,
@@ -196,7 +195,10 @@ impl UserRepository for SqliteUserRepo {
         Ok(())
     }
 
-    async fn get_reminder_days(&self, user_id: &UserId) -> Result<Option<Vec<i32>>, RepositoryError> {
+    async fn get_reminder_days(
+        &self,
+        user_id: &UserId,
+    ) -> Result<Option<Vec<i32>>, RepositoryError> {
         let row = sqlx::query_scalar::<_, String>(
             "SELECT days_before FROM user_reminder_settings WHERE user_id = ?",
         )

@@ -76,11 +76,7 @@ async fn validate_bearer_token(token: &str, state: &AppState) -> Option<User> {
 
 /// CSRF protection middleware for POST requests.
 /// Validates that the `csrf_token` form field or header matches the session token.
-pub async fn csrf_middleware(
-    session: Session,
-    request: Request,
-    next: Next,
-) -> Response {
+pub async fn csrf_middleware(session: Session, request: Request, next: Next) -> Response {
     // Only validate POST/PUT/PATCH/DELETE requests
     if request.method() != Method::POST
         && request.method() != Method::PUT
@@ -135,7 +131,13 @@ pub async fn csrf_middleware(
     // Reconstruct the request with the buffered body, stripping the csrf_token field
     let filtered_body: String = url::form_urlencoded::parse(&bytes)
         .filter(|(key, _)| key != "csrf_token")
-        .map(|(k, v)| format!("{}={}", url::form_urlencoded::byte_serialize(k.as_bytes()).collect::<String>(), url::form_urlencoded::byte_serialize(v.as_bytes()).collect::<String>()))
+        .map(|(k, v)| {
+            format!(
+                "{}={}",
+                url::form_urlencoded::byte_serialize(k.as_bytes()).collect::<String>(),
+                url::form_urlencoded::byte_serialize(v.as_bytes()).collect::<String>()
+            )
+        })
         .collect::<Vec<_>>()
         .join("&");
     let request = Request::from_parts(parts, Body::from(filtered_body));
@@ -207,6 +209,10 @@ pub async fn rate_limit_middleware(
     if limiter.check(ip).await {
         next.run(request).await
     } else {
-        (StatusCode::TOO_MANY_REQUESTS, "Too many requests. Please try again later.").into_response()
+        (
+            StatusCode::TOO_MANY_REQUESTS,
+            "Too many requests. Please try again later.",
+        )
+            .into_response()
     }
 }

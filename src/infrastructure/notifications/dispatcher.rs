@@ -12,8 +12,9 @@ use super::whatsapp::WhatsappSender;
 pub fn build_sender(
     record: &NotificationChannelRecord,
 ) -> Result<Box<dyn NotificationSender>, NotificationError> {
-    let kind = ChannelKind::from_str(&record.channel_type)
-        .ok_or_else(|| NotificationError::InvalidConfig(format!("Unknown channel type: {}", record.channel_type)))?;
+    let kind = ChannelKind::from_str(&record.channel_type).ok_or_else(|| {
+        NotificationError::InvalidConfig(format!("Unknown channel type: {}", record.channel_type))
+    })?;
 
     match kind {
         ChannelKind::Gotify => {
