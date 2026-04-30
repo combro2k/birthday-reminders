@@ -62,8 +62,8 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
     state: Arc<AppState>,
     session_layer: SessionManagerLayer<S>,
 ) -> Router {
-    // Rate limiter for auth routes: max 5 requests per 60 seconds per IP
-    let auth_rate_limiter = Arc::new(RateLimiter::new(5, 60));
+    // Rate limiter for auth routes: max 10 requests per 60 seconds per IP
+    let auth_rate_limiter = Arc::new(RateLimiter::new(10, 60));
 
     // Public routes (no auth required)
     let auth_routes = Router::new()
