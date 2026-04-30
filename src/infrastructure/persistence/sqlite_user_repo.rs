@@ -18,25 +18,21 @@ impl SqliteUserRepo {
 
 #[derive(sqlx::FromRow)]
 struct UserRow {
-    id: String,
+    id: Uuid,
     username: String,
     email: String,
     password_hash: Option<String>,
     role: String,
     auth_method: String,
     oidc_subject: Option<String>,
-    created_at: String,
-    updated_at: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+    updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl TryFrom<UserRow> for User {
-    type Error = RepositoryError;
-
-    fn try_from(row: UserRow) -> Result<Self, Self::Error> {
-        Ok(User {
-            id: UserId(
-                Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
-            ),
+impl From<UserRow> for User {
+    fn from(row: UserRow) -> Self {
+        User {
+            id: UserId(row.id),
             username: row.username,
             email: row.email,
             password_hash: row.password_hash,
@@ -44,27 +40,23 @@ impl TryFrom<UserRow> for User {
             auth_method: AuthMethod::from_str(&row.auth_method),
             oidc_subject: row.oidc_subject,
             date_format: "%d-%m-%Y".to_string(), // Default date format
-            created_at: chrono::DateTime::parse_from_rfc3339(&row.created_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
-            updated_at: chrono::DateTime::parse_from_rfc3339(&row.updated_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
-        })
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }
     }
 }
 
 #[async_trait]
 impl UserRepository for SqliteUserRepo {
     async fn create(&self, new: NewUser) -> Result<User, RepositoryError> {
-        let id = Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+        let id = Uuid::new_v4();
+        let now = chrono::Utc::now();
 
         sqlx::query(
             "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .bind(&id)
+        .bind(id)
         .bind(&new.username)
         .bind(&new.email)
         .bind(&new.password_hash)
@@ -85,7 +77,7 @@ impl UserRepository for SqliteUserRepo {
         })?;
 
         Ok(User {
-            id: UserId(Uuid::parse_str(&id).unwrap()),
+            id: UserId(id),
             username: new.username,
             email: new.email,
             password_hash: new.password_hash,
@@ -103,12 +95,12 @@ impl UserRepository for SqliteUserRepo {
             "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
              FROM users WHERE id = ?",
         )
-        .bind(id.0.to_string())
+        .bind(id.0)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?
         .ok_or(RepositoryError::NotFound)?;
-        row.try_into()
+        Ok(row.into())
     }
 
     async fn find_by_username(&self, username: &str) -> Result<User, RepositoryError> {
@@ -121,7 +113,7 @@ impl UserRepository for SqliteUserRepo {
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?
         .ok_or(RepositoryError::NotFound)?;
-        row.try_into()
+        Ok(row.into())
     }
 
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
@@ -134,7 +126,7 @@ impl UserRepository for SqliteUserRepo {
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?
         .ok_or(RepositoryError::NotFound)?;
-        row.try_into()
+        Ok(row.into())
     }
 
     async fn find_all(&self) -> Result<Vec<User>, RepositoryError> {
@@ -145,7 +137,7 @@ impl UserRepository for SqliteUserRepo {
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
-        rows.into_iter().map(TryInto::try_into).collect()
+        Ok(rows.into_iter().map(Into::into).collect())
     }
 
     async fn update(&self, id: &UserId, update: UpdateUser) -> Result<User, RepositoryError> {
@@ -163,7 +155,7 @@ impl UserRepository for SqliteUserRepo {
             Some(os) => os,
             None => current.oidc_subject,
         };
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = chrono::Utc::now();
 
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
@@ -177,7 +169,7 @@ impl UserRepository for SqliteUserRepo {
         .bind(auth_method.as_str())
         .bind(&oidc_subject)
         .bind(&now)
-        .bind(id.0.to_string())
+        .bind(id.0)
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -187,7 +179,7 @@ impl UserRepository for SqliteUserRepo {
 
     async fn delete(&self, id: &UserId) -> Result<(), RepositoryError> {
         let result = sqlx::query("DELETE FROM users WHERE id = ?")
-            .bind(id.0.to_string())
+            .bind(id.0)
             .execute(&self.pool)
             .await
             .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -204,7 +196,7 @@ impl UserRepository for SqliteUserRepo {
         let row = sqlx::query_scalar::<_, String>(
             "SELECT days_before FROM user_reminder_settings WHERE user_id = ?",
         )
-        .bind(user_id.0.to_string())
+        .bind(user_id.0)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -231,7 +223,7 @@ impl UserRepository for SqliteUserRepo {
             "INSERT INTO user_reminder_settings (user_id, days_before) VALUES (?, ?)
              ON CONFLICT (user_id) DO UPDATE SET days_before = excluded.days_before",
         )
-        .bind(user_id.0.to_string())
+        .bind(user_id.0)
         .bind(&days_str)
         .execute(&self.pool)
         .await
