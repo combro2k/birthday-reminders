@@ -62,18 +62,36 @@ impl DatabasePool {
         }
     }
 
-    pub async fn run_migrations(&self) -> anyhow::Result<()> {
+    pub async fn run_migrations(&self, debug: bool) -> anyhow::Result<()> {
         // Compile-time embedded migrations
         let migrator = migrate!("./migrations");
-        match self {
+        if debug {
+            for migration in migrator.iter() {
+                eprintln!(
+                    "[DEBUG] Starting migration file: {}_{}.sql",
+                    migration.version,
+                    migration.description
+                );
+            }
+            eprintln!("[DEBUG] Starting database migrations...");
+        }
+        let result = match self {
             Self::Postgres(pool) => {
-                migrator.run(pool).await?;
+                migrator.run(pool).await
             }
             Self::Sqlite(pool) => {
-                migrator.run(pool).await?;
+                migrator.run(pool).await
             }
+        };
+        match result {
+            Ok(_) => {
+                if debug {
+                    eprintln!("[DEBUG] Database migrations completed successfully.");
+                }
+            }
+            Err(ref e) => eprintln!("[ERROR] Database migration failed: {e}"),
         }
-        Ok(())
+        result.map_err(|e| anyhow::anyhow!(e))
     }
 }
 
