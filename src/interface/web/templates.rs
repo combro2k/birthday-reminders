@@ -130,14 +130,14 @@ pub struct BirthdayView {
     pub days_until: i64,
 }
 
-impl From<Birthday> for BirthdayView {
-    fn from(b: Birthday) -> Self {
+impl BirthdayView {
+    pub fn from_birthday(b: Birthday, date_format: &str) -> Self {
         let today = chrono::Local::now().date_naive();
         Self {
             id: b.id.0,
             name: b.name.clone(),
             birth_date: b.birth_date,
-            birth_date_str: b.birth_date.format("%B %d, %Y").to_string(),
+            birth_date_str: b.birth_date.format(date_format).to_string(),
             notes: b.notes.clone(),
             age: b.age_on(today),
             turning_age: b.turning_age_on(today),

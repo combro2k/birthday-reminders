@@ -27,9 +27,14 @@ pub async fn dashboard(
         .await
         .unwrap_or_default();
 
+    let upcoming_views = upcoming
+        .into_iter()
+        .map(|b| BirthdayView::from_birthday(b, &user.date_format))
+        .collect();
+
     let template = DashboardTemplate {
         user,
-        upcoming: upcoming.into_iter().map(BirthdayView::from).collect(),
+        upcoming: upcoming_views,
         csrf_token,
     };
     Html(template.to_string())
@@ -47,9 +52,14 @@ pub async fn list_birthdays(
         .await
         .unwrap_or_default();
 
+    let birthday_views = birthdays
+        .into_iter()
+        .map(|b| BirthdayView::from_birthday(b, &user.date_format))
+        .collect();
+
     let template = BirthdayListTemplate {
         user,
-        birthdays: birthdays.into_iter().map(BirthdayView::from).collect(),
+        birthdays: birthday_views,
         csrf_token,
     };
     Html(template.to_string())
@@ -139,7 +149,7 @@ pub async fn edit_birthday_form(
     let csrf_token = get_csrf_token(&session).await;
     match state.birthday_query_service.get_by_id(id, &user.id).await {
         Ok(birthday) => {
-            let bv = BirthdayView::from(birthday);
+            let bv = BirthdayView::from_birthday(birthday, &user.date_format);
             let template = BirthdayFormTemplate {
                 edit_name: bv.name.clone(),
                 edit_date: bv.birth_date.format("%Y-%m-%d").to_string(),
@@ -182,7 +192,7 @@ pub async fn update_birthday(
                 .get_by_id(id, &user.id)
                 .await
                 .ok()
-                .map(BirthdayView::from);
+                .map(|b| BirthdayView::from_birthday(b, &user.date_format));
             let edit_name = birthday
                 .as_ref()
                 .map(|b| b.name.clone())
