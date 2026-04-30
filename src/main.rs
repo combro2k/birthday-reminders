@@ -82,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
     let db = DatabasePool::connect(&config.database.url, config.database.max_connections).await?;
 
     // Run migrations
-    db.run_migrations().await?;
+    db.run_migrations(cli.debug).await?;
 
     // Create repositories
     let repos = Repositories::new(&db);

@@ -8,6 +8,10 @@ pub struct Cli {
     #[arg(short, long, default_value = "config.yaml")]
     pub config: String,
 
+    /// Enable debug output to stderr
+    #[arg(long, global = true)]
+    pub debug: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }
