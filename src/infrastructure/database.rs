@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use sqlx::PgPool;
 use sqlx::SqlitePool;
+use sqlx::migrate;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::migrate;
 
 use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
 use crate::domain::user_repository::UserRepository;
@@ -69,19 +69,14 @@ impl DatabasePool {
             for migration in migrator.iter() {
                 eprintln!(
                     "[DEBUG] Starting migration file: {}_{}.sql",
-                    migration.version,
-                    migration.description
+                    migration.version, migration.description
                 );
             }
             eprintln!("[DEBUG] Starting database migrations...");
         }
         let result = match self {
-            Self::Postgres(pool) => {
-                migrator.run(pool).await
-            }
-            Self::Sqlite(pool) => {
-                migrator.run(pool).await
-            }
+            Self::Postgres(pool) => migrator.run(pool).await,
+            Self::Sqlite(pool) => migrator.run(pool).await,
         };
         match result {
             Ok(_) => {
