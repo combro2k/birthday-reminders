@@ -18,57 +18,43 @@ impl SqliteBirthdayRepo {
 
 #[derive(sqlx::FromRow)]
 struct BirthdayRow {
-    id: String,
-    user_id: String,
+    id: Uuid,
+    user_id: Uuid,
     name: String,
-    birth_date: String,
+    birth_date: chrono::NaiveDate,
     notes: Option<String>,
-    created_at: String,
-    updated_at: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+    updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl TryFrom<BirthdayRow> for Birthday {
-    type Error = RepositoryError;
-
-    fn try_from(row: BirthdayRow) -> Result<Self, Self::Error> {
-        Ok(Birthday {
-            id: BirthdayId(
-                Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
-            ),
-            user_id: UserId(
-                Uuid::parse_str(&row.user_id)
-                    .map_err(|e| RepositoryError::Database(e.to_string()))?,
-            ),
+impl From<BirthdayRow> for Birthday {
+    fn from(row: BirthdayRow) -> Self {
+        Birthday {
+            id: BirthdayId(row.id),
+            user_id: UserId(row.user_id),
             name: row.name,
-            birth_date: chrono::NaiveDate::parse_from_str(&row.birth_date, "%Y-%m-%d")
-                .map_err(|e| RepositoryError::Database(e.to_string()))?,
+            birth_date: row.birth_date,
             notes: row.notes,
-            created_at: chrono::DateTime::parse_from_rfc3339(&row.created_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
-            updated_at: chrono::DateTime::parse_from_rfc3339(&row.updated_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
-        })
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }
     }
 }
 
 #[async_trait]
 impl BirthdayRepository for SqliteBirthdayRepo {
     async fn create(&self, new: NewBirthday) -> Result<Birthday, RepositoryError> {
-        let id = Uuid::new_v4().to_string();
-        let user_id = new.user_id.0.to_string();
-        let birth_date = new.birth_date.format("%Y-%m-%d").to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+        let id = Uuid::new_v4();
+        let now = chrono::Utc::now();
 
         sqlx::query(
             "INSERT INTO birthdays (id, user_id, name, birth_date, notes, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
-        .bind(&id)
-        .bind(&user_id)
+        .bind(id)
+        .bind(new.user_id.0)
         .bind(&new.name)
-        .bind(&birth_date)
+        .bind(new.birth_date)
         .bind(&new.notes)
         .bind(&now)
         .bind(&now)
@@ -77,13 +63,13 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
 
         Ok(Birthday {
-            id: BirthdayId(Uuid::parse_str(&id).unwrap()),
+            id: BirthdayId(id),
             user_id: new.user_id,
             name: new.name,
             birth_date: new.birth_date,
             notes: new.notes,
-            created_at: chrono::Utc::now(),
-            updated_at: chrono::Utc::now(),
+            created_at: now,
+            updated_at: now,
         })
     }
 
@@ -92,12 +78,12 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
              FROM birthdays WHERE id = ?",
         )
-        .bind(id.0.to_string())
+        .bind(id.0)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?
         .ok_or(RepositoryError::NotFound)?;
-        row.try_into()
+        Ok(row.into())
     }
 
     async fn find_all_for_user(&self, user_id: &UserId) -> Result<Vec<Birthday>, RepositoryError> {
@@ -105,11 +91,11 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
              FROM birthdays WHERE user_id = ? ORDER BY birth_date",
         )
-        .bind(user_id.0.to_string())
+        .bind(user_id.0)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
-        rows.into_iter().map(TryInto::try_into).collect()
+        Ok(rows.into_iter().map(Into::into).collect())
     }
 
     async fn update(
@@ -125,26 +111,34 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             Some(n) => n,
             None => current.notes,
         };
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = chrono::Utc::now();
 
         sqlx::query(
             "UPDATE birthdays SET name = ?, birth_date = ?, notes = ?, updated_at = ? WHERE id = ?",
         )
         .bind(&name)
-        .bind(birth_date.format("%Y-%m-%d").to_string())
+        .bind(birth_date)
         .bind(&notes)
         .bind(&now)
-        .bind(id.0.to_string())
+        .bind(id.0)
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
 
-        self.find_by_id(id).await
+        Ok(Birthday {
+            id: current.id,
+            user_id: current.user_id,
+            name,
+            birth_date,
+            notes,
+            created_at: current.created_at,
+            updated_at: now,
+        })
     }
 
     async fn delete(&self, id: &BirthdayId) -> Result<(), RepositoryError> {
         let result = sqlx::query("DELETE FROM birthdays WHERE id = ?")
-            .bind(id.0.to_string())
+            .bind(id.0)
             .execute(&self.pool)
             .await
             .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -192,7 +186,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "SELECT COUNT(*) FROM reminder_log
              WHERE birthday_id = ? AND channel_type = ? AND days_before = ? AND year = ?",
         )
-        .bind(birthday_id.0.to_string())
+        .bind(birthday_id.0)
         .bind(channel_type)
         .bind(days_before as i32)
         .bind(year)
@@ -213,7 +207,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "INSERT OR IGNORE INTO reminder_log (birthday_id, channel_type, days_before, year)
              VALUES (?, ?, ?, ?)",
         )
-        .bind(birthday_id.0.to_string())
+        .bind(birthday_id.0)
         .bind(channel_type)
         .bind(days_before as i32)
         .bind(year)
