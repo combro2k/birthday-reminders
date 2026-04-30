@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use tracing::info;
 
 use crate::domain::repository::RepositoryError;
 use crate::domain::user::{AuthMethod, Role, User};
@@ -123,5 +124,49 @@ impl AuthService {
             .map_err(|e| anyhow::anyhow!("Failed to create OIDC user: {}", e))?;
 
         Ok(user)
+    }
+
+    /// Create a default admin user if no users exist in the system.
+    /// This is intended to be called on application startup.
+    pub async fn bootstrap_admin_user(&self) -> anyhow::Result<()> {
+        let users = self
+            .user_repo
+            .find_all()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to check existing users: {}", e))?;
+
+        if !users.is_empty() {
+            return Ok(());
+        }
+
+        info!("No users found in database. Bootstrapping default admin account.");
+
+        // Generate a random 12-character password using a UUID
+        let password = uuid::Uuid::new_v4().to_string().replace("-", "")[..12].to_string();
+        let password_hash = password::hash_password(&password)?;
+
+        let new_user = NewUser {
+            username: "admin".to_string(),
+            email: "admin@example.org".to_string(),
+            password_hash: Some(password_hash),
+            role: Role::from_str("admin"),
+            auth_method: AuthMethod::Local,
+            oidc_subject: None,
+        };
+
+        self.user_repo
+            .create(new_user)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create default admin: {}", e))?;
+
+        info!("**********************************************************");
+        info!("DEFAULT ADMIN USER CREATED");
+        info!("Username: admin");
+        info!("Password: {}", password);
+        info!("Email:    admin@example.org");
+        info!("**********************************************************");
+        info!("Please change this password immediately after logging in.");
+
+        Ok(())
     }
 }

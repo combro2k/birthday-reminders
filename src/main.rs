@@ -160,6 +160,9 @@ async fn main() -> anyhow::Result<()> {
             default_role,
         );
 
+        // Bootstrap admin user if none exist in the database
+        auth_service.bootstrap_admin_user().await?;
+
         let state = Arc::new(AppState {
             db: db.clone(),
             config: config.clone(),
