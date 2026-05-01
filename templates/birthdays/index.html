@@ -44,6 +44,16 @@
             <div class="card-body">
                 <p>{{ b.birth_date_str }}</p>
                 <p>Turning <strong>{{ b.turning_age }}</strong></p>
+                {% if let Some(phone_number) = b.phone_number %}
+                <p>Phone: {{ phone_number }}</p>
+                {% endif %}
+                {% if b.city.is_some() || b.country.is_some() %}
+                <p>
+                    {% if let Some(city) = b.city %}{{ city }}{% endif %}
+                    {% if b.city.is_some() && b.country.is_some() %}, {% endif %}
+                    {% if let Some(country) = b.country %}{{ country }}{% endif %}
+                </p>
+                {% endif %}
                 {% if let Some(notes) = b.notes %}
                 <p class="notes">{{ notes }}</p>
                 {% endif %}

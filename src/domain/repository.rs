@@ -22,6 +22,11 @@ pub struct NewBirthday {
     pub user_id: UserId,
     pub name: String,
     pub birth_date: NaiveDate,
+    pub phone_number: Option<String>,
+    pub address: Option<String>,
+    pub postal_code: Option<String>,
+    pub city: Option<String>,
+    pub country: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -29,6 +34,11 @@ pub struct NewBirthday {
 pub struct UpdateBirthday {
     pub name: Option<String>,
     pub birth_date: Option<NaiveDate>,
+    pub phone_number: Option<Option<String>>,
+    pub address: Option<Option<String>>,
+    pub postal_code: Option<Option<String>>,
+    pub city: Option<Option<String>>,
+    pub country: Option<Option<String>>,
     pub notes: Option<Option<String>>,
 }
 

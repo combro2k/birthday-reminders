@@ -42,13 +42,28 @@ pub async fn handle_command(
         Commands::Add {
             name,
             date,
+            phone_number,
+            address,
+            postal_code,
+            city,
+            country,
             notes,
             token,
         } => {
             let user_id = user_cmd_svc.resolve_api_token(&token, db).await?;
             let birth_date = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d")?;
             let birthday = birthday_cmd_svc
-                .add(&user_id, &name, birth_date, notes)
+                .add(
+                    &user_id,
+                    &name,
+                    birth_date,
+                    phone_number,
+                    address,
+                    postal_code,
+                    city,
+                    country,
+                    notes,
+                )
                 .await?;
             println!(
                 "Added birthday: {} ({})",
@@ -66,20 +81,21 @@ pub async fn handle_command(
             }
 
             println!(
-                "{:<36} {:<20} {:<12} {:<5} {:<10}",
-                "ID", "Name", "Birth Date", "Age", "Days Until"
+                "{:<36} {:<20} {:<12} {:<5} {:<10} {:<15}",
+                "ID", "Name", "Birth Date", "Age", "Days Until", "Phone"
             );
-            println!("{}", "-".repeat(83));
+            println!("{}", "-".repeat(99));
 
             let today = chrono::Local::now().date_naive();
             for b in &birthdays {
                 println!(
-                    "{:<36} {:<20} {:<12} {:<5} {:<10}",
+                    "{:<36} {:<20} {:<12} {:<5} {:<10} {:<15}",
                     b.id.0,
                     b.name,
                     b.birth_date.format("%Y-%m-%d"),
                     b.age_on(today),
                     b.days_until_next_from(today),
+                    b.phone_number.as_deref().unwrap_or("-"),
                 );
             }
             Ok(())
