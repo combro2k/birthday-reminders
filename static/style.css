@@ -87,6 +87,19 @@ body {
     color: var(--text-muted);
     font-size: .85rem;
 }
+.provider-hint-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin: .3rem .4rem .3rem 0;
+    padding: .2rem .5rem;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+}
+.provider-hint-note {
+    margin-top: .4rem;
+}
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
     outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1);
 }

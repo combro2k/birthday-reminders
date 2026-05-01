@@ -64,7 +64,12 @@
                 <option value="outlook" {% if email_provider == "outlook" %}selected{% endif %}>Outlook</option>
                 <option value="custom" {% if email_provider == "custom" %}selected{% endif %}>Custom SMTP</option>
             </select>
-            <p id="email-provider-hint" class="provider-hint"></p>
+            <div id="email-provider-hint" class="provider-hint" aria-live="polite">
+                <span class="provider-hint-badge">Host: <strong id="email-provider-host"></strong></span>
+                <span class="provider-hint-badge">Port: <strong id="email-provider-port"></strong></span>
+                <span class="provider-hint-badge">Security: <strong id="email-provider-security"></strong></span>
+                <p id="email-provider-note" class="provider-hint-note"></p>
+            </div>
         </div>
 
         <div class="form-group">
@@ -174,12 +179,16 @@
 (function () {
     var provider = document.getElementById("email_provider");
     var providerHint = document.getElementById("email-provider-hint");
+    var providerHost = document.getElementById("email-provider-host");
+    var providerPort = document.getElementById("email-provider-port");
+    var providerSecurity = document.getElementById("email-provider-security");
+    var providerNote = document.getElementById("email-provider-note");
     var customSection = document.getElementById("custom-smtp-fields");
     var host = document.getElementById("email_smtp_host");
     var port = document.getElementById("email_smtp_port");
     var security = document.getElementById("email_smtp_security");
 
-    if (!provider || !providerHint || !customSection || !host || !port || !security) {
+    if (!provider || !providerHint || !providerHost || !providerPort || !providerSecurity || !providerNote || !customSection || !host || !port || !security) {
         return;
     }
 
@@ -220,7 +229,10 @@
         var selected = defaultsByProvider[provider.value] || defaultsByProvider.gmail;
         var isCustom = provider.value === "custom";
 
-        providerHint.textContent = "Defaults: " + selected.host + ":" + selected.port + " (" + selected.security + "). " + selected.note;
+        providerHost.textContent = selected.host;
+        providerPort.textContent = selected.port;
+        providerSecurity.textContent = selected.security;
+        providerNote.textContent = selected.note;
         customSection.hidden = !isCustom;
         host.required = isCustom;
         port.required = isCustom;
