@@ -93,10 +93,32 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_by_id(&self, id: &UserId) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
-             FROM users WHERE id = ?",
+            "SELECT
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END as id,
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+             FROM users
+             WHERE
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END = ?",
         )
-        .bind(id.0)
+        .bind(id.0.to_string())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?
@@ -106,7 +128,18 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_by_username(&self, username: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END as id,
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users WHERE username = ?",
         )
         .bind(username)
@@ -119,7 +152,18 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END as id,
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users WHERE oidc_subject = ?",
         )
         .bind(subject)
@@ -132,7 +176,18 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_all(&self) -> Result<Vec<User>, RepositoryError> {
         let rows = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END as id,
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -162,7 +217,17 @@ impl UserRepository for SqliteUserRepo {
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
              auth_method = ?, oidc_subject = ?, date_format = ?, updated_at = ?
-             WHERE id = ?",
+             WHERE
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END = ?",
         )
         .bind(&username)
         .bind(&email)
@@ -181,8 +246,21 @@ impl UserRepository for SqliteUserRepo {
     }
 
     async fn delete(&self, id: &UserId) -> Result<(), RepositoryError> {
-        let result = sqlx::query("DELETE FROM users WHERE id = ?")
-            .bind(id.0)
+        let result = sqlx::query(
+            "DELETE FROM users
+             WHERE
+                CASE
+                    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+                        SUBSTR(HEX(id), 1, 8),
+                        SUBSTR(HEX(id), 9, 4),
+                        SUBSTR(HEX(id), 13, 4),
+                        SUBSTR(HEX(id), 17, 4),
+                        SUBSTR(HEX(id), 21, 12)
+                    )
+                    ELSE id
+                END = ?",
+        )
+            .bind(id.0.to_string())
             .execute(&self.pool)
             .await
             .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -199,7 +277,7 @@ impl UserRepository for SqliteUserRepo {
         let row = sqlx::query_scalar::<_, String>(
             "SELECT days_before FROM user_reminder_settings WHERE user_id = ?",
         )
-        .bind(user_id.0)
+        .bind(user_id.0.to_string())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -226,7 +304,7 @@ impl UserRepository for SqliteUserRepo {
             "INSERT INTO user_reminder_settings (user_id, days_before) VALUES (?, ?)
              ON CONFLICT (user_id) DO UPDATE SET days_before = excluded.days_before",
         )
-        .bind(user_id.0)
+        .bind(user_id.0.to_string())
         .bind(&days_str)
         .execute(&self.pool)
         .await
