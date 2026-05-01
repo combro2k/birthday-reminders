@@ -203,9 +203,9 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
                 )?);
 
                 let port_raw = required_field(form.email_smtp_port.as_deref(), "Custom SMTP port")?;
-                let port = port_raw
-                    .parse::<u16>()
-                    .map_err(|_| "Custom SMTP port must be a number between 1 and 65535".to_string())?;
+                let port = port_raw.parse::<u16>().map_err(|_| {
+                    "Custom SMTP port must be a number between 1 and 65535".to_string()
+                })?;
                 cfg.smtp_port = Some(port);
                 cfg.security = Some(parse_smtp_security(form.email_smtp_security.as_deref())?);
             }
@@ -214,7 +214,10 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
         }
         ChannelKind::Telegram => {
             let cfg = TelegramConfig {
-                bot_token: required_field(form.telegram_bot_token.as_deref(), "Telegram bot token")?,
+                bot_token: required_field(
+                    form.telegram_bot_token.as_deref(),
+                    "Telegram bot token",
+                )?,
                 chat_id: required_field(form.telegram_chat_id.as_deref(), "Telegram chat ID")?,
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
@@ -229,7 +232,10 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
         ChannelKind::Whatsapp => {
             let cfg = WhatsappConfig {
                 api_url: required_field(form.whatsapp_api_url.as_deref(), "WhatsApp API URL")?,
-                recipient: required_field(form.whatsapp_recipient.as_deref(), "WhatsApp recipient")?,
+                recipient: required_field(
+                    form.whatsapp_recipient.as_deref(),
+                    "WhatsApp recipient",
+                )?,
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
         }
@@ -304,7 +310,8 @@ fn channel_form_template(
                         template.email_smtp_host = cfg.smtp_host.unwrap_or_default();
                     }
                     if template.email_smtp_port.is_empty() {
-                        template.email_smtp_port = cfg.smtp_port.map(|p| p.to_string()).unwrap_or_default();
+                        template.email_smtp_port =
+                            cfg.smtp_port.map(|p| p.to_string()).unwrap_or_default();
                     }
                     if template.email_smtp_security.is_empty() {
                         template.email_smtp_security = cfg
