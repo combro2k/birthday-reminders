@@ -62,6 +62,8 @@ pub struct OidcConfig {
     pub scopes: Vec<String>,
     #[serde(default)]
     pub trusted_audiences: Vec<String>,
+    #[serde(default)]
+    pub allow_dynamic_additional_audiences: bool,
     #[serde(default = "default_true")]
     pub auto_provision: bool,
     #[serde(default = "default_role")]

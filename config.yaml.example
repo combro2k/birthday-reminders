@@ -49,6 +49,9 @@ auth:
   #   # Additional trusted `aud` values in ID tokens (optional).
   #   # Use this only if your provider includes extra audiences besides client_id.
   #   # trusted_audiences: ["account", "birthday-api"]
+  #   # Trust all additional audiences when they are provider-managed and dynamic.
+  #   # client_id and azp checks still remain enforced by OIDC verification.
+  #   # allow_dynamic_additional_audiences: false
   #   # Automatically create local user accounts on first OIDC login (default: true)
   #   auto_provision: true
   #   # Default role assigned to auto-provisioned users (default: "user")
@@ -69,6 +72,7 @@ auth:
   #   issuer_url: "https://zitadel.example.com"
   #   client_id: "123456@birthday-reminders"
   #   client_secret: "your-client-secret"
+  #   allow_dynamic_additional_audiences: true
 
 # The entire reminders section is optional (all fields have defaults)
 reminders:
