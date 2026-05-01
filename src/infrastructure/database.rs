@@ -1,13 +1,18 @@
 use std::sync::Arc;
 
+use sqlx::MySqlPool;
 use sqlx::PgPool;
 use sqlx::SqlitePool;
 use sqlx::migrate;
+use sqlx::mysql::MySqlPoolOptions;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::sqlite::SqlitePoolOptions;
 
 use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
 use crate::domain::user_repository::UserRepository;
+use crate::infrastructure::persistence::mysql_birthday_repo::MysqlBirthdayRepo;
+use crate::infrastructure::persistence::mysql_notification_repo::MysqlNotificationRepo;
+use crate::infrastructure::persistence::mysql_user_repo::MysqlUserRepo;
 use crate::infrastructure::persistence::pg_birthday_repo::PgBirthdayRepo;
 // use crate::infrastructure::persistence::sqlite_migration_util;
 use crate::infrastructure::persistence::pg_notification_repo::PgNotificationRepo;
@@ -21,6 +26,7 @@ use crate::infrastructure::persistence::sqlite_user_repo::SqliteUserRepo;
 pub enum DatabasePool {
     Postgres(PgPool),
     Sqlite(SqlitePool),
+    Mysql(MySqlPool),
 }
 
 impl DatabasePool {
@@ -53,6 +59,12 @@ impl DatabasePool {
                 .await?;
 
             Ok(Self::Sqlite(pool))
+        } else if url.starts_with("mysql") {
+            let pool = MySqlPoolOptions::new()
+                .max_connections(max_connections)
+                .connect(url)
+                .await?;
+            Ok(Self::Mysql(pool))
         } else {
             let pool = PgPoolOptions::new()
                 .max_connections(max_connections)
@@ -63,8 +75,17 @@ impl DatabasePool {
     }
 
     pub async fn run_migrations(&self, debug: bool) -> anyhow::Result<()> {
-        // Compile-time embedded migrations
-        let migrator = migrate!("./migrations");
+        // Compile-time embedded backend-specific migrations.
+        let postgres_migrator = migrate!("./migrations/postgres");
+        let sqlite_migrator = migrate!("./migrations/sqlite");
+        let mysql_migrator = migrate!("./migrations/mysql");
+
+        let (migrator, backend_name) = match self {
+            Self::Postgres(_) => (&postgres_migrator, "postgres"),
+            Self::Sqlite(_) => (&sqlite_migrator, "sqlite"),
+            Self::Mysql(_) => (&mysql_migrator, "mysql"),
+        };
+
         if debug {
             for migration in migrator.iter() {
                 eprintln!(
@@ -72,12 +93,15 @@ impl DatabasePool {
                     migration.version, migration.description
                 );
             }
-            eprintln!("[DEBUG] Starting database migrations...");
+            eprintln!("[DEBUG] Starting database migrations for backend: {backend_name}");
         }
+
         let result = match self {
             Self::Postgres(pool) => migrator.run(pool).await,
             Self::Sqlite(pool) => migrator.run(pool).await,
+            Self::Mysql(pool) => migrator.run(pool).await,
         };
+
         match result {
             Ok(_) => {
                 if debug {
@@ -108,6 +132,11 @@ impl Repositories {
                 user_repo: Arc::new(SqliteUserRepo::new(sqlite.clone())),
                 birthday_repo: Arc::new(SqliteBirthdayRepo::new(sqlite.clone())),
                 notification_repo: Arc::new(SqliteNotificationRepo::new(sqlite.clone())),
+            },
+            DatabasePool::Mysql(mysql) => Self {
+                user_repo: Arc::new(MysqlUserRepo::new(mysql.clone())),
+                birthday_repo: Arc::new(MysqlBirthdayRepo::new(mysql.clone())),
+                notification_repo: Arc::new(MysqlNotificationRepo::new(mysql.clone())),
             },
         }
     }

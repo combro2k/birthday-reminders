@@ -102,6 +102,17 @@ impl UserCommandService {
                 .execute(pool)
                 .await?;
             }
+            DatabasePool::Mysql(pool) => {
+                sqlx::query(
+                    "INSERT INTO api_tokens (id, user_id, token_hash, name) VALUES (?, ?, ?, ?)",
+                )
+                .bind(id.to_string())
+                .bind(user_id.0.to_string())
+                .bind(&hash)
+                .bind(name)
+                .execute(pool)
+                .await?;
+            }
             DatabasePool::Sqlite(pool) => {
                 sqlx::query(
                     "INSERT INTO api_tokens (id, user_id, token_hash, name) VALUES (?, ?, ?, ?)",
@@ -129,6 +140,14 @@ impl UserCommandService {
                 sqlx::query("DELETE FROM api_tokens WHERE id = $1 AND user_id = $2")
                     .bind(token_id)
                     .bind(user_id.0)
+                    .execute(pool)
+                    .await?
+                    .rows_affected()
+            }
+            DatabasePool::Mysql(pool) => {
+                sqlx::query("DELETE FROM api_tokens WHERE id = ? AND user_id = ?")
+                    .bind(token_id.to_string())
+                    .bind(user_id.0.to_string())
                     .execute(pool)
                     .await?
                     .rows_affected()
@@ -169,6 +188,31 @@ impl UserCommandService {
                         name: r.name,
                         created_at: r.created_at,
                         last_used_at: r.last_used_at,
+                    })
+                    .collect())
+            }
+            DatabasePool::Mysql(pool) => {
+                let rows = sqlx::query_as::<_, MysqlApiTokenRow>(
+                    "SELECT id, name, created_at, last_used_at FROM api_tokens WHERE user_id = ? ORDER BY created_at DESC",
+                )
+                .bind(user_id.0.to_string())
+                .fetch_all(pool)
+                .await?;
+
+                Ok(rows
+                    .into_iter()
+                    .filter_map(|r| {
+                        Some(ApiTokenInfo {
+                            id: uuid::Uuid::parse_str(&r.id).ok()?,
+                            name: r.name,
+                            created_at: chrono::DateTime::from_naive_utc_and_offset(
+                                r.created_at,
+                                chrono::Utc,
+                            ),
+                            last_used_at: r.last_used_at.map(|ts| {
+                                chrono::DateTime::from_naive_utc_and_offset(ts, chrono::Utc)
+                            }),
+                        })
                     })
                     .collect())
             }
@@ -221,6 +265,23 @@ impl UserCommandService {
 
                 Ok(UserId(row))
             }
+            DatabasePool::Mysql(pool) => {
+                let user_id_str = sqlx::query_scalar::<_, String>(
+                    "SELECT user_id FROM api_tokens WHERE token_hash = ?",
+                )
+                .bind(&token_hash)
+                .fetch_optional(pool)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
+
+                sqlx::query("UPDATE api_tokens SET last_used_at = UTC_TIMESTAMP(6) WHERE token_hash = ?")
+                    .bind(&token_hash)
+                    .execute(pool)
+                    .await?;
+
+                let uuid = uuid::Uuid::parse_str(&user_id_str)?;
+                Ok(UserId(uuid))
+            }
             DatabasePool::Sqlite(pool) => {
                 // SQLite doesn't support UPDATE ... RETURNING in older versions,
                 // so we do it in two steps
@@ -260,6 +321,14 @@ struct SqliteApiTokenRow {
     name: String,
     created_at: String,
     last_used_at: Option<String>,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct MysqlApiTokenRow {
+    id: String,
+    name: String,
+    created_at: chrono::NaiveDateTime,
+    last_used_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Debug, Clone)]

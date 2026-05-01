@@ -9,6 +9,7 @@ use axum::{
 };
 use tower_http::services::ServeDir;
 use tower_sessions::SessionManagerLayer;
+use tower_sessions_sqlx_store::MySqlStore;
 use tower_sessions_sqlx_store::PostgresStore;
 use tower_sessions_sqlx_store::SqliteStore;
 
@@ -49,6 +50,14 @@ pub async fn create_router(state: Arc<AppState>, db: DatabasePool) -> anyhow::Re
         }
         DatabasePool::Sqlite(pool) => {
             let session_store = SqliteStore::new(pool.clone());
+            session_store.migrate().await?;
+            let session_layer = SessionManagerLayer::new(session_store)
+                .with_secure(state.config.server.base_url.starts_with("https"))
+                .with_http_only(true);
+            Ok(build_app(state, session_layer))
+        }
+        DatabasePool::Mysql(pool) => {
+            let session_store = MySqlStore::new(pool.clone());
             session_store.migrate().await?;
             let session_layer = SessionManagerLayer::new(session_store)
                 .with_secure(state.config.server.base_url.starts_with("https"))
@@ -161,6 +170,11 @@ async fn health_check(State(state): State<Arc<AppState>>) -> impl axum::response
                 .await
         }
         DatabasePool::Sqlite(pool) => {
+            sqlx::query_scalar::<_, i32>("SELECT 1")
+                .fetch_one(pool)
+                .await
+        }
+        DatabasePool::Mysql(pool) => {
             sqlx::query_scalar::<_, i32>("SELECT 1")
                 .fetch_one(pool)
                 .await

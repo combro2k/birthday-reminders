@@ -16,7 +16,7 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 ## Prerequisites
 
 - **Rust** 1.85+ (edition 2024)
-- **PostgreSQL** 13+ or **SQLite** 3.35+
+- **PostgreSQL** 13+, **MySQL** 8.0+, or **SQLite** 3.35+
 - A running database instance (for PostgreSQL)
 
 ## Quick Start
@@ -58,12 +58,19 @@ Configuration is stored in a YAML file (default: `config.yaml`). See [`config.ya
 
 ### Database
 
-Supports SQLite and PostgreSQL:
+Supports SQLite, MySQL, and PostgreSQL:
 
 ```yaml
 database:
   # SQLite (default, simplest for single-user/small deployments)
   url: "sqlite://birthday_reminders.db"
+  max_connections: 10
+```
+
+```yaml
+database:
+  # MySQL
+  url: "mysql://birthday:birthday@localhost:3306/birthday_reminders"
   max_connections: 10
 ```
 
@@ -75,6 +82,10 @@ database:
 ```
 
 Database migrations run automatically on startup.
+Migrations are split per backend under `migrations/sqlite`, `migrations/mysql`, and `migrations/postgres`.
+Each backend track has:
+- an `init` migration for clean installs,
+- incremental migrations for each schema change.
 
 - For SQLite, use a URL like:
 
