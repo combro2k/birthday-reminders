@@ -46,6 +46,9 @@ auth:
   #   client_secret: "your-client-secret"
   #   # Scopes to request (default: ["openid", "profile", "email"])
   #   scopes: ["openid", "profile", "email"]
+  #   # Additional trusted `aud` values in ID tokens (optional).
+  #   # Use this only if your provider includes extra audiences besides client_id.
+  #   # trusted_audiences: ["account", "birthday-api"]
   #   # Automatically create local user accounts on first OIDC login (default: true)
   #   auto_provision: true
   #   # Default role assigned to auto-provisioned users (default: "user")

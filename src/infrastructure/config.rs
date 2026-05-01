@@ -60,6 +60,8 @@ pub struct OidcConfig {
     pub client_secret: String,
     #[serde(default = "default_scopes")]
     pub scopes: Vec<String>,
+    #[serde(default)]
+    pub trusted_audiences: Vec<String>,
     #[serde(default = "default_true")]
     pub auto_provision: bool,
     #[serde(default = "default_role")]
