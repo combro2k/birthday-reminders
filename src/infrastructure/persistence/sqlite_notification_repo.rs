@@ -59,7 +59,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at
              FROM notification_channels WHERE user_id = ? ORDER BY channel_type",
         )
-        .bind(user_id.0)
+        .bind(user_id.0.to_string())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -75,7 +75,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at
              FROM notification_channels WHERE user_id = ? AND channel_type = ?",
         )
-        .bind(user_id.0)
+        .bind(user_id.0.to_string())
         .bind(channel_type)
         .fetch_optional(&self.pool)
         .await
@@ -121,7 +121,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
     async fn delete(&self, user_id: &UserId, channel_type: &str) -> Result<(), RepositoryError> {
         let result =
             sqlx::query("DELETE FROM notification_channels WHERE user_id = ? AND channel_type = ?")
-                .bind(user_id.0)
+                .bind(user_id.0.to_string())
                 .bind(channel_type)
                 .execute(&self.pool)
                 .await
@@ -140,7 +140,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at
              FROM notification_channels WHERE user_id = ? AND enabled = 1",
         )
-        .bind(user_id.0)
+        .bind(user_id.0.to_string())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;

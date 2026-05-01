@@ -99,7 +99,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays WHERE id = ?",
         )
-        .bind(id.0)
+        .bind(id.0.to_string())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?
@@ -114,7 +114,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
              WHERE user_id = ? 
              ORDER BY strftime('%m', birth_date), strftime('%d', birth_date)",
         )
-        .bind(user_id.0)
+        .bind(user_id.0.to_string())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -191,7 +191,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
 
     async fn delete(&self, id: &BirthdayId) -> Result<(), RepositoryError> {
         let result = sqlx::query("DELETE FROM birthdays WHERE id = ?")
-            .bind(id.0)
+            .bind(id.0.to_string())
             .execute(&self.pool)
             .await
             .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -241,7 +241,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "SELECT COUNT(*) FROM reminder_log
              WHERE birthday_id = ? AND channel_type = ? AND days_before = ? AND year = ?",
         )
-        .bind(birthday_id.0)
+        .bind(birthday_id.0.to_string())
         .bind(channel_type)
         .bind(days_before as i32)
         .bind(year)
@@ -262,7 +262,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             "INSERT OR IGNORE INTO reminder_log (birthday_id, channel_type, days_before, year)
              VALUES (?, ?, ?, ?)",
         )
-        .bind(birthday_id.0)
+        .bind(birthday_id.0.to_string())
         .bind(channel_type)
         .bind(days_before as i32)
         .bind(year)
