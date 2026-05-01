@@ -62,7 +62,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at
              FROM notification_channels WHERE user_id = ? ORDER BY channel_type",
         )
-        .bind(user_id.0.to_string())
+        .bind(user_id.0)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -78,7 +78,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at
              FROM notification_channels WHERE user_id = ? AND channel_type = ?",
         )
-        .bind(user_id.0.to_string())
+        .bind(user_id.0)
         .bind(channel_type)
         .fetch_optional(&self.pool)
         .await
@@ -93,8 +93,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
         enabled: bool,
         config: serde_json::Value,
     ) -> Result<NotificationChannelRecord, RepositoryError> {
-        let id = Uuid::new_v4().to_string();
-        let user_id_str = user_id.0.to_string();
+        let id = Uuid::new_v4();
         let config_str =
             serde_json::to_string(&config).map_err(|e| RepositoryError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
@@ -105,8 +104,8 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
              ON CONFLICT (user_id, channel_type)
              DO UPDATE SET enabled = excluded.enabled, config = excluded.config, updated_at = excluded.updated_at",
         )
-        .bind(&id)
-        .bind(&user_id_str)
+        .bind(id)
+        .bind(user_id.0)
         .bind(channel_type)
         .bind(enabled)
         .bind(&config_str)
@@ -125,7 +124,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
     async fn delete(&self, user_id: &UserId, channel_type: &str) -> Result<(), RepositoryError> {
         let result =
             sqlx::query("DELETE FROM notification_channels WHERE user_id = ? AND channel_type = ?")
-                .bind(user_id.0.to_string())
+                .bind(user_id.0)
                 .bind(channel_type)
                 .execute(&self.pool)
                 .await
@@ -144,7 +143,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
             "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at
              FROM notification_channels WHERE user_id = ? AND enabled = 1",
         )
-        .bind(user_id.0.to_string())
+        .bind(user_id.0)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
