@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::Datelike;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -88,8 +89,10 @@ impl BirthdayRepository for SqliteBirthdayRepo {
 
     async fn find_all_for_user(&self, user_id: &UserId) -> Result<Vec<Birthday>, RepositoryError> {
         let rows = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
-             FROM birthdays WHERE user_id = ? ORDER BY birth_date",
+            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at 
+             FROM birthdays 
+             WHERE user_id = ? 
+             ORDER BY strftime('%m', birth_date), strftime('%d', birth_date)",
         )
         .bind(user_id.0)
         .fetch_all(&self.pool)
@@ -160,15 +163,17 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         Ok(all
             .into_iter()
             .filter(|b| {
-                let this_year = today.year();
-                let next_birthday = b.birth_date.with_year(this_year).unwrap_or(b.birth_date);
-                let next_birthday = if next_birthday < today {
-                    b.birth_date
-                        .with_year(this_year + 1)
-                        .unwrap_or(next_birthday)
-                } else {
-                    next_birthday
-                };
+                // Calculate next occurrence, handling Feb 29th by falling back to Feb 28th
+                let mut next_birthday = b.birth_date.with_year(today.year()).unwrap_or_else(|| {
+                    chrono::NaiveDate::from_ymd_opt(today.year(), 2, 28).unwrap()
+                });
+
+                if next_birthday < today {
+                    next_birthday = b.birth_date.with_year(today.year() + 1).unwrap_or_else(|| {
+                        chrono::NaiveDate::from_ymd_opt(today.year() + 1, 2, 28).unwrap()
+                    });
+                }
+
                 let days_until = (next_birthday - today).num_days();
                 days_until >= 0 && days_until <= within_days as i64
             })
@@ -228,5 +233,3 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         Ok(result.rows_affected())
     }
 }
-
-use chrono::Datelike;

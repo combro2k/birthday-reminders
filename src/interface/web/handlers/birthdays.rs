@@ -100,13 +100,14 @@ pub async fn create_birthday(
     let birth_date = match chrono::NaiveDate::parse_from_str(&form.birth_date, "%Y-%m-%d") {
         Ok(d) => d,
         Err(_) => {
+            let edit_notes = form.notes.unwrap_or_default();
             return Html(
                 BirthdayFormTemplate {
                     user,
                     birthday: None,
                     edit_name: form.name,
                     edit_date: form.birth_date,
-                    edit_notes: String::new(),
+                    edit_notes,
                     error: Some("Invalid date format. Use YYYY-MM-DD.".to_string()),
                     csrf_token,
                 }
@@ -116,7 +117,7 @@ pub async fn create_birthday(
         }
     };
 
-    let notes = form.notes.filter(|n| !n.trim().is_empty());
+    let notes = form.notes.clone().filter(|n| !n.trim().is_empty());
 
     match state
         .birthday_command_service
@@ -128,9 +129,9 @@ pub async fn create_birthday(
             BirthdayFormTemplate {
                 user,
                 birthday: None,
-                edit_name: String::new(),
-                edit_date: String::new(),
-                edit_notes: String::new(),
+                edit_name: form.name,
+                edit_date: form.birth_date,
+                edit_notes: form.notes.unwrap_or_default(),
                 error: Some(e.to_string()),
                 csrf_token,
             }
@@ -172,39 +173,51 @@ pub async fn update_birthday(
     Path(id): Path<uuid::Uuid>,
     Form(form): Form<BirthdayForm>,
 ) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
     let birth_date = match chrono::NaiveDate::parse_from_str(&form.birth_date, "%Y-%m-%d") {
         Ok(d) => Some(d),
-        Err(_) => None,
-    };
-
-    let notes = form.notes.filter(|n| !n.trim().is_empty());
-
-    match state
-        .birthday_command_service
-        .update(id, &user.id, Some(form.name), birth_date, Some(notes))
-        .await
-    {
-        Ok(_) => Redirect::to("/birthdays").into_response(),
-        Err(e) => {
-            let csrf_token = get_csrf_token(&session).await;
+        Err(_) => {
             let birthday = state
                 .birthday_query_service
                 .get_by_id(id, &user.id)
                 .await
                 .ok()
                 .map(|b| BirthdayView::from_birthday(b, &user.date_format));
-            let edit_name = birthday
-                .as_ref()
-                .map(|b| b.name.clone())
-                .unwrap_or_default();
-            let edit_date = birthday
-                .as_ref()
-                .map(|b| b.birth_date.format("%Y-%m-%d").to_string())
-                .unwrap_or_default();
-            let edit_notes = birthday
-                .as_ref()
-                .and_then(|b| b.notes.clone())
-                .unwrap_or_default();
+
+            return Html(
+                BirthdayFormTemplate {
+                    user,
+                    birthday,
+                    edit_name: form.name,
+                    edit_date: form.birth_date,
+                    edit_notes: form.notes.unwrap_or_default(),
+                    error: Some("Invalid date format. Use YYYY-MM-DD.".to_string()),
+                    csrf_token,
+                }
+                .to_string(),
+            ).into_response();
+        }
+    };
+
+    let notes = form.notes.clone().filter(|n| !n.trim().is_empty());
+
+    match state
+        .birthday_command_service
+        .update(id, &user.id, Some(form.name.clone()), birth_date, Some(notes))
+        .await
+    {
+        Ok(_) => Redirect::to("/birthdays").into_response(),
+        Err(e) => {
+            let birthday = state
+                .birthday_query_service
+                .get_by_id(id, &user.id)
+                .await
+                .ok()
+                .map(|b| BirthdayView::from_birthday(b, &user.date_format));
+            let edit_name = form.name;
+            let edit_date = form.birth_date;
+            let edit_notes = form.notes.unwrap_or_default();
+
             Html(
                 BirthdayFormTemplate {
                     user,
