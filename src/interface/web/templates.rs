@@ -41,6 +41,8 @@ pub struct DashboardTemplate {
 pub struct BirthdayListTemplate {
     pub user: User,
     pub birthdays: Vec<BirthdayView>,
+    pub current_sort: String,
+    pub is_desc: bool,
     pub csrf_token: String,
 }
 
@@ -133,7 +135,11 @@ pub struct BirthdayView {
 impl BirthdayView {
     pub fn from_birthday(b: Birthday, date_format: &str) -> Self {
         let today = chrono::Local::now().date_naive();
-        let format = if date_format.is_empty() { "%Y-%m-%d" } else { date_format };
+        let format = if date_format.is_empty() {
+            "%Y-%m-%d"
+        } else {
+            date_format
+        };
 
         Self {
             id: b.id.0,
