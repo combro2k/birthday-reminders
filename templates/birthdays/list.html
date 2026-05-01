@@ -43,7 +43,11 @@
                         Birth Date {% if current_sort == "age" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
                     </a>
                 </th>
-                <th>Age</th>
+                <th>
+                    <a href="/birthdays?sort=age{% if current_sort == "age" && !is_desc %}&desc=true{% endif %}" class="{% if current_sort == "age" %}active{% endif %}">
+                        Age {% if current_sort == "age" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
+                    </a>
+                </th>
                 <th>
                     <a href="/birthdays?sort=date{% if current_sort == "date" && !is_desc %}&desc=true{% endif %}" class="{% if current_sort == "date" %}active{% endif %}">
                         Days Until Next {% if current_sort == "date" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
