@@ -1,0 +1,67 @@
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,
+    role TEXT NOT NULL DEFAULT 'user',
+    auth_method TEXT NOT NULL DEFAULT 'local',
+    oidc_subject TEXT UNIQUE,
+    date_format VARCHAR(10) NOT NULL DEFAULT '%d-%m-%Y',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS birthdays (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    birth_date DATE NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_used_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS notification_channels (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    channel_type TEXT NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    config JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, channel_type)
+);
+
+CREATE TABLE IF NOT EXISTS user_reminder_settings (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    days_before INTEGER[] NOT NULL DEFAULT ARRAY[7, 3, 1, 0]
+);
+
+CREATE TABLE IF NOT EXISTS reminder_log (
+    id BIGSERIAL PRIMARY KEY,
+    birthday_id UUID NOT NULL REFERENCES birthdays(id) ON DELETE CASCADE,
+    channel_type TEXT NOT NULL,
+    reminded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    days_before INTEGER NOT NULL,
+    year INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_oidc_subject ON users(oidc_subject) WHERE oidc_subject IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_birthdays_user_id ON birthdays(user_id);
+CREATE INDEX IF NOT EXISTS idx_birthdays_birth_date ON birthdays(birth_date);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_notification_channels_user_id ON notification_channels(user_id);
+CREATE INDEX IF NOT EXISTS idx_reminder_log_birthday_id ON reminder_log(birthday_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reminder_log_unique ON reminder_log(birthday_id, channel_type, days_before, year);

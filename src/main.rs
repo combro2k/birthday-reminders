@@ -78,7 +78,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Create database pool (auto-detects SQLite or PostgreSQL from URL)
+    // Create database pool (auto-detects SQLite, MySQL, or PostgreSQL from URL)
     let db = DatabasePool::connect(&config.database.url, config.database.max_connections).await?;
 
     // Run migrations
