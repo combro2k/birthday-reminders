@@ -51,9 +51,9 @@
         <tbody>
             {% for ch in channels %}
             <tr>
-                <td>{{ ch.display_name }}</td>
-                <td>{% if ch.enabled %}✅{% else %}❌{% endif %}</td>
-                <td class="actions">
+                <td data-label="Channel">{{ ch.display_name }}</td>
+                <td data-label="Enabled">{% if ch.enabled %}✅{% else %}❌{% endif %}</td>
+                <td data-label="Actions" class="actions">
                     <a href="/notifications/{{ ch.channel_type }}" class="btn btn-small">Edit</a>
                     <form method="POST" action="/notifications/{{ ch.channel_type }}/test" class="inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

@@ -62,16 +62,16 @@
         <tbody>
             {% for b in birthdays %}
             <tr>
-                <td>{{ b.name }}</td>
-                <td>{{ b.birth_date_str }}</td>
-                <td>{{ b.age }}</td>
-                <td>
+                <td data-label="Name">{{ b.name }}</td>
+                <td data-label="Birth Date">{{ b.birth_date_str }}</td>
+                <td data-label="Age">{{ b.age }}</td>
+                <td data-label="Days Until Next">
                     {% if b.days_until == 0 %}🎉 Today!
                     {% elif b.days_until == 1 %}Tomorrow
                     {% else %}{{ b.days_until }} days{% endif %}
                 </td>
-                <td>{{ b.phone_number.as_deref().unwrap_or("-") }}</td>
-                <td>
+                <td data-label="Contact">{{ b.phone_number.as_deref().unwrap_or("-") }}</td>
+                <td data-label="Location">
                     {% if b.address.is_some() || b.postal_code.is_some() || b.city.is_some() || b.country.is_some() %}
                         {{ b.address.as_deref().unwrap_or("") }}
                         {% if b.address.is_some() && (b.postal_code.is_some() || b.city.is_some()) %}, {% endif %}
@@ -81,8 +81,8 @@
                         -
                     {% endif %}
                 </td>
-                <td>{{ b.notes.as_deref().unwrap_or("-") }}</td>
-                <td class="actions">
+                <td data-label="Notes">{{ b.notes.as_deref().unwrap_or("-") }}</td>
+                <td data-label="Actions" class="actions">
                     <a href="/birthdays/{{ b.id }}/edit" class="btn btn-small">Edit</a>
                     <form method="POST" action="/birthdays/{{ b.id }}/delete" class="inline"
                           onsubmit="return confirm('Delete {{ b.name }}?')">
