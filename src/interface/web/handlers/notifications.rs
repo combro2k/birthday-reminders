@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     Form,
-    extract::{Extension, Path, State},
+    extract::{Extension, Path, Query, State},
     response::{Html, IntoResponse, Redirect},
 };
 use serde::Deserialize;
@@ -21,10 +21,22 @@ use crate::interface::web::templates::{
     ChannelFormTemplate, ChannelKindView, ChannelView, ChannelsTemplate,
 };
 
+#[derive(Debug, Deserialize, Default)]
+pub struct TestResultQuery {
+    pub test_ok: Option<String>,
+    pub test_err: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct TestChannelForm {
+    pub source: Option<String>,
+}
+
 pub async fn list_channels(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
     session: Session,
+    Query(params): Query<TestResultQuery>,
 ) -> impl IntoResponse {
     let csrf_token = get_csrf_token(&session).await;
     let records = state
@@ -51,6 +63,8 @@ pub async fn list_channels(
         channels,
         available,
         csrf_token,
+        test_success: params.test_ok,
+        test_error: params.test_err,
     };
     Html(template.to_string())
 }
@@ -433,6 +447,7 @@ pub async fn test_channel(
     Extension(user): Extension<User>,
     session: Session,
     Path(channel_type): Path<String>,
+    Form(form): Form<TestChannelForm>,
 ) -> impl IntoResponse {
     let csrf_token = get_csrf_token(&session).await;
     let kind = match ChannelKind::from_str(&channel_type) {
@@ -448,11 +463,32 @@ pub async fn test_channel(
         .into_iter()
         .find(|r| r.channel_type == channel_type);
 
-    let (error, success) = match state
+    let result = state
         .notification_service
         .test_channel(&user.id, &channel_type)
-        .await
-    {
+        .await;
+
+    if form.source.as_deref() == Some("list") {
+        let display_name = kind.display_name();
+        return match result {
+            Ok(()) => {
+                let msg = url::form_urlencoded::byte_serialize(
+                    format!("Test notification sent via {}!", display_name).as_bytes(),
+                )
+                .collect::<String>();
+                Redirect::to(&format!("/notifications?test_ok={}", msg)).into_response()
+            }
+            Err(e) => {
+                let msg = url::form_urlencoded::byte_serialize(
+                    format!("Test failed for {}: {}", display_name, e).as_bytes(),
+                )
+                .collect::<String>();
+                Redirect::to(&format!("/notifications?test_err={}", msg)).into_response()
+            }
+        };
+    }
+
+    let (error, success) = match result {
         Ok(()) => (
             None,
             Some("Test notification sent successfully!".to_string()),
