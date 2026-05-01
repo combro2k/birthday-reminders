@@ -82,6 +82,11 @@ body {
     width: 100%; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--radius);
     font-size: 1rem; font-family: inherit;
 }
+.provider-hint {
+    margin-top: .5rem;
+    color: var(--text-muted);
+    font-size: .85rem;
+}
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
     outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1);
 }

@@ -450,6 +450,53 @@ Users can configure one or more notification channels in the web UI under **Sett
 | **Signal** | Messages via Signal messenger |
 | **WhatsApp** | Messages via WhatsApp Business API |
 
+### Proton Mail Email Setup
+
+Email channels support two Proton modes:
+
+1. Proton SMTP Submission (recommended)
+2. Proton Bridge (local bridge)
+
+#### Proton SMTP Submission (recommended)
+
+- Provider: `proton_smtp`
+- Host: `smtp.protonmail.ch`
+- Port: `587`
+- Security: `STARTTLS`
+- Username: your Proton email address
+- Password: your generated SMTP token
+
+Example:
+
+```json
+{
+  "provider": "proton_smtp",
+  "username": "you@proton.me",
+  "password": "your-smtp-token",
+  "to": "you@proton.me"
+}
+```
+
+#### Proton Bridge (local)
+
+- Provider: `proton`
+- Host: `127.0.0.1`
+- Port: `1025`
+- Security: `STARTTLS`
+
+Example:
+
+```json
+{
+  "provider": "proton",
+  "username": "you@proton.me",
+  "password": "bridge-password",
+  "to": "you@proton.me"
+}
+```
+
+Proton SMTP uses SMTP token credentials. Do not use your Proton account login password in third-party SMTP clients.
+
 ## Installation
 
 ### Docker

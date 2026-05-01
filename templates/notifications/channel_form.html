@@ -30,7 +30,7 @@
     {% endif %}
 
     <form method="POST" action="/notifications/{{ channel_type }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="form-group">
             <label>
                 <input type="checkbox" name="enabled" value="true"
@@ -39,73 +39,117 @@
             </label>
         </div>
 
-        <div class="form-group">
-            <label for="config_json">Configuration (JSON)</label>
-            <textarea id="config_json" name="config_json" rows="10" class="code">{{ config_json }}</textarea>
-        </div>
-
         {% if channel_type == "gotify" %}
+        <div class="form-group">
+            <label for="gotify_url">Server URL</label>
+            <input id="gotify_url" name="gotify_url" type="url" placeholder="https://gotify.example.com" value="{{ gotify_url }}" required>
+        </div>
+        <div class="form-group">
+            <label for="gotify_token">App Token</label>
+            <input id="gotify_token" name="gotify_token" type="password" value="{{ gotify_token }}" required>
+        </div>
         <details class="help-text">
-            <summary>Gotify configuration help</summary>
-            <pre>
-{
-  "url": "https://gotify.example.com",
-  "token": "your-app-token"
-}</pre>
+            <summary>Gotify setup help</summary>
+            <p>Use your Gotify app token and the base URL of your Gotify server.</p>
         </details>
         {% endif %}
 
         {% if channel_type == "email" %}
+        <div class="form-group">
+            <label for="email_provider">Provider</label>
+            <select id="email_provider" name="email_provider">
+                <option value="gmail" {% if email_provider == "gmail" %}selected{% endif %}>Gmail</option>
+                <option value="proton" {% if email_provider == "proton" %}selected{% endif %}>Proton Bridge (Local)</option>
+                <option value="proton_smtp" {% if email_provider == "proton_smtp" %}selected{% endif %}>Proton SMTP Submission</option>
+                <option value="outlook" {% if email_provider == "outlook" %}selected{% endif %}>Outlook</option>
+                <option value="custom" {% if email_provider == "custom" %}selected{% endif %}>Custom SMTP</option>
+            </select>
+            <p id="email-provider-hint" class="provider-hint"></p>
+        </div>
+
+        <div class="form-group">
+            <label for="email_username">SMTP Username</label>
+            <input id="email_username" name="email_username" type="text" placeholder="you@example.com" value="{{ email_username }}" required>
+        </div>
+        <div class="form-group">
+            <label for="email_password">SMTP Password / App Password</label>
+            <input id="email_password" name="email_password" type="password" value="{{ email_password }}" required>
+        </div>
+        <div class="form-group">
+            <label for="email_to">Recipient Email</label>
+            <input id="email_to" name="email_to" type="email" placeholder="you@example.com" value="{{ email_to }}" required>
+        </div>
+
+        <div id="custom-smtp-fields">
+            <h3>Custom SMTP (only when provider is Custom)</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email_smtp_host">SMTP Host</label>
+                    <input id="email_smtp_host" name="email_smtp_host" type="text" placeholder="smtp.example.com" value="{{ email_smtp_host }}">
+                </div>
+                <div class="form-group">
+                    <label for="email_smtp_port">SMTP Port</label>
+                    <input id="email_smtp_port" name="email_smtp_port" type="number" min="1" max="65535" value="{{ email_smtp_port }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="email_smtp_security">Security</label>
+                <select id="email_smtp_security" name="email_smtp_security">
+                    <option value="starttls" {% if email_smtp_security == "starttls" %}selected{% endif %}>STARTTLS</option>
+                    <option value="tls" {% if email_smtp_security == "tls" %}selected{% endif %}>TLS</option>
+                    <option value="none" {% if email_smtp_security == "none" %}selected{% endif %}>None</option>
+                </select>
+            </div>
+        </div>
+
         <details class="help-text">
-            <summary>Email configuration help</summary>
-            <p>Provider options: <code>gmail</code>, <code>proton</code>, <code>outlook</code>, <code>custom</code></p>
-            <pre>
-// Gmail
-{
-  "provider": "gmail",
-  "username": "you@gmail.com",
-  "password": "your-app-password",
-  "to": "you@gmail.com"
-}
-
-// Proton Bridge
-{
-  "provider": "proton",
-  "username": "you@proton.me",
-  "password": "bridge-password",
-  "to": "you@proton.me"
-}
-
-// Custom SMTP
-{
-  "provider": "custom",
-  "username": "you@example.com",
-  "password": "password",
-  "to": "you@example.com",
-  "smtp_host": "smtp.example.com",
-  "smtp_port": 587,
-  "security": "starttls"
-}</pre>
+            <summary>Email setup help</summary>
+            <p>For Gmail and Outlook, use an app password. For Proton SMTP, use your SMTP token. Custom SMTP host/port/security are only required when Provider is set to Custom.</p>
         </details>
         {% endif %}
 
         {% if channel_type == "telegram" %}
+        <div class="form-group">
+            <label for="telegram_bot_token">Bot Token</label>
+            <input id="telegram_bot_token" name="telegram_bot_token" type="password" value="{{ telegram_bot_token }}" required>
+        </div>
+        <div class="form-group">
+            <label for="telegram_chat_id">Chat ID</label>
+            <input id="telegram_chat_id" name="telegram_chat_id" type="text" value="{{ telegram_chat_id }}" required>
+        </div>
         <details class="help-text">
-            <summary>Telegram configuration help</summary>
-            <pre>
-{
-  "bot_token": "123456:ABC-DEF1234",
-  "chat_id": "12345678"
-}</pre>
+            <summary>Telegram setup help</summary>
             <p>Create a bot via <a href="https://t.me/BotFather" target="_blank">@BotFather</a>,
                get your chat_id by messaging the bot and checking
                <code>https://api.telegram.org/bot&lt;token&gt;/getUpdates</code></p>
         </details>
         {% endif %}
 
-        {% if channel_type == "signal" || channel_type == "whatsapp" %}
+        {% if channel_type == "signal" %}
+        <div class="form-group">
+            <label for="signal_api_url">Signal API URL</label>
+            <input id="signal_api_url" name="signal_api_url" type="url" value="{{ signal_api_url }}" required>
+        </div>
+        <div class="form-group">
+            <label for="signal_recipient">Recipient</label>
+            <input id="signal_recipient" name="signal_recipient" type="text" value="{{ signal_recipient }}" required>
+        </div>
         <div class="alert alert-warning">
-            This channel is not yet fully implemented. Configuration can be saved for future use.
+            Signal sending is not yet fully implemented. Configuration can still be saved for future use.
+        </div>
+        {% endif %}
+
+        {% if channel_type == "whatsapp" %}
+        <div class="form-group">
+            <label for="whatsapp_api_url">WhatsApp API URL</label>
+            <input id="whatsapp_api_url" name="whatsapp_api_url" type="url" value="{{ whatsapp_api_url }}" required>
+        </div>
+        <div class="form-group">
+            <label for="whatsapp_recipient">Recipient</label>
+            <input id="whatsapp_recipient" name="whatsapp_recipient" type="text" value="{{ whatsapp_recipient }}" required>
+        </div>
+        <div class="alert alert-warning">
+            WhatsApp sending is not yet fully implemented. Configuration can still be saved for future use.
         </div>
         {% endif %}
 
@@ -124,4 +168,68 @@
     </div>
     {% endif %}
 </main>
+
+{% if channel_type == "email" %}
+<script>
+(function () {
+    var provider = document.getElementById("email_provider");
+    var providerHint = document.getElementById("email-provider-hint");
+    var customSection = document.getElementById("custom-smtp-fields");
+    var host = document.getElementById("email_smtp_host");
+    var port = document.getElementById("email_smtp_port");
+    var security = document.getElementById("email_smtp_security");
+
+    if (!provider || !providerHint || !customSection || !host || !port || !security) {
+        return;
+    }
+
+    var defaultsByProvider = {
+        gmail: {
+            host: "smtp.gmail.com",
+            port: "587",
+            security: "STARTTLS",
+            note: "Use a Gmail app password."
+        },
+        proton: {
+            host: "127.0.0.1",
+            port: "1025",
+            security: "STARTTLS",
+            note: "Requires Proton Bridge running locally."
+        },
+        proton_smtp: {
+            host: "smtp.protonmail.ch",
+            port: "587",
+            security: "STARTTLS",
+            note: "Use your Proton SMTP token as password."
+        },
+        outlook: {
+            host: "smtp.office365.com",
+            port: "587",
+            security: "STARTTLS",
+            note: "Use an Outlook app password if required by your account policy."
+        },
+        custom: {
+            host: "Your SMTP server",
+            port: "Your SMTP port",
+            security: "Your choice",
+            note: "Fill in host, port, and security below."
+        }
+    };
+
+    function setCustomSmtpState() {
+        var selected = defaultsByProvider[provider.value] || defaultsByProvider.gmail;
+        var isCustom = provider.value === "custom";
+
+        providerHint.textContent = "Defaults: " + selected.host + ":" + selected.port + " (" + selected.security + "). " + selected.note;
+        customSection.hidden = !isCustom;
+        host.required = isCustom;
+        port.required = isCustom;
+        security.required = isCustom;
+    }
+
+    provider.addEventListener("change", setCustomSmtpState);
+    setCustomSmtpState();
+})();
+</script>
+{% endif %}
 {% endblock %}

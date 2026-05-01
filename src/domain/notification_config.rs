@@ -27,6 +27,8 @@ pub struct EmailConfig {
 pub enum EmailProvider {
     Gmail,
     Proton,
+    #[serde(rename = "proton_smtp")]
+    ProtonSmtp,
     Outlook,
     Custom,
 }
@@ -36,6 +38,7 @@ impl EmailProvider {
         match self {
             EmailProvider::Gmail => Some("smtp.gmail.com"),
             EmailProvider::Proton => Some("127.0.0.1"),
+            EmailProvider::ProtonSmtp => Some("smtp.protonmail.ch"),
             EmailProvider::Outlook => Some("smtp.office365.com"),
             EmailProvider::Custom => None,
         }
@@ -45,6 +48,7 @@ impl EmailProvider {
         match self {
             EmailProvider::Gmail => Some(587),
             EmailProvider::Proton => Some(1025),
+            EmailProvider::ProtonSmtp => Some(587),
             EmailProvider::Outlook => Some(587),
             EmailProvider::Custom => None,
         }
@@ -54,6 +58,7 @@ impl EmailProvider {
         match self {
             EmailProvider::Gmail => SmtpSecurity::Starttls,
             EmailProvider::Proton => SmtpSecurity::Starttls,
+            EmailProvider::ProtonSmtp => SmtpSecurity::Starttls,
             EmailProvider::Outlook => SmtpSecurity::Starttls,
             EmailProvider::Custom => SmtpSecurity::Starttls,
         }
@@ -113,4 +118,33 @@ pub struct SignalConfig {
 pub struct WhatsappConfig {
     pub api_url: String,
     pub recipient: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{EmailConfig, EmailProvider, SmtpSecurity};
+
+    #[test]
+    fn proton_bridge_defaults_remain_localhost() {
+        assert_eq!(EmailProvider::Proton.smtp_host(), Some("127.0.0.1"));
+        assert_eq!(EmailProvider::Proton.smtp_port(), Some(1025));
+        assert_eq!(EmailProvider::Proton.security(), SmtpSecurity::Starttls);
+    }
+
+    #[test]
+    fn proton_smtp_submission_defaults_are_resolved() {
+        let config = EmailConfig {
+            provider: EmailProvider::ProtonSmtp,
+            username: "you@proton.me".to_string(),
+            password: "smtp-token".to_string(),
+            to: "you@proton.me".to_string(),
+            smtp_host: None,
+            smtp_port: None,
+            security: None,
+        };
+
+        assert_eq!(config.resolved_host(), "smtp.protonmail.ch");
+        assert_eq!(config.resolved_port(), 587);
+        assert_eq!(config.resolved_security(), SmtpSecurity::Starttls);
+    }
 }
