@@ -4,6 +4,7 @@ use openidconnect::{
     PkceCodeVerifier, RedirectUrl, Scope, TokenResponse,
     core::{CoreAuthenticationFlow, CoreProviderMetadata},
 };
+use url::Url;
 
 use crate::infrastructure::config::OidcConfig;
 
@@ -34,7 +35,7 @@ pub struct OidcUserInfo {
 }
 
 impl OidcClient {
-    pub async fn new(config: &OidcConfig, base_url: &str) -> anyhow::Result<Self> {
+    pub async fn new(config: &OidcConfig, callback_url: &Url) -> anyhow::Result<Self> {
         let http_client = reqwest::ClientBuilder::new()
             .redirect(reqwest::redirect::Policy::none())
             .build()
@@ -43,7 +44,7 @@ impl OidcClient {
         let issuer_url = IssuerUrl::new(config.issuer_url.clone())?;
         let metadata = CoreProviderMetadata::discover_async(issuer_url, &http_client).await?;
 
-        let redirect_url = RedirectUrl::new(format!("{}/auth/oidc/callback", base_url))?;
+        let redirect_url = RedirectUrl::new(callback_url.as_str().to_string())?;
 
         Ok(Self {
             metadata,

@@ -35,7 +35,9 @@ impl TryFrom<UserRow> for User {
 
     fn try_from(row: UserRow) -> Result<Self, Self::Error> {
         Ok(User {
-            id: UserId(Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?),
+            id: UserId(
+                Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
+            ),
             username: row.username,
             email: row.email,
             password_hash: row.password_hash,

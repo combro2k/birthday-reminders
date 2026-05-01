@@ -6,10 +6,12 @@ use std::time::Instant;
 use axum::{
     body::Body,
     extract::{ConnectInfo, Request, State},
+    http::HeaderMap,
     http::{Method, StatusCode},
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
+use ipnet::IpNet;
 use tokio::sync::Mutex;
 use tower_sessions::Session;
 
@@ -159,6 +161,47 @@ pub struct RateLimiter {
     requests: Mutex<HashMap<IpAddr, Vec<Instant>>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProxyTrust {
+    trusted_proxies: Vec<IpNet>,
+}
+
+impl ProxyTrust {
+    pub fn new(trusted_proxies: Vec<IpNet>) -> Self {
+        Self { trusted_proxies }
+    }
+
+    pub fn client_ip(&self, headers: &HeaderMap, peer_ip: Option<IpAddr>) -> Option<IpAddr> {
+        let peer_ip = peer_ip?;
+        if !self.is_trusted(peer_ip) {
+            return Some(peer_ip);
+        }
+
+        self.client_ip_from_forwarded_headers(headers)
+            .or(Some(peer_ip))
+    }
+
+    fn client_ip_from_forwarded_headers(&self, headers: &HeaderMap) -> Option<IpAddr> {
+        if let Some(chain) = parse_forwarded_for(headers) {
+            for address in chain.iter().rev() {
+                if !self.is_trusted(*address) {
+                    return Some(*address);
+                }
+            }
+
+            return chain.first().copied();
+        }
+
+        headers.get("x-real-ip").and_then(parse_single_ip_header)
+    }
+
+    fn is_trusted(&self, ip: IpAddr) -> bool {
+        self.trusted_proxies
+            .iter()
+            .any(|network| network.contains(&ip))
+    }
+}
+
 impl RateLimiter {
     pub fn new(max_requests: u32, window_secs: u64) -> Self {
         Self {
@@ -188,22 +231,16 @@ impl RateLimiter {
 /// Rate limiting middleware
 pub async fn rate_limit_middleware(
     limiter: Arc<RateLimiter>,
+    proxy_trust: Arc<ProxyTrust>,
     request: Request,
     next: Next,
 ) -> Response {
-    // Extract client IP from X-Forwarded-For or connection info
-    let ip = request
-        .headers()
-        .get("x-forwarded-for")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.split(',').next())
-        .and_then(|s| s.trim().parse::<IpAddr>().ok())
-        .or_else(|| {
-            request
-                .extensions()
-                .get::<ConnectInfo<std::net::SocketAddr>>()
-                .map(|ci| ci.0.ip())
-        })
+    let peer_ip = request
+        .extensions()
+        .get::<ConnectInfo<std::net::SocketAddr>>()
+        .map(|ci| ci.0.ip());
+    let ip = proxy_trust
+        .client_ip(request.headers(), peer_ip)
         .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
 
     if limiter.check(ip).await {
@@ -214,5 +251,81 @@ pub async fn rate_limit_middleware(
             "Too many requests. Please try again later.",
         )
             .into_response()
+    }
+}
+
+fn parse_forwarded_for(headers: &HeaderMap) -> Option<Vec<IpAddr>> {
+    let value = headers.get("x-forwarded-for")?.to_str().ok()?;
+    let addresses: Option<Vec<IpAddr>> = value
+        .split(',')
+        .map(|segment| segment.trim().parse::<IpAddr>().ok())
+        .collect();
+
+    addresses.filter(|addresses| !addresses.is_empty())
+}
+
+fn parse_single_ip_header(value: &axum::http::HeaderValue) -> Option<IpAddr> {
+    value.to_str().ok()?.trim().parse::<IpAddr>().ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ProxyTrust;
+    use axum::http::HeaderMap;
+    use ipnet::IpNet;
+    use std::net::{IpAddr, Ipv4Addr};
+
+    fn proxy_trust() -> ProxyTrust {
+        ProxyTrust::new(vec![
+            "127.0.0.1/32".parse::<IpNet>().unwrap(),
+            "10.0.0.0/8".parse::<IpNet>().unwrap(),
+        ])
+    }
+
+    #[test]
+    fn uses_peer_ip_when_peer_is_not_trusted() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-for", "203.0.113.10".parse().unwrap());
+
+        let ip = trust.client_ip(&headers, Some(IpAddr::V4(Ipv4Addr::new(198, 51, 100, 10))));
+
+        assert_eq!(ip, Some(IpAddr::V4(Ipv4Addr::new(198, 51, 100, 10))));
+    }
+
+    #[test]
+    fn uses_first_untrusted_ip_from_right_side_of_forwarded_chain() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "x-forwarded-for",
+            "203.0.113.10, 10.0.0.5, 127.0.0.1".parse().unwrap(),
+        );
+
+        let ip = trust.client_ip(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(ip, Some(IpAddr::V4(Ipv4Addr::new(203, 0, 113, 10))));
+    }
+
+    #[test]
+    fn falls_back_to_x_real_ip_for_trusted_proxy() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-real-ip", "203.0.113.44".parse().unwrap());
+
+        let ip = trust.client_ip(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(ip, Some(IpAddr::V4(Ipv4Addr::new(203, 0, 113, 44))));
+    }
+
+    #[test]
+    fn ignores_malformed_forwarded_for_chain() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-for", "invalid, 203.0.113.10".parse().unwrap());
+
+        let ip = trust.client_ip(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(ip, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
     }
 }

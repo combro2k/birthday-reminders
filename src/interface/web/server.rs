@@ -24,7 +24,9 @@ use crate::infrastructure::config::AppConfig;
 use crate::infrastructure::database::DatabasePool;
 
 use super::handlers::{admin, auth, birthdays, notifications, settings};
-use super::middleware::{RateLimiter, auth_middleware, csrf_middleware, rate_limit_middleware};
+use super::middleware::{
+    ProxyTrust, RateLimiter, auth_middleware, csrf_middleware, rate_limit_middleware,
+};
 
 pub struct AppState {
     pub db: DatabasePool,
@@ -39,30 +41,33 @@ pub struct AppState {
 }
 
 pub async fn create_router(state: Arc<AppState>, db: DatabasePool) -> anyhow::Result<Router> {
+    let secure_cookies = state.config.server.secure_cookies()?;
+    let proxy_trust = Arc::new(ProxyTrust::new(state.config.server.trusted_proxy_nets()?));
+
     match &db {
         DatabasePool::Postgres(pool) => {
             let session_store = PostgresStore::new(pool.clone());
             session_store.migrate().await?;
             let session_layer = SessionManagerLayer::new(session_store)
-                .with_secure(state.config.server.base_url.starts_with("https"))
+                .with_secure(secure_cookies)
                 .with_http_only(true);
-            Ok(build_app(state, session_layer))
+            Ok(build_app(state, session_layer, proxy_trust))
         }
         DatabasePool::Sqlite(pool) => {
             let session_store = SqliteStore::new(pool.clone());
             session_store.migrate().await?;
             let session_layer = SessionManagerLayer::new(session_store)
-                .with_secure(state.config.server.base_url.starts_with("https"))
+                .with_secure(secure_cookies)
                 .with_http_only(true);
-            Ok(build_app(state, session_layer))
+            Ok(build_app(state, session_layer, proxy_trust))
         }
         DatabasePool::Mysql(pool) => {
             let session_store = MySqlStore::new(pool.clone());
             session_store.migrate().await?;
             let session_layer = SessionManagerLayer::new(session_store)
-                .with_secure(state.config.server.base_url.starts_with("https"))
+                .with_secure(secure_cookies)
                 .with_http_only(true);
-            Ok(build_app(state, session_layer))
+            Ok(build_app(state, session_layer, proxy_trust))
         }
     }
 }
@@ -70,6 +75,7 @@ pub async fn create_router(state: Arc<AppState>, db: DatabasePool) -> anyhow::Re
 fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
     state: Arc<AppState>,
     session_layer: SessionManagerLayer<S>,
+    proxy_trust: Arc<ProxyTrust>,
 ) -> Router {
     // Rate limiter for auth routes: max 10 requests per 60 seconds per IP
     let auth_rate_limiter = Arc::new(RateLimiter::new(10, 60));
@@ -90,7 +96,8 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         .layer(middleware::from_fn(csrf_middleware))
         .layer(middleware::from_fn(move |req, next| {
             let limiter = auth_rate_limiter.clone();
-            rate_limit_middleware(limiter, req, next)
+            let proxy_trust = proxy_trust.clone();
+            rate_limit_middleware(limiter, proxy_trust, req, next)
         }));
 
     let public = Router::new()
