@@ -2,10 +2,41 @@
     "name": "Birthday Reminders",
     "short_name": "Birthdays",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "background_color": "#f8fafc",
-    "theme_color": "#6366f1",
+    "background_color": "#f5f5f4",
+    "theme_color": "#0f766e",
     "description": "Keep track of birthdays and get reminded",
+    "categories": ["productivity", "utilities"],
+    "shortcuts": [
+        {
+            "name": "Add Birthday",
+            "short_name": "Add",
+            "description": "Quickly add a new birthday",
+            "url": "/birthdays/new",
+            "icons": [
+                {
+                    "src": "/static/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/screenshot-mobile.png",
+            "sizes": "540x720",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/static/screenshot-desktop.png",
+            "sizes": "720x540",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ],
     "icons": [
         {
             "src": "/static/icon-192.png",
@@ -13,8 +44,25 @@
             "type": "image/png"
         },
         {
+            "src": "/static/icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
             "src": "/static/icon-512.png",
             "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/static/icon-180.png",
+            "sizes": "180x180",
             "type": "image/png"
         }
     ]

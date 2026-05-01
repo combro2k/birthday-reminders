@@ -5,6 +5,7 @@ use axum::{
     extract::State,
     http::StatusCode,
     middleware,
+    response::Html,
     routing::{get, post},
 };
 use tower_http::services::ServeDir;
@@ -102,6 +103,7 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
 
     let public = Router::new()
         .route("/health", get(health_check))
+        .route("/offline", get(offline_page))
         .merge(auth_routes);
 
     // Protected routes (auth required)
@@ -194,4 +196,8 @@ async fn health_check(State(state): State<Arc<AppState>>) -> impl axum::response
             Json(serde_json::json!({"status": "unhealthy", "reason": "database unreachable"})),
         ),
     }
+}
+
+async fn offline_page() -> Html<&'static str> {
+    Html(include_str!("../../../templates/offline.html"))
 }
