@@ -66,13 +66,17 @@ pub async fn list_birthdays(
 
     birthdays.sort_by(|a, b| {
         let res = match current_sort {
-            "date" => a.days_until_next_from(today)
+            "date" => a
+                .days_until_next_from(today)
                 .cmp(&b.days_until_next_from(today))
                 .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
-            "age" => a.birth_date
+            "age" => a
+                .birth_date
                 .cmp(&b.birth_date)
                 .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
-            _ => a.name.to_lowercase()
+            _ => a
+                .name
+                .to_lowercase()
                 .cmp(&b.name.to_lowercase())
                 .then_with(|| {
                     a.days_until_next_from(today)

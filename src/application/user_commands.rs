@@ -55,7 +55,11 @@ impl UserCommandService {
         Ok(())
     }
 
-    pub async fn update_date_format(&self, user_id: &UserId, date_format: &str) -> anyhow::Result<()> {
+    pub async fn update_date_format(
+        &self,
+        user_id: &UserId,
+        date_format: &str,
+    ) -> anyhow::Result<()> {
         let update = UpdateUser {
             date_format: Some(date_format.to_string()),
             ..Default::default()
