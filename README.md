@@ -215,6 +215,7 @@ Birthday Reminders supports OpenID Connect for single sign-on. When configured, 
 | `client_secret` | Yes | — | OAuth2 client secret |
 | `scopes` | No | `["openid", "profile", "email"]` | Requested OIDC scopes |
 | `trusted_audiences` | No | `[]` | Additional trusted `aud` values when ID tokens include multiple audiences |
+| `allow_dynamic_additional_audiences` | No | `false` | Trust all additional `aud` values; keep `client_id`/`azp` checks enforced |
 | `auto_provision` | No | `true` | Create local accounts on first OIDC login |
 | `default_role` | No | `"user"` | Role assigned to auto-provisioned users |
 
@@ -229,6 +230,8 @@ If `base_url` is set, it is used directly. Otherwise the app derives the callbac
 For example: `https://birthdays.example.com/auth/oidc/callback`
 
 If your provider returns ID tokens with more than one audience, keep `client_id` set to your app's client ID and add the other allowed audience values to `trusted_audiences`.
+
+If additional audiences are provider-managed and change over time (common with some self-hosted Zitadel setups), set `allow_dynamic_additional_audiences: true`.
 
 ---
 
@@ -293,6 +296,7 @@ auth:
     issuer_url: "https://zitadel.example.com"
     client_id: "123456@birthday-reminders"
     client_secret: "your-client-secret"
+    allow_dynamic_additional_audiences: true
 ```
 
 ---
