@@ -48,6 +48,7 @@ package: build
 	cp package/uninstall.sh $(PACKAGE_DIR)/uninstall.sh
 	chmod +x $(PACKAGE_DIR)/uninstall.sh
 	tar -czf target/package/$(PACKAGE_NAME).tar.gz -C target/package $(PACKAGE_NAME)
+	rm -rf $(PACKAGE_DIR)
 	@echo ""
 	@echo "Package created: target/package/$(PACKAGE_NAME).tar.gz"
 	@echo "Copy to target server and run: tar xzf $(PACKAGE_NAME).tar.gz && cd $(PACKAGE_NAME) && ./install.sh"
