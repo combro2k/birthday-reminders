@@ -57,7 +57,7 @@ impl UserRepository for SqliteUserRepo {
             "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .bind(id)
+        .bind(id.to_string())
         .bind(&new.username)
         .bind(&new.email)
         .bind(&new.password_hash)
@@ -172,7 +172,7 @@ impl UserRepository for SqliteUserRepo {
         .bind(&oidc_subject)
         .bind(&date_format)
         .bind(&now)
-        .bind(id.0)
+        .bind(id.0.to_string())
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
