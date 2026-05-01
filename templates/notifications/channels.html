@@ -22,6 +22,14 @@
     <h1>Notification Channels</h1>
     <p>Configure how you want to receive birthday reminders.</p>
 
+    {% if let Some(msg) = test_success %}
+    <div class="alert alert-success">{{ msg }}</div>
+    {% endif %}
+
+    {% if let Some(msg) = test_error %}
+    <div class="alert alert-error">{{ msg }}</div>
+    {% endif %}
+
     <div class="channels-grid">
         {% for ch in available %}
         <div class="channel-card {% if ch.configured %}configured{% endif %}">
@@ -34,6 +42,13 @@
             <a href="/notifications/{{ ch.kind }}" class="btn btn-small mt-1">
                 {% if ch.configured %}Edit{% else %}Configure{% endif %}
             </a>
+            {% if ch.configured %}
+            <form method="POST" action="/notifications/{{ ch.kind }}/test" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="source" value="list">
+                <button type="submit" class="btn btn-small btn-secondary mt-1">Test</button>
+            </form>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

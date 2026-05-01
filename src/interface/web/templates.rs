@@ -72,6 +72,8 @@ pub struct ChannelsTemplate {
     pub channels: Vec<ChannelView>,
     pub available: Vec<ChannelKindView>,
     pub csrf_token: String,
+    pub test_success: Option<String>,
+    pub test_error: Option<String>,
 }
 
 #[derive(Template)]
