@@ -212,7 +212,7 @@ impl ApiTokenView {
             // Append time format to user's date format
             date_format
         };
-        
+
         Self {
             id: t.id,
             name: t.name,
