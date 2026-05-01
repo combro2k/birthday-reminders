@@ -1,7 +1,7 @@
 {
   "name": "birthday-reminders-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.8",
   "scripts": {
     "build:css": "tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --watch"

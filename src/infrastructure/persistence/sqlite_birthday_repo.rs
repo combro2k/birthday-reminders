@@ -62,8 +62,8 @@ impl BirthdayRepository for SqliteBirthdayRepo {
               "INSERT INTO birthdays (id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .bind(id)
-        .bind(new.user_id.0)
+        .bind(id.to_string())
+        .bind(new.user_id.0.to_string())
         .bind(&new.name)
         .bind(new.birth_date)
            .bind(&new.phone_number)
@@ -168,7 +168,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         .bind(&country)
         .bind(&notes)
         .bind(&now)
-        .bind(id.0)
+        .bind(id.0.to_string())
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;

@@ -19,8 +19,8 @@ impl SqliteNotificationRepo {
 
 #[derive(sqlx::FromRow)]
 struct ChannelRow {
-    id: String,
-    user_id: String,
+    id: Uuid,
+    user_id: Uuid,
     channel_type: String,
     enabled: bool,
     config: String,
@@ -33,11 +33,8 @@ impl TryFrom<ChannelRow> for NotificationChannelRecord {
 
     fn try_from(row: ChannelRow) -> Result<Self, Self::Error> {
         Ok(NotificationChannelRecord {
-            id: Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
-            user_id: UserId(
-                Uuid::parse_str(&row.user_id)
-                    .map_err(|e| RepositoryError::Database(e.to_string()))?,
-            ),
+            id: row.id,
+            user_id: UserId(row.user_id),
             channel_type: row.channel_type,
             enabled: row.enabled,
             config: serde_json::from_str(&row.config)
@@ -93,7 +90,7 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
         enabled: bool,
         config: serde_json::Value,
     ) -> Result<NotificationChannelRecord, RepositoryError> {
-        let id = Uuid::new_v4();
+        let id = Uuid::new_v4().to_string();
         let config_str =
             serde_json::to_string(&config).map_err(|e| RepositoryError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
@@ -104,8 +101,8 @@ impl NotificationChannelRepository for SqliteNotificationRepo {
              ON CONFLICT (user_id, channel_type)
              DO UPDATE SET enabled = excluded.enabled, config = excluded.config, updated_at = excluded.updated_at",
         )
-        .bind(id)
-        .bind(user_id.0)
+        .bind(&id)
+        .bind(user_id.0.to_string())
         .bind(channel_type)
         .bind(enabled)
         .bind(&config_str)
