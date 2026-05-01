@@ -25,6 +25,7 @@ struct UserRow {
     role: String,
     auth_method: String,
     oidc_subject: Option<String>,
+    date_format: String,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -39,7 +40,7 @@ impl From<UserRow> for User {
             role: Role::from_str(&row.role),
             auth_method: AuthMethod::from_str(&row.auth_method),
             oidc_subject: row.oidc_subject,
-            date_format: "%d-%m-%Y".to_string(), // Default date format
+            date_format: row.date_format,
             created_at: row.created_at,
             updated_at: row.updated_at,
         }
@@ -92,7 +93,7 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_by_id(&self, id: &UserId) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users WHERE id = ?",
         )
         .bind(id.0)
@@ -105,7 +106,7 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_by_username(&self, username: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users WHERE username = ?",
         )
         .bind(username)
@@ -118,7 +119,7 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users WHERE oidc_subject = ?",
         )
         .bind(subject)
@@ -131,7 +132,7 @@ impl UserRepository for SqliteUserRepo {
 
     async fn find_all(&self) -> Result<Vec<User>, RepositoryError> {
         let rows = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -155,11 +156,12 @@ impl UserRepository for SqliteUserRepo {
             Some(os) => os,
             None => current.oidc_subject,
         };
+        let date_format = update.date_format.unwrap_or(current.date_format);
         let now = chrono::Utc::now();
 
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
-             auth_method = ?, oidc_subject = ?, updated_at = ?
+             auth_method = ?, oidc_subject = ?, date_format = ?, updated_at = ?
              WHERE id = ?",
         )
         .bind(&username)
@@ -168,6 +170,7 @@ impl UserRepository for SqliteUserRepo {
         .bind(role.as_str())
         .bind(auth_method.as_str())
         .bind(&oidc_subject)
+        .bind(&date_format)
         .bind(&now)
         .bind(id.0)
         .execute(&self.pool)

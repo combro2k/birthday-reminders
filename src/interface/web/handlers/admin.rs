@@ -11,7 +11,7 @@ use tower_sessions::Session;
 use crate::domain::user::{Role, User};
 use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
-use crate::interface::web::templates::AdminUsersTemplate;
+use crate::interface::web::templates::{AdminUsersTemplate, UserView};
 
 pub async fn users_page(
     State(state): State<Arc<AppState>>,
@@ -25,9 +25,14 @@ pub async fn users_page(
     let csrf_token = get_csrf_token(&session).await;
     let users = state.user_repo.find_all().await.unwrap_or_default();
 
+    let user_views = users
+        .into_iter()
+        .map(|u| UserView::from_user(u, &user.date_format))
+        .collect();
+
     let template = AdminUsersTemplate {
         user,
-        users,
+        users: user_views,
         error: None,
         success: None,
         csrf_token,
@@ -64,10 +69,14 @@ pub async fn create_user(
         Err(e) => {
             let csrf_token = get_csrf_token(&session).await;
             let users = state.user_repo.find_all().await.unwrap_or_default();
+            let user_views = users
+                .into_iter()
+                .map(|u| UserView::from_user(u, &user.date_format))
+                .collect();
             Html(
                 AdminUsersTemplate {
                     user,
-                    users,
+                    users: user_views,
                     error: Some(e.to_string()),
                     success: None,
                     csrf_token,

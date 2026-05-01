@@ -60,6 +60,23 @@
     {% endif %}
 
     <div class="card mt-2">
+        <h3>Date Format</h3>
+        <p>Choose how dates are displayed across the app:</p>
+        <form method="POST" action="/settings/profile">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="date_format">Date format</label>
+                <select id="date_format" name="date_format">
+                    <option value="%d-%m-%Y" {% if user.date_format == "%d-%m-%Y" %}selected{% endif %}>DD-MM-YYYY (e.g. 31-12-2026)</option>
+                    <option value="%m-%d-%Y" {% if user.date_format == "%m-%d-%Y" %}selected{% endif %}>MM-DD-YYYY (e.g. 12-31-2026)</option>
+                    <option value="%Y-%m-%d" {% if user.date_format == "%Y-%m-%d" %}selected{% endif %}>YYYY-MM-DD (e.g. 2026-12-31)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-1">Save Date Format</button>
+        </form>
+    </div>
+
+    <div class="card mt-2">
         <h3>Reminder Preferences</h3>
         <p>Choose how many days before a birthday you'd like to be reminded:</p>
         <form method="POST" action="/settings/reminders">

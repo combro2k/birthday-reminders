@@ -75,12 +75,12 @@
             <tr>
                 <td>{{ u.username }}</td>
                 <td>{{ u.email }}</td>
-                <td>{{ u.role.as_str() }}</td>
-                <td>{{ u.auth_method.as_str() }}</td>
-                <td>{{ u.created_at.format("%Y-%m-%d") }}</td>
+                <td>{{ u.role }}</td>
+                <td>{{ u.auth_method }}</td>
+                <td>{{ u.created_at }}</td>
                 <td>
-                    {% if u.id != user.id %}
-                    <form method="POST" action="/admin/users/{{ u.id.0 }}/delete" class="inline"
+                    {% if u.id != user.id.0 %}
+                    <form method="POST" action="/admin/users/{{ u.id }}/delete" class="inline"
                           onsubmit="return confirm('Delete user {{ u.username }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-small btn-danger">Delete</button>

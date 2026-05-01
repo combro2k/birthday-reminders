@@ -13,6 +13,8 @@ use crate::infrastructure::auth::session::get_csrf_token;
 use crate::interface::web::server::AppState;
 use crate::interface::web::templates::{ApiTokenView, ApiTokensTemplate, ProfileTemplate};
 
+const ALLOWED_DATE_FORMATS: [&str; 3] = ["%d-%m-%Y", "%m-%d-%Y", "%Y-%m-%d"];
+
 fn days_to_csv(days: &[i32]) -> String {
     days.iter()
         .map(|d| d.to_string())
@@ -150,6 +152,62 @@ pub struct ReminderDaysForm {
     pub days_before: String,
 }
 
+#[derive(Deserialize)]
+pub struct DateFormatForm {
+    pub date_format: String,
+}
+
+pub async fn update_date_format(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<User>,
+    session: Session,
+    Form(form): Form<DateFormatForm>,
+) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
+    let reminder_days = get_user_reminder_days(&state, &user).await;
+
+    if !ALLOWED_DATE_FORMATS.contains(&form.date_format.as_str()) {
+        return Html(
+            profile_template(
+                user,
+                Some("Invalid date format selection".to_string()),
+                None,
+                csrf_token,
+                reminder_days,
+            )
+            .to_string(),
+        )
+        .into_response();
+    }
+
+    match state
+        .user_command_service
+        .update_date_format(&user.id, &form.date_format)
+        .await
+    {
+        Ok(()) => {
+            let mut updated_user = user;
+            updated_user.date_format = form.date_format;
+            Html(
+                profile_template(
+                    updated_user,
+                    None,
+                    Some("Date format updated".to_string()),
+                    csrf_token,
+                    reminder_days,
+                )
+                .to_string(),
+            )
+            .into_response()
+        }
+        Err(e) => Html(
+            profile_template(user, Some(e.to_string()), None, csrf_token, reminder_days)
+                .to_string(),
+        )
+        .into_response(),
+    }
+}
+
 pub async fn update_reminder_days(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
@@ -229,8 +287,11 @@ pub async fn api_tokens_page(
         .unwrap_or_default();
 
     let template = ApiTokensTemplate {
-        user,
-        tokens: tokens.into_iter().map(ApiTokenView::from).collect(),
+        user: user.clone(),
+        tokens: tokens
+            .into_iter()
+            .map(|t| ApiTokenView::from_token_info(t, &user.date_format))
+            .collect(),
         new_token: None,
         error: None,
         csrf_token,
@@ -263,8 +324,11 @@ pub async fn create_api_token(
                 .unwrap_or_default();
             Html(
                 ApiTokensTemplate {
-                    user,
-                    tokens: tokens.into_iter().map(ApiTokenView::from).collect(),
+                    user: user.clone(),
+                    tokens: tokens
+                        .into_iter()
+                        .map(|t| ApiTokenView::from_token_info(t, &user.date_format))
+                        .collect(),
                     new_token: Some(plain_token),
                     error: None,
                     csrf_token,
@@ -281,8 +345,11 @@ pub async fn create_api_token(
                 .unwrap_or_default();
             Html(
                 ApiTokensTemplate {
-                    user,
-                    tokens: tokens.into_iter().map(ApiTokenView::from).collect(),
+                    user: user.clone(),
+                    tokens: tokens
+                        .into_iter()
+                        .map(|t| ApiTokenView::from_token_info(t, &user.date_format))
+                        .collect(),
                     new_token: None,
                     error: Some(e.to_string()),
                     csrf_token,
