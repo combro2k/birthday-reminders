@@ -55,6 +55,18 @@ impl UserCommandService {
         Ok(())
     }
 
+    pub async fn update_date_format(&self, user_id: &UserId, date_format: &str) -> anyhow::Result<()> {
+        let update = UpdateUser {
+            date_format: Some(date_format.to_string()),
+            ..Default::default()
+        };
+        self.user_repo
+            .update(user_id, update)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to update date format: {}", e))?;
+        Ok(())
+    }
+
     pub async fn delete_user(&self, user_id: &UserId) -> anyhow::Result<()> {
         self.user_repo
             .delete(user_id)

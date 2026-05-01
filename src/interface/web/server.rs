@@ -116,7 +116,10 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
             post(notifications::delete_channel),
         )
         // Settings
-        .route("/settings/profile", get(settings::profile_page))
+        .route(
+            "/settings/profile",
+            get(settings::profile_page).post(settings::update_date_format),
+        )
         .route("/settings/password", post(settings::update_password))
         .route("/settings/reminders", post(settings::update_reminder_days))
         .route(

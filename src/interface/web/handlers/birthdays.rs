@@ -141,7 +141,7 @@ pub async fn create_birthday(
                     edit_name: form.name,
                     edit_date: form.birth_date,
                     edit_notes,
-                    error: Some("Invalid date format. Use YYYY-MM-DD.".to_string()),
+                    error: Some("Invalid date format.".to_string()),
                     csrf_token,
                 }
                 .to_string(),
@@ -224,7 +224,7 @@ pub async fn update_birthday(
                     edit_name: form.name,
                     edit_date: form.birth_date,
                     edit_notes: form.notes.unwrap_or_default(),
-                    error: Some("Invalid date format. Use YYYY-MM-DD.".to_string()),
+                    error: Some("Invalid date format.".to_string()),
                     csrf_token,
                 }
                 .to_string(),
