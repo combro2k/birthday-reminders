@@ -19,8 +19,8 @@ impl SqliteBirthdayRepo {
 
 #[derive(sqlx::FromRow)]
 struct BirthdayRow {
-    id: Uuid,
-    user_id: Uuid,
+    id: String,
+    user_id: String,
     name: String,
     birth_date: chrono::NaiveDate,
     phone_number: Option<String>,
@@ -36,8 +36,8 @@ struct BirthdayRow {
 impl From<BirthdayRow> for Birthday {
     fn from(row: BirthdayRow) -> Self {
         Birthday {
-            id: BirthdayId(row.id),
-            user_id: UserId(row.user_id),
+            id: BirthdayId(Uuid::parse_str(&row.id).expect("Invalid UUID in database")),
+            user_id: UserId(Uuid::parse_str(&row.user_id).expect("Invalid UUID in database")),
             name: row.name,
             birth_date: row.birth_date,
             phone_number: row.phone_number,
