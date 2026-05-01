@@ -9,11 +9,14 @@ VERSION = $(shell grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
 PACKAGE_NAME = birthday-reminders-$(VERSION)
 PACKAGE_DIR = target/package/$(PACKAGE_NAME)
 
-.PHONY: all build install uninstall clean package
+.PHONY: all build build-css install uninstall clean package
 
 all: build
 
-build:
+build-css:
+	npm run build:css
+
+build: build-css
 	cargo build --release
 
 install: build

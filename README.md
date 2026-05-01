@@ -16,6 +16,7 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 ## Prerequisites
 
 - **Rust** 1.85+ (edition 2024)
+- **Node.js** 20+ and **npm** (for Tailwind CSS build)
 - **PostgreSQL** 13+, **MySQL** 8.0+, or **SQLite** 3.35+
 - A running database instance (for PostgreSQL)
 
@@ -24,8 +25,12 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 ### 1. Build
 
 ```bash
+npm install
+npm run build:css
 cargo build --release
 ```
+
+You can also run `make build`, which now builds Tailwind CSS before compiling Rust.
 
 ### 2. Configure
 
@@ -51,6 +56,16 @@ cp config.yaml.example config.yaml
 ```
 
 The app will be available at `http://localhost:3000` by default.
+
+### PWA assets
+
+Android installability assets (icons and screenshots) are generated with:
+
+```bash
+python3 scripts/generate_pwa_assets.py
+```
+
+The generated files are written to `static/` and referenced by `static/manifest.json`.
 
 ## Configuration
 
