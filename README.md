@@ -146,15 +146,24 @@ If you started with SQLite and want to move to PostgreSQL:
 ```yaml
 server:
   listen: "0.0.0.0:3000"
-  base_url: "http://localhost:3000"
+  server_name: "birthdays.example.com"
+  scheme: "https"
+  # Optional override when the externally visible URL differs from scheme + server_name
+  # base_url: "https://birthdays.example.com/app"
   session_secret: "generate-a-random-string-at-least-32-chars"
   encryption_key: "generate-a-separate-key-for-encryption"  # required, generate with: openssl rand -base64 32
   static_dir: "static"  # path to static assets (CSS, JS, manifest)
+  # Optional: trust forwarded headers from these proxy IPs or CIDRs only
+  # trusted_proxies: ["127.0.0.1", "10.0.0.0/8"]
 ```
 
 > **Important:** Generate a strong random `session_secret` for production. It must be at least 32 characters.
 >
 > The `encryption_key` is used to encrypt notification channel secrets at rest (XChaCha20-Poly1305). Generate a dedicated key with: `openssl rand -base64 32`
+
+`scheme` + `server_name` define the public URL used for OIDC callbacks, generated links, and secure-cookie detection. Set `base_url` only when the public URL cannot be expressed as `scheme://server_name`, such as a reverse proxy that serves the app from a sub-path.
+
+When the app is behind a reverse proxy, add the proxy IPs or CIDRs to `trusted_proxies`. Forwarded headers from any other peer are ignored, so clients cannot spoof their rate-limit identity with `X-Forwarded-For`.
 
 ### Authentication
 
@@ -211,10 +220,12 @@ Birthday Reminders supports OpenID Connect for single sign-on. When configured, 
 The callback URL to configure in your provider is:
 
 ```
-{base_url}/auth/oidc/callback
+{resolved_public_url}/auth/oidc/callback
 ```
 
-For example: `http://localhost:3000/auth/oidc/callback`
+If `base_url` is set, it is used directly. Otherwise the app derives the callback URL from `scheme://server_name`.
+
+For example: `https://birthdays.example.com/auth/oidc/callback`
 
 ---
 
@@ -607,7 +618,9 @@ The following configuration fields have defaults and are optional unless marked 
 | Field | Default | Description |
 |-------|---------|-------------|
 | `database.max_connections` | `10` | Max DB connections |
+| `server.scheme` | `"http"` | Public URL scheme used with `server_name` |
 | `server.static_dir` | `/opt/birthday-reminders/static` | Path to static files |
+| `server.trusted_proxies` | `[]` | Proxy IPs/CIDRs allowed to supply forwarded client IP headers |
 | `auth.allow_registration` | `false` | Allow user self-registration |
 | `auth.oidc.enabled` | `false` | Enable OIDC authentication |
 | `auth.oidc.scopes` | `["openid", "profile", "email"]` | OIDC scopes |
@@ -619,5 +632,7 @@ The following configuration fields have defaults and are optional unless marked 
 | `logging.level` | `"info"` | Log level filter |
 
 All path defaults (such as `static_dir`) are now absolute by default, e.g. `/opt/birthday-reminders/static`.
+
+`server.base_url` is optional. When omitted, the app derives the public URL from `server.scheme://server.server_name`. `server.server_name` itself has no default and must be provided whenever `server.base_url` is not set.
 
 See [`config.yaml.example`](config.yaml.example) for a fully commented example with all defaults and required fields clearly marked.

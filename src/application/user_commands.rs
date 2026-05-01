@@ -274,10 +274,12 @@ impl UserCommandService {
                 .await?
                 .ok_or_else(|| anyhow::anyhow!("Invalid API token"))?;
 
-                sqlx::query("UPDATE api_tokens SET last_used_at = UTC_TIMESTAMP(6) WHERE token_hash = ?")
-                    .bind(&token_hash)
-                    .execute(pool)
-                    .await?;
+                sqlx::query(
+                    "UPDATE api_tokens SET last_used_at = UTC_TIMESTAMP(6) WHERE token_hash = ?",
+                )
+                .bind(&token_hash)
+                .execute(pool)
+                .await?;
 
                 let uuid = uuid::Uuid::parse_str(&user_id_str)?;
                 Ok(UserId(uuid))

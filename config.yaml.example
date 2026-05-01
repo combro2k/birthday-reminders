@@ -12,8 +12,12 @@ database:
 server:
   # Address and port to bind the HTTP server to [required]
   listen: "0.0.0.0:3000"
-  # Public URL used for generating links (e.g. in emails) [required]
-  base_url: "http://localhost:3000"
+  # Public host[:port] used to derive callback URLs and links when base_url is omitted [recommended]
+  server_name: "birthdays.example.com"
+  # Public scheme used with server_name (default: "http")
+  # scheme: "https"
+  # Optional full public URL override for reverse proxies, non-root mounts, or unusual ports
+  # base_url: "https://birthdays.example.com/app"
   # Secret key for signing session cookies (must be random, at least 32 chars in production) [required]
   session_secret: "change-me-to-a-random-string-in-production!"
   # Encryption key for notification channel secrets [required]
@@ -21,6 +25,10 @@ server:
   encryption_key: "generate-a-random-key-for-encryption-here"
   # Path to static files directory (default: "/opt/birthday-reminders/static")
   # static_dir: "/opt/birthday-reminders/static"
+  # Trust forwarded IP headers only from these proxy IPs or CIDR ranges (default: [])
+  # trusted_proxies:
+  #   - "127.0.0.1"
+  #   - "10.0.0.0/8"
   # Migrations are now embedded in the binary for security and reliability.
   # User and group to run the app as (required, can be 'root' if desired)
   run_as_user: "birthday-reminders"

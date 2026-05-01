@@ -117,17 +117,27 @@ async fn main() -> anyhow::Result<()> {
         // Initialize OIDC client if configured
         let oidc_client = if let Some(ref oidc_config) = config.auth.oidc {
             if oidc_config.enabled {
-                match OidcClient::new(oidc_config, &config.server.base_url).await {
-                    Ok(client) => {
-                        tracing::info!(
-                            "OIDC configured with provider: {}",
-                            oidc_config.provider_name
-                        );
-                        Some(Arc::new(client))
-                    }
+                match config.server.oidc_callback_url() {
+                    Ok(callback_url) => match OidcClient::new(oidc_config, &callback_url).await {
+                        Ok(client) => {
+                            tracing::info!(
+                                "OIDC configured with provider: {} ({})",
+                                oidc_config.provider_name,
+                                callback_url
+                            );
+                            Some(Arc::new(client))
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                "Failed to initialize OIDC: {}. Continuing without OIDC.",
+                                e
+                            );
+                            None
+                        }
+                    },
                     Err(e) => {
                         tracing::warn!(
-                            "Failed to initialize OIDC: {}. Continuing without OIDC.",
+                            "Failed to resolve OIDC callback URL: {}. Continuing without OIDC.",
                             e
                         );
                         None

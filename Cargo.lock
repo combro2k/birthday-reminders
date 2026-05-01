@@ -365,6 +365,7 @@ dependencies = [
  "chrono",
  "clap",
  "hex",
+ "ipnet",
  "lettre",
  "nix",
  "openidconnect",
