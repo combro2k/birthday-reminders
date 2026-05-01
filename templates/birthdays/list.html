@@ -33,10 +33,22 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Birth Date</th>
+                <th>
+                    <a href="/birthdays?sort=name{% if current_sort == "name" && !is_desc %}&desc=true{% endif %}" class="{% if current_sort == "name" %}active{% endif %}">
+                        Name {% if current_sort == "name" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="/birthdays?sort=age{% if current_sort == "age" && !is_desc %}&desc=true{% endif %}" class="{% if current_sort == "age" %}active{% endif %}">
+                        Birth Date {% if current_sort == "age" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
+                    </a>
+                </th>
                 <th>Age</th>
-                <th>Days Until Next</th>
+                <th>
+                    <a href="/birthdays?sort=date{% if current_sort == "date" && !is_desc %}&desc=true{% endif %}" class="{% if current_sort == "date" %}active{% endif %}">
+                        Days Until Next {% if current_sort == "date" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
+                    </a>
+                </th>
                 <th>Notes</th>
                 <th>Actions</th>
             </tr>

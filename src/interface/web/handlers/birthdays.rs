@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use axum::{
     Form,
-    extract::{Extension, Path, State},
+    extract::{Extension, Path, Query, State},
     response::{Html, IntoResponse, Redirect},
 };
+use chrono::Local;
 use serde::Deserialize;
 use tower_sessions::Session;
 
@@ -40,17 +41,47 @@ pub async fn dashboard(
     Html(template.to_string())
 }
 
+#[derive(Deserialize)]
+pub struct ListQuery {
+    pub sort: Option<String>,
+    pub desc: Option<bool>,
+}
+
 pub async fn list_birthdays(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
     session: Session,
+    Query(query): Query<ListQuery>,
 ) -> impl IntoResponse {
     let csrf_token = get_csrf_token(&session).await;
-    let birthdays = state
+    let mut birthdays = state
         .birthday_query_service
         .list_all(&user.id)
         .await
         .unwrap_or_default();
+
+    let current_sort = query.sort.as_deref().unwrap_or("name");
+    let is_desc = query.desc.unwrap_or(false);
+    let today = Local::now().date_naive();
+
+    birthdays.sort_by(|a, b| {
+        let res = match current_sort {
+            "date" => a.days_until_next_from(today)
+                .cmp(&b.days_until_next_from(today))
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+            "age" => a.birth_date
+                .cmp(&b.birth_date)
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+            _ => a.name.to_lowercase()
+                .cmp(&b.name.to_lowercase())
+                .then_with(|| {
+                    a.days_until_next_from(today)
+                        .cmp(&b.days_until_next_from(today))
+                }),
+        };
+
+        if is_desc { res.reverse() } else { res }
+    });
 
     let birthday_views = birthdays
         .into_iter()
@@ -60,6 +91,8 @@ pub async fn list_birthdays(
     let template = BirthdayListTemplate {
         user,
         birthdays: birthday_views,
+        current_sort: current_sort.to_string(),
+        is_desc,
         csrf_token,
     };
     Html(template.to_string())
@@ -195,7 +228,8 @@ pub async fn update_birthday(
                     csrf_token,
                 }
                 .to_string(),
-            ).into_response();
+            )
+            .into_response();
         }
     };
 
@@ -203,7 +237,13 @@ pub async fn update_birthday(
 
     match state
         .birthday_command_service
-        .update(id, &user.id, Some(form.name.clone()), birth_date, Some(notes))
+        .update(
+            id,
+            &user.id,
+            Some(form.name.clone()),
+            birth_date,
+            Some(notes),
+        )
         .await
     {
         Ok(_) => Redirect::to("/birthdays").into_response(),
