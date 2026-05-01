@@ -18,7 +18,7 @@ impl SqliteUserRepo {
 
 #[derive(sqlx::FromRow)]
 struct UserRow {
-    id: Uuid,
+    id: String,
     username: String,
     email: String,
     password_hash: Option<String>,
@@ -33,7 +33,7 @@ struct UserRow {
 impl From<UserRow> for User {
     fn from(row: UserRow) -> Self {
         User {
-            id: UserId(row.id),
+            id: UserId(Uuid::parse_str(&row.id).expect("Invalid UUID in database")),
             username: row.username,
             email: row.email,
             password_hash: row.password_hash,
