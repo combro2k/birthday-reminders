@@ -108,6 +108,11 @@ pub async fn new_birthday_form(
         birthday: None,
         edit_name: String::new(),
         edit_date: String::new(),
+        edit_phone_number: String::new(),
+        edit_address: String::new(),
+        edit_postal_code: String::new(),
+        edit_city: String::new(),
+        edit_country: String::new(),
         edit_notes: String::new(),
         error: None,
         csrf_token,
@@ -119,6 +124,11 @@ pub async fn new_birthday_form(
 pub struct BirthdayForm {
     pub name: String,
     pub birth_date: String,
+    pub phone_number: Option<String>,
+    pub address: Option<String>,
+    pub postal_code: Option<String>,
+    pub city: Option<String>,
+    pub country: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -140,6 +150,11 @@ pub async fn create_birthday(
                     birthday: None,
                     edit_name: form.name,
                     edit_date: form.birth_date,
+                    edit_phone_number: form.phone_number.unwrap_or_default(),
+                    edit_address: form.address.unwrap_or_default(),
+                    edit_postal_code: form.postal_code.unwrap_or_default(),
+                    edit_city: form.city.unwrap_or_default(),
+                    edit_country: form.country.unwrap_or_default(),
                     edit_notes,
                     error: Some("Invalid date format.".to_string()),
                     csrf_token,
@@ -150,11 +165,26 @@ pub async fn create_birthday(
         }
     };
 
+    let phone_number = form.phone_number.clone().filter(|n| !n.trim().is_empty());
+    let address = form.address.clone().filter(|n| !n.trim().is_empty());
+    let postal_code = form.postal_code.clone().filter(|n| !n.trim().is_empty());
+    let city = form.city.clone().filter(|n| !n.trim().is_empty());
+    let country = form.country.clone().filter(|n| !n.trim().is_empty());
     let notes = form.notes.clone().filter(|n| !n.trim().is_empty());
 
     match state
         .birthday_command_service
-        .add(&user.id, &form.name, birth_date, notes)
+        .add(
+            &user.id,
+            &form.name,
+            birth_date,
+            phone_number,
+            address,
+            postal_code,
+            city,
+            country,
+            notes,
+        )
         .await
     {
         Ok(_) => Redirect::to("/birthdays").into_response(),
@@ -164,6 +194,11 @@ pub async fn create_birthday(
                 birthday: None,
                 edit_name: form.name,
                 edit_date: form.birth_date,
+                edit_phone_number: form.phone_number.unwrap_or_default(),
+                edit_address: form.address.unwrap_or_default(),
+                edit_postal_code: form.postal_code.unwrap_or_default(),
+                edit_city: form.city.unwrap_or_default(),
+                edit_country: form.country.unwrap_or_default(),
                 edit_notes: form.notes.unwrap_or_default(),
                 error: Some(e.to_string()),
                 csrf_token,
@@ -187,6 +222,11 @@ pub async fn edit_birthday_form(
             let template = BirthdayFormTemplate {
                 edit_name: bv.name.clone(),
                 edit_date: bv.birth_date.format("%Y-%m-%d").to_string(),
+                edit_phone_number: bv.phone_number.clone().unwrap_or_default(),
+                edit_address: bv.address.clone().unwrap_or_default(),
+                edit_postal_code: bv.postal_code.clone().unwrap_or_default(),
+                edit_city: bv.city.clone().unwrap_or_default(),
+                edit_country: bv.country.clone().unwrap_or_default(),
                 edit_notes: bv.notes.clone().unwrap_or_default(),
                 user,
                 birthday: Some(bv),
@@ -223,6 +263,11 @@ pub async fn update_birthday(
                     birthday,
                     edit_name: form.name,
                     edit_date: form.birth_date,
+                    edit_phone_number: form.phone_number.unwrap_or_default(),
+                    edit_address: form.address.unwrap_or_default(),
+                    edit_postal_code: form.postal_code.unwrap_or_default(),
+                    edit_city: form.city.unwrap_or_default(),
+                    edit_country: form.country.unwrap_or_default(),
                     edit_notes: form.notes.unwrap_or_default(),
                     error: Some("Invalid date format.".to_string()),
                     csrf_token,
@@ -233,6 +278,11 @@ pub async fn update_birthday(
         }
     };
 
+    let phone_number = form.phone_number.clone().filter(|n| !n.trim().is_empty());
+    let address = form.address.clone().filter(|n| !n.trim().is_empty());
+    let postal_code = form.postal_code.clone().filter(|n| !n.trim().is_empty());
+    let city = form.city.clone().filter(|n| !n.trim().is_empty());
+    let country = form.country.clone().filter(|n| !n.trim().is_empty());
     let notes = form.notes.clone().filter(|n| !n.trim().is_empty());
 
     match state
@@ -242,6 +292,11 @@ pub async fn update_birthday(
             &user.id,
             Some(form.name.clone()),
             birth_date,
+            Some(phone_number),
+            Some(address),
+            Some(postal_code),
+            Some(city),
+            Some(country),
             Some(notes),
         )
         .await
@@ -256,6 +311,11 @@ pub async fn update_birthday(
                 .map(|b| BirthdayView::from_birthday(b, &user.date_format));
             let edit_name = form.name;
             let edit_date = form.birth_date;
+            let edit_phone_number = form.phone_number.unwrap_or_default();
+            let edit_address = form.address.unwrap_or_default();
+            let edit_postal_code = form.postal_code.unwrap_or_default();
+            let edit_city = form.city.unwrap_or_default();
+            let edit_country = form.country.unwrap_or_default();
             let edit_notes = form.notes.unwrap_or_default();
 
             Html(
@@ -264,6 +324,11 @@ pub async fn update_birthday(
                     birthday,
                     edit_name,
                     edit_date,
+                    edit_phone_number,
+                    edit_address,
+                    edit_postal_code,
+                    edit_city,
+                    edit_country,
                     edit_notes,
                     error: Some(e.to_string()),
                     csrf_token,

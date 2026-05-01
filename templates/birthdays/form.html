@@ -43,6 +43,31 @@
                    value="{{ edit_date }}">
         </div>
         <div class="form-group">
+            <label for="phone_number">Phone Number (optional)</label>
+            <input type="tel" id="phone_number" name="phone_number"
+                   value="{{ edit_phone_number }}">
+        </div>
+        <div class="form-group">
+            <label for="address">Address (optional)</label>
+            <input type="text" id="address" name="address"
+                   value="{{ edit_address }}">
+        </div>
+        <div class="form-group">
+            <label for="postal_code">Postal Code (optional)</label>
+            <input type="text" id="postal_code" name="postal_code"
+                   value="{{ edit_postal_code }}">
+        </div>
+        <div class="form-group">
+            <label for="city">City (optional)</label>
+            <input type="text" id="city" name="city"
+                   value="{{ edit_city }}">
+        </div>
+        <div class="form-group">
+            <label for="country">Country (optional)</label>
+            <input type="text" id="country" name="country"
+                   value="{{ edit_country }}">
+        </div>
+        <div class="form-group">
             <label for="notes">Notes (optional)</label>
             <textarea id="notes" name="notes" rows="3">{{ edit_notes }}</textarea>
         </div>

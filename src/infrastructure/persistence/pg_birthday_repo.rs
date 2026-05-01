@@ -22,6 +22,11 @@ struct BirthdayRow {
     user_id: Uuid,
     name: String,
     birth_date: chrono::NaiveDate,
+    phone_number: Option<String>,
+    address: Option<String>,
+    postal_code: Option<String>,
+    city: Option<String>,
+    country: Option<String>,
     notes: Option<String>,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
@@ -34,6 +39,11 @@ impl From<BirthdayRow> for Birthday {
             user_id: UserId(row.user_id),
             name: row.name,
             birth_date: row.birth_date,
+            phone_number: row.phone_number,
+            address: row.address,
+            postal_code: row.postal_code,
+            city: row.city,
+            country: row.country,
             notes: row.notes,
             created_at: row.created_at,
             updated_at: row.updated_at,
@@ -46,14 +56,19 @@ impl BirthdayRepository for PgBirthdayRepo {
     async fn create(&self, new: NewBirthday) -> Result<Birthday, RepositoryError> {
         let id = Uuid::new_v4();
         let row = sqlx::query_as::<_, BirthdayRow>(
-            "INSERT INTO birthdays (id, user_id, name, birth_date, notes)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING id, user_id, name, birth_date, notes, created_at, updated_at",
+              "INSERT INTO birthdays (id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               RETURNING id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at",
         )
         .bind(id)
         .bind(new.user_id.0)
         .bind(&new.name)
         .bind(new.birth_date)
+           .bind(&new.phone_number)
+           .bind(&new.address)
+           .bind(&new.postal_code)
+           .bind(&new.city)
+           .bind(&new.country)
         .bind(&new.notes)
         .fetch_one(&self.pool)
         .await
@@ -63,7 +78,7 @@ impl BirthdayRepository for PgBirthdayRepo {
 
     async fn find_by_id(&self, id: &BirthdayId) -> Result<Birthday, RepositoryError> {
         let row = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
+            "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays WHERE id = $1",
         )
         .bind(id.0)
@@ -76,7 +91,7 @@ impl BirthdayRepository for PgBirthdayRepo {
 
     async fn find_all_for_user(&self, user_id: &UserId) -> Result<Vec<Birthday>, RepositoryError> {
         let rows = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
+            "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays WHERE user_id = $1 ORDER BY birth_date",
         )
         .bind(user_id.0)
@@ -95,18 +110,43 @@ impl BirthdayRepository for PgBirthdayRepo {
 
         let name = update.name.unwrap_or(current.name);
         let birth_date = update.birth_date.unwrap_or(current.birth_date);
+        let phone_number = match update.phone_number {
+            Some(n) => n,
+            None => current.phone_number,
+        };
+        let address = match update.address {
+            Some(a) => a,
+            None => current.address,
+        };
+        let postal_code = match update.postal_code {
+            Some(p) => p,
+            None => current.postal_code,
+        };
+        let city = match update.city {
+            Some(c) => c,
+            None => current.city,
+        };
+        let country = match update.country {
+            Some(c) => c,
+            None => current.country,
+        };
         let notes = match update.notes {
             Some(n) => n,
             None => current.notes,
         };
 
         let row = sqlx::query_as::<_, BirthdayRow>(
-            "UPDATE birthdays SET name = $1, birth_date = $2, notes = $3, updated_at = NOW()
-             WHERE id = $4
-             RETURNING id, user_id, name, birth_date, notes, created_at, updated_at",
+            "UPDATE birthdays SET name = $1, birth_date = $2, phone_number = $3, address = $4, postal_code = $5, city = $6, country = $7, notes = $8, updated_at = NOW()
+             WHERE id = $9
+             RETURNING id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at",
         )
         .bind(&name)
         .bind(birth_date)
+        .bind(&phone_number)
+        .bind(&address)
+        .bind(&postal_code)
+        .bind(&city)
+        .bind(&country)
         .bind(&notes)
         .bind(id.0)
         .fetch_one(&self.pool)
@@ -134,7 +174,7 @@ impl BirthdayRepository for PgBirthdayRepo {
     ) -> Result<Vec<Birthday>, RepositoryError> {
         // Use SQL to compute next birthday occurrence and filter within range
         let rows = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
+                        "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays
              WHERE user_id = $1
                AND (

@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS birthdays (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     birth_date DATE NOT NULL,
+    phone_number TEXT,
+    address TEXT,
+    postal_code TEXT,
+    city TEXT,
+    country TEXT,
     notes TEXT,
     created_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))

@@ -53,6 +53,8 @@
                         Days Until Next {% if current_sort == "date" %}{% if is_desc %}↑{% else %}↓{% endif %}{% endif %}
                     </a>
                 </th>
+                <th>Contact</th>
+                <th>Location</th>
                 <th>Notes</th>
                 <th>Actions</th>
             </tr>
@@ -67,6 +69,17 @@
                     {% if b.days_until == 0 %}🎉 Today!
                     {% elif b.days_until == 1 %}Tomorrow
                     {% else %}{{ b.days_until }} days{% endif %}
+                </td>
+                <td>{{ b.phone_number.as_deref().unwrap_or("-") }}</td>
+                <td>
+                    {% if b.address.is_some() || b.postal_code.is_some() || b.city.is_some() || b.country.is_some() %}
+                        {{ b.address.as_deref().unwrap_or("") }}
+                        {% if b.address.is_some() && (b.postal_code.is_some() || b.city.is_some()) %}, {% endif %}
+                        {{ b.postal_code.as_deref().unwrap_or("") }}{% if b.postal_code.is_some() && b.city.is_some() %} {% endif %}{{ b.city.as_deref().unwrap_or("") }}
+                        {% if b.country.is_some() %}{% if b.address.is_some() || b.postal_code.is_some() || b.city.is_some() %}, {% endif %}{{ b.country.as_deref().unwrap_or("") }}{% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
                 <td>{{ b.notes.as_deref().unwrap_or("-") }}</td>
                 <td class="actions">

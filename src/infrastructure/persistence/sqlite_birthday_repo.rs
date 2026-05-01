@@ -23,6 +23,11 @@ struct BirthdayRow {
     user_id: Uuid,
     name: String,
     birth_date: chrono::NaiveDate,
+    phone_number: Option<String>,
+    address: Option<String>,
+    postal_code: Option<String>,
+    city: Option<String>,
+    country: Option<String>,
     notes: Option<String>,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
@@ -35,6 +40,11 @@ impl From<BirthdayRow> for Birthday {
             user_id: UserId(row.user_id),
             name: row.name,
             birth_date: row.birth_date,
+            phone_number: row.phone_number,
+            address: row.address,
+            postal_code: row.postal_code,
+            city: row.city,
+            country: row.country,
             notes: row.notes,
             created_at: row.created_at,
             updated_at: row.updated_at,
@@ -49,13 +59,18 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         let now = chrono::Utc::now();
 
         sqlx::query(
-            "INSERT INTO birthdays (id, user_id, name, birth_date, notes, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+              "INSERT INTO birthdays (id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id)
         .bind(new.user_id.0)
         .bind(&new.name)
         .bind(new.birth_date)
+           .bind(&new.phone_number)
+           .bind(&new.address)
+           .bind(&new.postal_code)
+           .bind(&new.city)
+           .bind(&new.country)
         .bind(&new.notes)
         .bind(&now)
         .bind(&now)
@@ -68,6 +83,11 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             user_id: new.user_id,
             name: new.name,
             birth_date: new.birth_date,
+            phone_number: new.phone_number,
+            address: new.address,
+            postal_code: new.postal_code,
+            city: new.city,
+            country: new.country,
             notes: new.notes,
             created_at: now,
             updated_at: now,
@@ -76,7 +96,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
 
     async fn find_by_id(&self, id: &BirthdayId) -> Result<Birthday, RepositoryError> {
         let row = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at
+            "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays WHERE id = ?",
         )
         .bind(id.0)
@@ -89,7 +109,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
 
     async fn find_all_for_user(&self, user_id: &UserId) -> Result<Vec<Birthday>, RepositoryError> {
         let rows = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, notes, created_at, updated_at 
+            "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at 
              FROM birthdays 
              WHERE user_id = ? 
              ORDER BY strftime('%m', birth_date), strftime('%d', birth_date)",
@@ -110,6 +130,26 @@ impl BirthdayRepository for SqliteBirthdayRepo {
 
         let name = update.name.unwrap_or(current.name);
         let birth_date = update.birth_date.unwrap_or(current.birth_date);
+        let phone_number = match update.phone_number {
+            Some(n) => n,
+            None => current.phone_number,
+        };
+        let address = match update.address {
+            Some(a) => a,
+            None => current.address,
+        };
+        let postal_code = match update.postal_code {
+            Some(p) => p,
+            None => current.postal_code,
+        };
+        let city = match update.city {
+            Some(c) => c,
+            None => current.city,
+        };
+        let country = match update.country {
+            Some(c) => c,
+            None => current.country,
+        };
         let notes = match update.notes {
             Some(n) => n,
             None => current.notes,
@@ -117,10 +157,15 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         let now = chrono::Utc::now();
 
         sqlx::query(
-            "UPDATE birthdays SET name = ?, birth_date = ?, notes = ?, updated_at = ? WHERE id = ?",
+            "UPDATE birthdays SET name = ?, birth_date = ?, phone_number = ?, address = ?, postal_code = ?, city = ?, country = ?, notes = ?, updated_at = ? WHERE id = ?",
         )
         .bind(&name)
         .bind(birth_date)
+        .bind(&phone_number)
+        .bind(&address)
+        .bind(&postal_code)
+        .bind(&city)
+        .bind(&country)
         .bind(&notes)
         .bind(&now)
         .bind(id.0)
@@ -133,6 +178,11 @@ impl BirthdayRepository for SqliteBirthdayRepo {
             user_id: current.user_id,
             name,
             birth_date,
+            phone_number,
+            address,
+            postal_code,
+            city,
+            country,
             notes,
             created_at: current.created_at,
             updated_at: now,

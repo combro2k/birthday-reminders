@@ -4,8 +4,8 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 
 ## Features
 
-- **Web UI** — manage birthdays, notification channels, and user settings
-- **CLI** — add/list/remove birthdays and manage users from the terminal
+- **Web UI** — manage birthdays, contact details, notification channels, and user settings
+- **CLI** — add/list/remove birthdays with contact details and manage users from the terminal
 - **Notifications** — Email, Gotify, Telegram, Signal, and WhatsApp
 - **Scheduled reminders** — configurable cron schedule with customizable lead days
 - **Authentication** — local accounts with Argon2 password hashing, or OIDC (Keycloak, Authentik, Zitadel, and others)
@@ -355,8 +355,27 @@ birthday-reminders -c config.yaml serve --port 8080
 # Add a birthday
 birthday-reminders add "Jane Doe" 1990-05-15 --token your-api-token
 
+# Add a birthday with contact details
+birthday-reminders add "Jane Doe" 1990-05-15 \
+  --phone-number "+31 6 12345678" \
+  --address "Keizersgracht 1" \
+  --postal-code "1015 CC" \
+  --city "Amsterdam" \
+  --country "Netherlands" \
+  --token your-api-token
+
 # Add a birthday with notes
 birthday-reminders add "John Smith" 1985-12-25 --notes "Likes chocolate" --token your-api-token
+
+# Add a birthday with both notes and address data
+birthday-reminders add "John Smith" 1985-12-25 \
+  --phone-number "+1 555 123 4567" \
+  --address "123 Main St" \
+  --postal-code "90210" \
+  --city "Beverly Hills" \
+  --country "USA" \
+  --notes "Likes chocolate" \
+  --token your-api-token
 
 # List upcoming birthdays in the next 14 days (default: 30)
 birthday-reminders upcoming --days 14 --token your-api-token
@@ -364,6 +383,16 @@ birthday-reminders upcoming --days 14 --token your-api-token
 # Manually trigger reminders (useful for testing)
 birthday-reminders check-reminders
 ```
+
+The `add` command accepts these optional contact fields:
+
+- `--phone-number`
+- `--address`
+- `--postal-code`
+- `--city`
+- `--country`
+
+These same fields are also available in the web form when creating or editing a birthday.
 
 ## Notification Channels
 
