@@ -121,14 +121,16 @@ async fn test_sqlite_notification_channel_fk_constraint() -> anyhow::Result<()> 
 
     // Test 3: Verify the channel was inserted (just verify count)
     println!("🔍 Test 3: Verifying notification channel...");
-    let count: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM notification_channels WHERE channel_type = 'email'"
-    )
-    .fetch_one(&pool)
-    .await?;
+    let count: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM notification_channels WHERE channel_type = 'email'")
+            .fetch_one(&pool)
+            .await?;
 
     if count.0 > 0 {
-        println!("   ✅ Notification channel found in database (count: {})\n", count.0);
+        println!(
+            "   ✅ Notification channel found in database (count: {})\n",
+            count.0
+        );
     } else {
         return Err(anyhow::anyhow!("Channel not found in database"));
     }
@@ -160,11 +162,10 @@ async fn test_sqlite_notification_channel_fk_constraint() -> anyhow::Result<()> 
 
     // Test 5: Verify update worked (just verify the value changed)
     println!("✨ Test 5: Verifying update...");
-    let updated_channel: (i32,) = sqlx::query_as(
-        "SELECT enabled FROM notification_channels WHERE channel_type = 'email'"
-    )
-    .fetch_one(&pool)
-    .await?;
+    let updated_channel: (i32,) =
+        sqlx::query_as("SELECT enabled FROM notification_channels WHERE channel_type = 'email'")
+            .fetch_one(&pool)
+            .await?;
 
     if updated_channel.0 == 0 {
         println!("   ✅ Channel was correctly updated (enabled = false)\n");

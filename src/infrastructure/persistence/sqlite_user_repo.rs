@@ -260,10 +260,10 @@ impl UserRepository for SqliteUserRepo {
                     ELSE id
                 END = ?",
         )
-            .bind(id.0.to_string())
-            .execute(&self.pool)
-            .await
-            .map_err(|e| RepositoryError::Database(e.to_string()))?;
+        .bind(id.0.to_string())
+        .execute(&self.pool)
+        .await
+        .map_err(|e| RepositoryError::Database(e.to_string()))?;
         if result.rows_affected() == 0 {
             return Err(RepositoryError::NotFound);
         }

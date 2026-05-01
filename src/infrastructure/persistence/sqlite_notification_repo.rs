@@ -34,7 +34,10 @@ impl TryFrom<ChannelRow> for NotificationChannelRecord {
     fn try_from(row: ChannelRow) -> Result<Self, Self::Error> {
         Ok(NotificationChannelRecord {
             id: Uuid::parse_str(&row.id).map_err(|e| RepositoryError::Database(e.to_string()))?,
-            user_id: UserId(Uuid::parse_str(&row.user_id).map_err(|e| RepositoryError::Database(e.to_string()))?),
+            user_id: UserId(
+                Uuid::parse_str(&row.user_id)
+                    .map_err(|e| RepositoryError::Database(e.to_string()))?,
+            ),
             channel_type: row.channel_type,
             enabled: row.enabled,
             config: serde_json::from_str(&row.config)

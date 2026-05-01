@@ -123,12 +123,13 @@ impl OidcClient {
         let nonce = openidconnect::Nonce::new(flow_state.nonce.clone());
         let allow_dynamic_additional_audiences = self.allow_dynamic_additional_audiences;
         let trusted_audiences = self.trusted_audiences.clone();
-        let id_token_verifier = client.id_token_verifier().set_other_audience_verifier_fn(
-            move |aud| {
-                allow_dynamic_additional_audiences
-                    || trusted_audiences.iter().any(|allowed| allowed == &**aud)
-            },
-        );
+        let id_token_verifier =
+            client
+                .id_token_verifier()
+                .set_other_audience_verifier_fn(move |aud| {
+                    allow_dynamic_additional_audiences
+                        || trusted_audiences.iter().any(|allowed| allowed == &**aud)
+                });
         let claims = id_token
             .claims(&id_token_verifier, &nonce)
             .map_err(|e| anyhow::anyhow!("Failed to verify id_token: {}", e))?;
