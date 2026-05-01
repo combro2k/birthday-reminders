@@ -1,5 +1,5 @@
-ALTER TABLE birthdays ADD COLUMN IF NOT EXISTS phone_number TEXT;
-ALTER TABLE birthdays ADD COLUMN IF NOT EXISTS address TEXT;
-ALTER TABLE birthdays ADD COLUMN IF NOT EXISTS postal_code TEXT;
-ALTER TABLE birthdays ADD COLUMN IF NOT EXISTS city TEXT;
-ALTER TABLE birthdays ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE birthdays ADD COLUMN phone_number TEXT;
+ALTER TABLE birthdays ADD COLUMN address TEXT;
+ALTER TABLE birthdays ADD COLUMN postal_code TEXT;
+ALTER TABLE birthdays ADD COLUMN city TEXT;
+ALTER TABLE birthdays ADD COLUMN country TEXT;
