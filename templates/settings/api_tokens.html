@@ -59,10 +59,10 @@
         <tbody>
             {% for t in tokens %}
             <tr>
-                <td>{{ t.name }}</td>
-                <td>{{ t.created_at }}</td>
-                <td>{{ t.last_used_at }}</td>
-                <td>
+                <td data-label="Name">{{ t.name }}</td>
+                <td data-label="Created">{{ t.created_at }}</td>
+                <td data-label="Last Used">{{ t.last_used_at }}</td>
+                <td data-label="Actions" class="actions">
                     <form method="POST" action="/settings/api-tokens/{{ t.id }}/revoke"
                           onsubmit="return confirm('Revoke token {{ t.name }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

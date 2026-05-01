@@ -73,12 +73,12 @@
         <tbody>
             {% for u in users %}
             <tr>
-                <td>{{ u.username }}</td>
-                <td>{{ u.email }}</td>
-                <td>{{ u.role }}</td>
-                <td>{{ u.auth_method }}</td>
-                <td>{{ u.created_at }}</td>
-                <td>
+                <td data-label="Username">{{ u.username }}</td>
+                <td data-label="Email">{{ u.email }}</td>
+                <td data-label="Role">{{ u.role }}</td>
+                <td data-label="Auth">{{ u.auth_method }}</td>
+                <td data-label="Created">{{ u.created_at }}</td>
+                <td data-label="Actions" class="actions">
                     {% if u.id != user.id.0 %}
                     <form method="POST" action="/admin/users/{{ u.id }}/delete" class="inline"
                           onsubmit="return confirm('Delete user {{ u.username }}?')">
