@@ -15,6 +15,7 @@ pub struct OidcClient {
     redirect_url: RedirectUrl,
     http_client: reqwest::Client,
     scopes: Vec<String>,
+    trusted_audiences: Vec<String>,
 }
 
 /// Data stored in session during OIDC flow
@@ -53,6 +54,7 @@ impl OidcClient {
             redirect_url,
             http_client,
             scopes: config.scopes.clone(),
+            trusted_audiences: config.trusted_audiences.clone(),
         })
     }
 
@@ -117,7 +119,10 @@ impl OidcClient {
             .ok_or_else(|| anyhow::anyhow!("No id_token in response"))?;
 
         let nonce = openidconnect::Nonce::new(flow_state.nonce.clone());
-        let id_token_verifier = client.id_token_verifier();
+        let trusted_audiences = self.trusted_audiences.clone();
+        let id_token_verifier = client.id_token_verifier().set_other_audience_verifier_fn(
+            move |aud| trusted_audiences.iter().any(|allowed| allowed == &**aud),
+        );
         let claims = id_token
             .claims(&id_token_verifier, &nonce)
             .map_err(|e| anyhow::anyhow!("Failed to verify id_token: {}", e))?;
