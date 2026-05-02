@@ -44,6 +44,9 @@
             <div class="card-body">
                 <p>{{ b.birth_date_str }}</p>
                 <p>Turning <strong>{{ b.turning_age }}</strong></p>
+                {% if let Some(email) = b.email %}
+                <p>Email: {{ email }}</p>
+                {% endif %}
                 {% if let Some(phone_number) = b.phone_number %}
                 <p>Phone: {{ phone_number }}</p>
                 {% endif %}

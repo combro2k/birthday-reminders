@@ -112,6 +112,7 @@ pub async fn new_birthday_form(
         birthday: None,
         edit_name: String::new(),
         edit_date: String::new(),
+        edit_email: String::new(),
         edit_phone_number: String::new(),
         edit_address: String::new(),
         edit_postal_code: String::new(),
@@ -128,6 +129,7 @@ pub async fn new_birthday_form(
 pub struct BirthdayForm {
     pub name: String,
     pub birth_date: String,
+    pub email: Option<String>,
     pub phone_number: Option<String>,
     pub address: Option<String>,
     pub postal_code: Option<String>,
@@ -154,6 +156,7 @@ pub async fn create_birthday(
                     birthday: None,
                     edit_name: form.name,
                     edit_date: form.birth_date,
+                    edit_email: form.email.unwrap_or_default(),
                     edit_phone_number: form.phone_number.unwrap_or_default(),
                     edit_address: form.address.unwrap_or_default(),
                     edit_postal_code: form.postal_code.unwrap_or_default(),
@@ -169,6 +172,7 @@ pub async fn create_birthday(
         }
     };
 
+    let email = form.email.clone().filter(|n| !n.trim().is_empty());
     let phone_number = form.phone_number.clone().filter(|n| !n.trim().is_empty());
     let address = form.address.clone().filter(|n| !n.trim().is_empty());
     let postal_code = form.postal_code.clone().filter(|n| !n.trim().is_empty());
@@ -182,6 +186,7 @@ pub async fn create_birthday(
             &user.id,
             &form.name,
             birth_date,
+            email,
             phone_number,
             address,
             postal_code,
@@ -198,6 +203,7 @@ pub async fn create_birthday(
                 birthday: None,
                 edit_name: form.name,
                 edit_date: form.birth_date,
+                edit_email: form.email.unwrap_or_default(),
                 edit_phone_number: form.phone_number.unwrap_or_default(),
                 edit_address: form.address.unwrap_or_default(),
                 edit_postal_code: form.postal_code.unwrap_or_default(),
@@ -226,6 +232,7 @@ pub async fn edit_birthday_form(
             let template = BirthdayFormTemplate {
                 edit_name: bv.name.clone(),
                 edit_date: bv.birth_date.format("%Y-%m-%d").to_string(),
+                edit_email: bv.email.clone().unwrap_or_default(),
                 edit_phone_number: bv.phone_number.clone().unwrap_or_default(),
                 edit_address: bv.address.clone().unwrap_or_default(),
                 edit_postal_code: bv.postal_code.clone().unwrap_or_default(),
@@ -267,6 +274,7 @@ pub async fn update_birthday(
                     birthday,
                     edit_name: form.name,
                     edit_date: form.birth_date,
+                    edit_email: form.email.unwrap_or_default(),
                     edit_phone_number: form.phone_number.unwrap_or_default(),
                     edit_address: form.address.unwrap_or_default(),
                     edit_postal_code: form.postal_code.unwrap_or_default(),
@@ -282,6 +290,7 @@ pub async fn update_birthday(
         }
     };
 
+    let email = form.email.clone().filter(|n| !n.trim().is_empty());
     let phone_number = form.phone_number.clone().filter(|n| !n.trim().is_empty());
     let address = form.address.clone().filter(|n| !n.trim().is_empty());
     let postal_code = form.postal_code.clone().filter(|n| !n.trim().is_empty());
@@ -296,6 +305,7 @@ pub async fn update_birthday(
             &user.id,
             Some(form.name.clone()),
             birth_date,
+            Some(email),
             Some(phone_number),
             Some(address),
             Some(postal_code),
@@ -315,6 +325,7 @@ pub async fn update_birthday(
                 .map(|b| BirthdayView::from_birthday(b, &user.date_format));
             let edit_name = form.name;
             let edit_date = form.birth_date;
+            let edit_email = form.email.unwrap_or_default();
             let edit_phone_number = form.phone_number.unwrap_or_default();
             let edit_address = form.address.unwrap_or_default();
             let edit_postal_code = form.postal_code.unwrap_or_default();
@@ -328,6 +339,7 @@ pub async fn update_birthday(
                     birthday,
                     edit_name,
                     edit_date,
+                    edit_email,
                     edit_phone_number,
                     edit_address,
                     edit_postal_code,

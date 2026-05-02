@@ -23,6 +23,7 @@ struct BirthdayRow {
     user_id: String,
     name: String,
     birth_date: chrono::NaiveDate,
+    email: Option<String>,
     phone_number: Option<String>,
     address: Option<String>,
     postal_code: Option<String>,
@@ -47,6 +48,7 @@ impl TryFrom<BirthdayRow> for Birthday {
             ),
             name: row.name,
             birth_date: row.birth_date,
+            email: row.email,
             phone_number: row.phone_number,
             address: row.address,
             postal_code: row.postal_code,
@@ -66,13 +68,14 @@ impl BirthdayRepository for MysqlBirthdayRepo {
         let now = chrono::Utc::now().naive_utc();
 
         sqlx::query(
-            "INSERT INTO birthdays (id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO birthdays (id, user_id, name, birth_date, email, phone_number, address, postal_code, city, country, notes, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id.to_string())
         .bind(new.user_id.0.to_string())
         .bind(&new.name)
         .bind(new.birth_date)
+        .bind(&new.email)
         .bind(&new.phone_number)
         .bind(&new.address)
         .bind(&new.postal_code)
@@ -90,6 +93,7 @@ impl BirthdayRepository for MysqlBirthdayRepo {
             user_id: new.user_id,
             name: new.name,
             birth_date: new.birth_date,
+            email: new.email,
             phone_number: new.phone_number,
             address: new.address,
             postal_code: new.postal_code,
@@ -103,7 +107,7 @@ impl BirthdayRepository for MysqlBirthdayRepo {
 
     async fn find_by_id(&self, id: &BirthdayId) -> Result<Birthday, RepositoryError> {
         let row = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
+            "SELECT id, user_id, name, birth_date, email, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays WHERE id = ?",
         )
         .bind(id.0.to_string())
@@ -117,7 +121,7 @@ impl BirthdayRepository for MysqlBirthdayRepo {
 
     async fn find_all_for_user(&self, user_id: &UserId) -> Result<Vec<Birthday>, RepositoryError> {
         let rows = sqlx::query_as::<_, BirthdayRow>(
-            "SELECT id, user_id, name, birth_date, phone_number, address, postal_code, city, country, notes, created_at, updated_at
+            "SELECT id, user_id, name, birth_date, email, phone_number, address, postal_code, city, country, notes, created_at, updated_at
              FROM birthdays
              WHERE user_id = ?
              ORDER BY MONTH(birth_date), DAY(birth_date)",
@@ -139,6 +143,10 @@ impl BirthdayRepository for MysqlBirthdayRepo {
 
         let name = update.name.unwrap_or(current.name);
         let birth_date = update.birth_date.unwrap_or(current.birth_date);
+        let email = match update.email {
+            Some(e) => e,
+            None => current.email,
+        };
         let phone_number = match update.phone_number {
             Some(n) => n,
             None => current.phone_number,
@@ -165,10 +173,11 @@ impl BirthdayRepository for MysqlBirthdayRepo {
         };
 
         sqlx::query(
-            "UPDATE birthdays SET name = ?, birth_date = ?, phone_number = ?, address = ?, postal_code = ?, city = ?, country = ?, notes = ?, updated_at = UTC_TIMESTAMP(6) WHERE id = ?",
+            "UPDATE birthdays SET name = ?, birth_date = ?, email = ?, phone_number = ?, address = ?, postal_code = ?, city = ?, country = ?, notes = ?, updated_at = UTC_TIMESTAMP(6) WHERE id = ?",
         )
         .bind(&name)
         .bind(birth_date)
+        .bind(&email)
         .bind(&phone_number)
         .bind(&address)
         .bind(&postal_code)
