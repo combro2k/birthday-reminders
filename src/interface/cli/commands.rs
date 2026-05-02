@@ -44,6 +44,9 @@ pub enum Commands {
         name: String,
         /// Birth date (YYYY-MM-DD)
         date: String,
+        /// Optional email address
+        #[arg(long)]
+        email: Option<String>,
         /// Optional phone number
         #[arg(long)]
         phone_number: Option<String>,

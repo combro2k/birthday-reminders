@@ -70,7 +70,15 @@
                     {% elif b.days_until == 1 %}Tomorrow
                     {% else %}{{ b.days_until }} days{% endif %}
                 </td>
-                <td data-label="Contact">{{ b.phone_number.as_deref().unwrap_or("-") }}</td>
+                <td data-label="Contact">
+                    {% if b.email.is_some() || b.phone_number.is_some() %}
+                        {% if let Some(email) = b.email %}{{ email }}{% endif %}
+                        {% if b.email.is_some() && b.phone_number.is_some() %}<br>{% endif %}
+                        {% if let Some(phone) = b.phone_number %}{{ phone }}{% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 <td data-label="Location">
                     {% if b.address.is_some() || b.postal_code.is_some() || b.city.is_some() || b.country.is_some() %}
                         {{ b.address.as_deref().unwrap_or("") }}

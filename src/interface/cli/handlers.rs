@@ -42,6 +42,7 @@ pub async fn handle_command(
         Commands::Add {
             name,
             date,
+            email,
             phone_number,
             address,
             postal_code,
@@ -57,6 +58,7 @@ pub async fn handle_command(
                     &user_id,
                     &name,
                     birth_date,
+                    email,
                     phone_number,
                     address,
                     postal_code,

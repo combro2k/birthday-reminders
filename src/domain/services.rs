@@ -41,6 +41,7 @@ mod tests {
             user_id: UserId::new(),
             name: "Test Person".to_string(),
             birth_date: NaiveDate::from_ymd_opt(1990, month, day).unwrap(),
+            email: None,
             phone_number: None,
             address: None,
             postal_code: None,

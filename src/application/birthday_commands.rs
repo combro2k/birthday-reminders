@@ -20,6 +20,7 @@ impl BirthdayCommandService {
         user_id: &UserId,
         name: &str,
         birth_date: NaiveDate,
+        email: Option<String>,
         phone_number: Option<String>,
         address: Option<String>,
         postal_code: Option<String>,
@@ -30,6 +31,7 @@ impl BirthdayCommandService {
         validate_birthday_input(
             name,
             birth_date,
+            email.as_deref(),
             phone_number.as_deref(),
             address.as_deref(),
             postal_code.as_deref(),
@@ -42,6 +44,7 @@ impl BirthdayCommandService {
             user_id: user_id.clone(),
             name: name.to_string(),
             birth_date,
+            email,
             phone_number,
             address,
             postal_code,
@@ -63,6 +66,7 @@ impl BirthdayCommandService {
         user_id: &UserId,
         name: Option<String>,
         birth_date: Option<NaiveDate>,
+        email: Option<Option<String>>,
         phone_number: Option<Option<String>>,
         address: Option<Option<String>>,
         postal_code: Option<Option<String>>,
@@ -73,6 +77,7 @@ impl BirthdayCommandService {
         // Validate provided fields
         let effective_name = name.as_deref().unwrap_or("placeholder");
         let effective_date = birth_date.unwrap_or(chrono::Local::now().date_naive());
+        let effective_email = email.as_ref().and_then(|n| n.as_deref());
         let effective_phone_number = phone_number.as_ref().and_then(|n| n.as_deref());
         let effective_address = address.as_ref().and_then(|n| n.as_deref());
         let effective_postal_code = postal_code.as_ref().and_then(|n| n.as_deref());
@@ -82,6 +87,7 @@ impl BirthdayCommandService {
         validate_birthday_input(
             effective_name,
             effective_date,
+            effective_email,
             effective_phone_number,
             effective_address,
             effective_postal_code,
@@ -104,6 +110,7 @@ impl BirthdayCommandService {
         let update = UpdateBirthday {
             name,
             birth_date,
+            email,
             phone_number,
             address,
             postal_code,
@@ -142,6 +149,7 @@ impl BirthdayCommandService {
 fn validate_birthday_input(
     name: &str,
     birth_date: NaiveDate,
+    email: Option<&str>,
     phone_number: Option<&str>,
     address: Option<&str>,
     postal_code: Option<&str>,
@@ -160,6 +168,15 @@ fn validate_birthday_input(
     let today = chrono::Local::now().date_naive();
     if birth_date > today {
         anyhow::bail!("Birth date cannot be in the future");
+    }
+
+    if let Some(e) = email {
+        if e.len() > 255 {
+            anyhow::bail!("Email cannot exceed 255 characters");
+        }
+        if !e.contains('@') {
+            anyhow::bail!("Email must contain an '@' symbol");
+        }
     }
 
     if let Some(phone) = phone_number {
@@ -206,7 +223,7 @@ mod tests {
     use super::*;
 
     fn validate(name: &str, date: NaiveDate, notes: Option<&str>) -> anyhow::Result<()> {
-        validate_birthday_input(name, date, None, None, None, None, None, notes)
+        validate_birthday_input(name, date, None, None, None, None, None, None, notes)
     }
 
     #[test]
@@ -263,6 +280,7 @@ mod tests {
             validate_birthday_input(
                 "Test",
                 date,
+                None,
                 Some(&long_phone),
                 None,
                 None,
