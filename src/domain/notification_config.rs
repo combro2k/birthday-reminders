@@ -126,6 +126,15 @@ pub struct DiscordConfig {
     pub webhook_url: String,
 }
 
+/// SMS (Twilio, custom) channel configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SmsConfig {
+    pub account_sid: String,
+    pub auth_token: String,
+    pub from_number: String,
+    pub to_number: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::{EmailConfig, EmailProvider, SmtpSecurity};

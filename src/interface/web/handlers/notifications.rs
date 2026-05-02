@@ -10,7 +10,7 @@ use tower_sessions::Session;
 
 use crate::domain::notification::ChannelKind;
 use crate::domain::notification_config::{
-    DiscordConfig, EmailConfig, EmailProvider, GotifyConfig, SignalConfig, SmtpSecurity,
+    DiscordConfig, EmailConfig, EmailProvider, GotifyConfig, SignalConfig, SmsConfig, SmtpSecurity,
     TelegramConfig, WhatsappConfig,
 };
 use crate::domain::repository::NotificationChannelRecord;
@@ -123,6 +123,10 @@ pub struct ChannelConfigForm {
     pub whatsapp_api_url: Option<String>,
     pub whatsapp_recipient: Option<String>,
     pub discord_webhook_url: Option<String>,
+    pub sms_account_sid: Option<String>,
+    pub sms_auth_token: Option<String>,
+    pub sms_from_number: Option<String>,
+    pub sms_to_number: Option<String>,
 }
 
 fn trim_or_empty(value: Option<&str>) -> String {
@@ -249,6 +253,15 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
         }
+        ChannelKind::Sms => {
+            let cfg = SmsConfig {
+                account_sid: required_field(form.sms_account_sid.as_deref(), "Account SID")?,
+                auth_token: required_field(form.sms_auth_token.as_deref(), "Auth Token")?,
+                from_number: required_field(form.sms_from_number.as_deref(), "From Number")?,
+                to_number: required_field(form.sms_to_number.as_deref(), "To Number")?,
+            };
+            serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
+        }
     }
 }
 
@@ -286,6 +299,10 @@ fn channel_form_template(
         whatsapp_api_url: trim_or_empty(form.whatsapp_api_url.as_deref()),
         whatsapp_recipient: trim_or_empty(form.whatsapp_recipient.as_deref()),
         discord_webhook_url: trim_or_empty(form.discord_webhook_url.as_deref()),
+        sms_account_sid: trim_or_empty(form.sms_account_sid.as_deref()),
+        sms_auth_token: trim_or_empty(form.sms_auth_token.as_deref()),
+        sms_from_number: trim_or_empty(form.sms_from_number.as_deref()),
+        sms_to_number: trim_or_empty(form.sms_to_number.as_deref()),
         error,
         success,
         csrf_token,
@@ -367,6 +384,22 @@ fn channel_form_template(
                 if let Ok(cfg) = serde_json::from_value::<DiscordConfig>(existing.config.clone()) {
                     if template.discord_webhook_url.is_empty() {
                         template.discord_webhook_url = cfg.webhook_url;
+                    }
+                }
+            }
+            ChannelKind::Sms => {
+                if let Ok(cfg) = serde_json::from_value::<SmsConfig>(existing.config.clone()) {
+                    if template.sms_account_sid.is_empty() {
+                        template.sms_account_sid = cfg.account_sid;
+                    }
+                    if template.sms_auth_token.is_empty() {
+                        template.sms_auth_token = cfg.auth_token;
+                    }
+                    if template.sms_from_number.is_empty() {
+                        template.sms_from_number = cfg.from_number;
+                    }
+                    if template.sms_to_number.is_empty() {
+                        template.sms_to_number = cfg.to_number;
                     }
                 }
             }

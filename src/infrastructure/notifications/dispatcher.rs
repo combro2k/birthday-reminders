@@ -6,6 +6,7 @@ use super::discord::DiscordSender;
 use super::email::EmailSender;
 use super::gotify::GotifySender;
 use super::signal::SignalSender;
+use super::sms::SmsSender;
 use super::telegram::TelegramSender;
 use super::whatsapp::WhatsappSender;
 
@@ -47,6 +48,11 @@ pub fn build_sender(
             let config: DiscordConfig = serde_json::from_value(record.config.clone())
                 .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
             Ok(Box::new(DiscordSender::new(config)))
+        }
+        ChannelKind::Sms => {
+            let config: SmsConfig = serde_json::from_value(record.config.clone())
+                .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
+            Ok(Box::new(SmsSender::new(config)))
         }
     }
 }
