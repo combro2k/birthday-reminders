@@ -120,6 +120,12 @@ pub struct WhatsappConfig {
     pub recipient: String,
 }
 
+/// Discord channel configuration (user-provided, stub)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscordConfig {
+    pub webhook_url: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::{EmailConfig, EmailProvider, SmtpSecurity};

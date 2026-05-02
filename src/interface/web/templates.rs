@@ -99,6 +99,7 @@ pub struct ChannelFormTemplate {
     pub signal_recipient: String,
     pub whatsapp_api_url: String,
     pub whatsapp_recipient: String,
+    pub discord_webhook_url: String,
     pub error: Option<String>,
     pub success: Option<String>,
     pub csrf_token: String,
