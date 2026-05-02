@@ -2,6 +2,7 @@ use crate::domain::notification::{ChannelKind, NotificationError, NotificationSe
 use crate::domain::notification_config::*;
 use crate::domain::repository::NotificationChannelRecord;
 
+use super::discord::DiscordSender;
 use super::email::EmailSender;
 use super::gotify::GotifySender;
 use super::signal::SignalSender;
@@ -41,6 +42,11 @@ pub fn build_sender(
             let config: WhatsappConfig = serde_json::from_value(record.config.clone())
                 .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
             Ok(Box::new(WhatsappSender::new(config)))
+        }
+        ChannelKind::Discord => {
+            let config: DiscordConfig = serde_json::from_value(record.config.clone())
+                .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
+            Ok(Box::new(DiscordSender::new(config)))
         }
     }
 }

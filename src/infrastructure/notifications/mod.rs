@@ -1,3 +1,4 @@
+pub mod discord;
 pub mod dispatcher;
 pub mod email;
 pub mod gotify;

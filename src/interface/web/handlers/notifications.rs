@@ -10,8 +10,8 @@ use tower_sessions::Session;
 
 use crate::domain::notification::ChannelKind;
 use crate::domain::notification_config::{
-    EmailConfig, EmailProvider, GotifyConfig, SignalConfig, SmtpSecurity, TelegramConfig,
-    WhatsappConfig,
+    DiscordConfig, EmailConfig, EmailProvider, GotifyConfig, SignalConfig, SmtpSecurity,
+    TelegramConfig, WhatsappConfig,
 };
 use crate::domain::repository::NotificationChannelRecord;
 use crate::domain::user::User;
@@ -122,6 +122,7 @@ pub struct ChannelConfigForm {
     pub signal_recipient: Option<String>,
     pub whatsapp_api_url: Option<String>,
     pub whatsapp_recipient: Option<String>,
+    pub discord_webhook_url: Option<String>,
 }
 
 fn trim_or_empty(value: Option<&str>) -> String {
@@ -239,6 +240,12 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
         }
+        ChannelKind::Discord => {
+            let cfg = DiscordConfig {
+                webhook_url: required_field(form.discord_webhook_url.as_deref(), "Discord webhook URL")?,
+            };
+            serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
+        }
     }
 }
 
@@ -275,6 +282,7 @@ fn channel_form_template(
         signal_recipient: trim_or_empty(form.signal_recipient.as_deref()),
         whatsapp_api_url: trim_or_empty(form.whatsapp_api_url.as_deref()),
         whatsapp_recipient: trim_or_empty(form.whatsapp_recipient.as_deref()),
+        discord_webhook_url: trim_or_empty(form.discord_webhook_url.as_deref()),
         error,
         success,
         csrf_token,
@@ -352,19 +360,15 @@ fn channel_form_template(
                     }
                 }
             }
+            ChannelKind::Discord => {
+                if let Ok(cfg) = serde_json::from_value::<DiscordConfig>(existing.config.clone()) {
+                    if template.discord_webhook_url.is_empty() {
+                        template.discord_webhook_url = cfg.webhook_url;
+                    }
+                }
+            }
         }
     }
-
-    if template.email_provider.is_empty() {
-        template.email_provider = "gmail".to_string();
-    }
-    if template.email_smtp_port.is_empty() {
-        template.email_smtp_port = "587".to_string();
-    }
-    if template.email_smtp_security.is_empty() {
-        template.email_smtp_security = "starttls".to_string();
-    }
-
     template
 }
 
