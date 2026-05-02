@@ -13,6 +13,7 @@ pub enum ChannelKind {
     Signal,
     Whatsapp,
     Discord,
+    Sms,
 }
 
 impl ChannelKind {
@@ -24,6 +25,7 @@ impl ChannelKind {
             ChannelKind::Signal => "signal",
             ChannelKind::Whatsapp => "whatsapp",
             ChannelKind::Discord => "discord",
+            ChannelKind::Sms => "sms",
         }
     }
 
@@ -35,6 +37,7 @@ impl ChannelKind {
             "signal" => Some(ChannelKind::Signal),
             "whatsapp" => Some(ChannelKind::Whatsapp),
             "discord" => Some(ChannelKind::Discord),
+            "sms" => Some(ChannelKind::Sms),
             _ => None,
         }
     }
@@ -47,6 +50,7 @@ impl ChannelKind {
             ChannelKind::Signal => "Signal",
             ChannelKind::Whatsapp => "WhatsApp",
             ChannelKind::Discord => "Discord",
+            ChannelKind::Sms => "SMS (Twilio)",
         }
     }
 
@@ -57,6 +61,7 @@ impl ChannelKind {
             ChannelKind::Email,
             ChannelKind::Telegram,
             ChannelKind::Discord,
+            ChannelKind::Sms,
         ]
     }
 }

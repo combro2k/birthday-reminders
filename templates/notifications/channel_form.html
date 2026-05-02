@@ -163,6 +163,30 @@
             <label for="discord_webhook_url">Webhook URL</label>
             <input id="discord_webhook_url" name="discord_webhook_url" type="url" value="{{ discord_webhook_url }}" required>
         </div>
+            
+        <details class="help-text">
+            <summary>Discord setup help</summary>
+            <p>Create a webhook via your Discord server settings and use the webhook URL here.</p>
+        </details>
+        {% endif %}
+
+        {% if channel_type == "sms" %}
+        <div class="form-group">
+            <label for="sms_account_sid">Account SID</label>
+            <input id="sms_account_sid" name="sms_account_sid" type="text" value="{{ sms_account_sid }}" required>
+        </div>
+        <div class="form-group">
+            <label for="sms_auth_token">Auth Token</label>
+            <input id="sms_auth_token" name="sms_auth_token" type="password" value="{{ sms_auth_token }}" required>
+        </div>
+        <div class="form-group">
+            <label for="sms_to_number">To Number</label>
+            <input id="sms_to_number" name="sms_to_number" type="text" value="{{ sms_to_number }}" required>
+        </div>
+        <details class="help-text">
+            <summary>SMS setup help</summary>
+            <p>For Twilio, use your Account SID, Auth Token, and a Twilio phone number as the From Number.</p>
+        </details>
         {% endif %}
 
         <div class="form-actions">
