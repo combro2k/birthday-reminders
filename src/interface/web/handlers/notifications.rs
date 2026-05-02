@@ -242,7 +242,10 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
         }
         ChannelKind::Discord => {
             let cfg = DiscordConfig {
-                webhook_url: required_field(form.discord_webhook_url.as_deref(), "Discord webhook URL")?,
+                webhook_url: required_field(
+                    form.discord_webhook_url.as_deref(),
+                    "Discord webhook URL",
+                )?,
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
         }

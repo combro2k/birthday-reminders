@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use reqwest::Client;
 use crate::domain::notification::{NotificationError, NotificationSender};
 use crate::domain::notification_config::DiscordConfig;
 use crate::domain::reminder::PendingReminder;
+use async_trait::async_trait;
+use reqwest::Client;
 
 pub struct DiscordSender {
     config: DiscordConfig,
