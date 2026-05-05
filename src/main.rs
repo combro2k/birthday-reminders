@@ -214,6 +214,7 @@ async fn main() -> anyhow::Result<()> {
             &birthday_cmd_svc,
             &birthday_query_svc,
             &reminder_svc,
+            &user_repo,
         )
         .await?;
     }
