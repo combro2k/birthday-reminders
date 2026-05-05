@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::application::birthday_commands::BirthdayCommandService;
 use crate::application::birthday_queries::BirthdayQueryService;
+use crate::application::export_service::ExportService;
 use crate::application::reminder_job::ReminderJobService;
 use crate::application::user_commands::UserCommandService;
 use crate::domain::repository::BirthdayRepository;
@@ -15,11 +16,12 @@ pub async fn handle_command(
     cmd: Commands,
     db: &DatabasePool,
     _user_repo: &Arc<dyn UserRepository>,
-    _birthday_repo: &Arc<dyn BirthdayRepository>,
+    birthday_repo: &Arc<dyn BirthdayRepository>,
     user_cmd_svc: &UserCommandService,
     birthday_cmd_svc: &BirthdayCommandService,
     birthday_query_svc: &BirthdayQueryService,
     reminder_svc: &Arc<ReminderJobService>,
+    user_repo: &Arc<dyn UserRepository>,
 ) -> anyhow::Result<()> {
     match cmd {
         Commands::Serve { .. } => {
@@ -136,11 +138,177 @@ pub async fn handle_command(
             println!("Deleted birthday {}", id);
             Ok(())
         }
+        Commands::Export {
+            admin,
+            token,
+            r#type,
+            output,
+        } => {
+            handle_export_command(
+                admin,
+                token,
+                r#type,
+                output,
+                db,
+                user_cmd_svc,
+                user_repo,
+                birthday_repo,
+            )
+            .await
+        }
         Commands::CheckReminders => {
             println!("Running reminder check for all users...");
             reminder_svc.run_for_all_users().await?;
             println!("Done.");
             Ok(())
+        }
+    }
+}
+
+async fn handle_export_command(
+    admin: bool,
+    token: Option<String>,
+    export_type: Option<String>,
+    output: Option<String>,
+    db: &DatabasePool,
+    user_cmd_svc: &UserCommandService,
+    user_repo: &Arc<dyn UserRepository>,
+    birthday_repo: &Arc<dyn BirthdayRepository>,
+) -> anyhow::Result<()> {
+    // Validate auth flags
+    if admin && token.is_some() {
+        anyhow::bail!("Cannot use --admin and --token together");
+    }
+
+    let export_svc = ExportService::new(birthday_repo.clone(), user_repo.clone());
+
+    let user_id = if admin {
+        None
+    } else {
+        let token_value = token.ok_or_else(|| {
+            anyhow::anyhow!("Either --admin or --token must be provided")
+        })?;
+        Some(user_cmd_svc.resolve_api_token(&token_value, db).await?)
+    };
+
+    let export_type_str = export_type.as_deref().unwrap_or("all");
+
+    match export_type_str {
+        "birthdays" => {
+            let csv = if let Some(ref uid) = user_id {
+                export_svc.export_birthdays_for_user(uid).await?
+            } else {
+                export_svc.export_all_birthdays().await?
+            };
+
+            if let Some(ref output_path) = output {
+                export_svc.write_csv_file(&csv, output_path)?;
+            } else {
+                print!("{}", csv);
+            }
+            Ok(())
+        }
+        "users" => {
+            if user_id.is_some() {
+                anyhow::bail!("Only admins can export users");
+            }
+            let csv = export_svc.export_all_users().await?;
+            if let Some(ref output_path) = output {
+                export_svc.write_csv_file(&csv, output_path)?;
+            } else {
+                print!("{}", csv);
+            }
+            Ok(())
+        }
+        "api_tokens" => {
+            let uid = user_id.ok_or_else(|| {
+                anyhow::anyhow!("API tokens export requires authentication")
+            })?;
+            let csv = export_svc.export_api_tokens(&uid, db).await?;
+            if let Some(ref output_path) = output {
+                export_svc.write_csv_file(&csv, output_path)?;
+            } else {
+                print!("{}", csv);
+            }
+            Ok(())
+        }
+        "notifications" => {
+            let uid = user_id.ok_or_else(|| {
+                anyhow::anyhow!("Notifications export requires authentication")
+            })?;
+            let csv = export_svc.export_notifications(&uid, db).await?;
+            if let Some(ref output_path) = output {
+                export_svc.write_csv_file(&csv, output_path)?;
+            } else {
+                print!("{}", csv);
+            }
+            Ok(())
+        }
+        "reminders" => {
+            let uid = user_id.ok_or_else(|| {
+                anyhow::anyhow!("Reminders export requires authentication")
+            })?;
+            let csv = export_svc.export_reminder_settings(&uid, db).await?;
+            if let Some(ref output_path) = output {
+                export_svc.write_csv_file(&csv, output_path)?;
+            } else {
+                print!("{}", csv);
+            }
+            Ok(())
+        }
+        "all" => {
+            let mut exports = Vec::new();
+
+            // Birthdays
+            if let Some(ref uid) = user_id {
+                let csv = export_svc.export_birthdays_for_user(uid).await?;
+                exports.push(("birthdays.csv", csv));
+            } else {
+                let csv = export_svc.export_all_birthdays().await?;
+                exports.push(("birthdays.csv", csv));
+            }
+
+            // API tokens
+            if let Some(ref uid) = user_id {
+                if let Ok(csv) = export_svc.export_api_tokens(uid, db).await {
+                    exports.push(("api_tokens.csv", csv));
+                }
+            }
+
+            // Notifications
+            if let Some(ref uid) = user_id {
+                if let Ok(csv) = export_svc.export_notifications(uid, db).await {
+                    exports.push(("notifications.csv", csv));
+                }
+            }
+
+            // Reminder settings
+            if let Some(ref uid) = user_id {
+                if let Ok(csv) = export_svc.export_reminder_settings(uid, db).await {
+                    exports.push(("reminders.csv", csv));
+                }
+            }
+
+            // Users (admin only)
+            if admin {
+                if let Ok(csv) = export_svc.export_all_users().await {
+                    exports.push(("users.csv", csv));
+                }
+            }
+
+            if let Some(ref output_dir) = output {
+                export_svc.write_csv_files(exports, output_dir)?;
+            } else {
+                for (filename, content) in exports {
+                    println!("=== {} ===", filename);
+                    println!("{}", content);
+                    println!();
+                }
+            }
+            Ok(())
+        }
+        other => {
+            anyhow::bail!("Unknown export type: {}. Use: birthdays, users, api_tokens, notifications, reminders, or all", other)
         }
     }
 }

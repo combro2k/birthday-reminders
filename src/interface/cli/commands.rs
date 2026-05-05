@@ -96,6 +96,27 @@ pub enum Commands {
         token: String,
     },
 
+    /// Export data to CSV (admin or user with token)
+    Export {
+        /// Use admin mode (requires no token)
+        #[arg(long)]
+        admin: bool,
+
+        /// API token (for user mode, can use BIRTHDAY_API_TOKEN env var)
+        #[arg(long, env = "BIRTHDAY_API_TOKEN")]
+        token: Option<String>,
+
+        /// What to export: birthdays, users, api_tokens, notifications, reminders
+        /// Default: all (exports to separate files)
+        #[arg(long)]
+        r#type: Option<String>,
+
+        /// Output path: directory for multiple files or file path for single export
+        /// Default: stdout
+        #[arg(long)]
+        output: Option<String>,
+    },
+
     /// Manually trigger reminder check for all users
     CheckReminders,
 }
