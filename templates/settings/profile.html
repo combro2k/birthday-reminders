@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block theme %}{{ user.theme.as_str() }}{% endblock %}
+
 {% block title %}Profile - Birthday Reminders{% endblock %}
 
 {% block body %}
@@ -77,6 +79,23 @@
     </div>
 
     <div class="card mt-2">
+        <h3>Theme</h3>
+        <p>Choose how the app looks:</p>
+        <form method="POST" action="/settings/theme">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="theme">Appearance</label>
+                <select id="theme" name="theme">
+                    <option value="auto" {% if user.theme.as_str() == "auto" %}selected{% endif %}>Auto (system preference)</option>
+                    <option value="light" {% if user.theme.as_str() == "light" %}selected{% endif %}>Light</option>
+                    <option value="dark" {% if user.theme.as_str() == "dark" %}selected{% endif %}>Dark</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-1">Save Theme</button>
+        </form>
+    </div>
+
+    <div class="card mt-2">
         <h3>Reminder Preferences</h3>
         <p>Choose how many days before a birthday you'd like to be reminded:</p>
         <form method="POST" action="/settings/reminders">
@@ -120,4 +139,9 @@
         <a href="/settings/api-tokens" class="btn btn-secondary">Manage API Tokens</a>
     </div>
 </main>
+{% endblock %}
+{% block footer %}
+<footer class="text-center text-xs text-gray-400 dark:text-gray-600 py-4">
+    Birthday Reminders v{{ self.app_version() }}
+</footer>
 {% endblock %}

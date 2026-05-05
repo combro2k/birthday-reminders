@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block theme %}{{ user.theme.as_str() }}{% endblock %}
+
 {% block title %}API Tokens - Birthday Reminders{% endblock %}
 
 {% block body %}
@@ -82,4 +84,9 @@ birthday-reminders list --token "$BIRTHDAY_API_TOKEN"
 birthday-reminders add "John Doe" "1990-05-15" --token "$BIRTHDAY_API_TOKEN"</pre>
     </div>
 </main>
+{% endblock %}
+{% block footer %}
+<footer class="text-center text-xs text-gray-400 dark:text-gray-600 py-4">
+    Birthday Reminders v{{ self.app_version() }}
+</footer>
 {% endblock %}

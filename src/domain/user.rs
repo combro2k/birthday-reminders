@@ -68,6 +68,37 @@ impl AuthMethod {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Theme {
+    Light,
+    Dark,
+    Auto,
+}
+
+impl Theme {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Theme::Light => "light",
+            Theme::Dark => "dark",
+            Theme::Auto => "auto",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        match s {
+            "light" => Theme::Light,
+            "dark" => Theme::Dark,
+            _ => Theme::Auto,
+        }
+    }
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Theme::Auto
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: UserId,
@@ -78,6 +109,7 @@ pub struct User {
     pub auth_method: AuthMethod,
     pub oidc_subject: Option<String>,
     pub date_format: String,
+    pub theme: Theme,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
