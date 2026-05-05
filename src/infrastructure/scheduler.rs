@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{error, info};
 
-use crate::application::reminder_job::ReminderJobService;
+use crate::reminders::application::reminder_job::ReminderJobService;
 
 pub async fn start_scheduler(
     schedule: &str,

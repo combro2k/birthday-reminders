@@ -167,7 +167,6 @@ server:
   # base_url: "https://birthdays.example.com/app"
   session_secret: "generate-a-random-string-at-least-32-chars"
   encryption_key: "generate-a-separate-key-for-encryption"  # required, generate with: openssl rand -base64 32
-  static_dir: "static"  # path to static assets (CSS, JS, manifest)
   # Optional: trust forwarded headers from these proxy IPs or CIDRs only
   # trusted_proxies: ["127.0.0.1", "10.0.0.0/8"]
 ```
@@ -575,8 +574,8 @@ make install PREFIX=/usr/local
 This installs:
 - Binary → `<prefix>/bin/birthday-reminders`
 - Config → `<prefix>/etc/config.yaml`
-- Migrations → `<prefix>/share/migrations/`
-- Static files → `<prefix>/share/static/`
+- Migrations → (Embedded in binary)
+- Static files → (Embedded in binary)
 
 ### Package & Deploy
 
@@ -634,8 +633,6 @@ server:
 ├── bin/            # Binary
 ├── etc/            # Configuration (config.yaml)
 ├── data/           # Runtime data (SQLite database)
-├── migrations/     # SQL migration files
-└── static/         # Static assets (CSS, JS, manifest)
 ```
 
 ## Backup & Restore

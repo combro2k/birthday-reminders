@@ -1,15 +1,17 @@
 # Error handling
 [package]
 name = "birthday-reminders"
-version = "0.3.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
 # Web framework
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
+rust-embed = { version = "8.5", features = ["interpolate-folder-path", "compression"] }
+mime_guess = "2.0"
 tower = "0.5"
-tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
+tower-http = { version = "0.6", features = ["fs", "trace", "cors", "compression-full"] }
 
 # Database
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "sqlite", "mysql", "chrono", "migrate", "uuid"] }
@@ -71,7 +73,7 @@ url = "2"
 
 # Privilege dropping
 nix = { version = "0.27", default-features = false, features = ["user"] }
-users = "0.11"
+unix_users = { package = "users", version = "0.11" }
 
 [profile.dev]
 # Reduce memory usage during compilation
@@ -80,3 +82,4 @@ codegen-units = 8
 [profile.release]
 codegen-units = 1
 lto = "thin"
+strip = true

@@ -1,7 +1,7 @@
-pub mod auth;
+pub mod assets;
 pub mod config;
 pub mod database;
+pub mod error;
 pub mod logging;
-pub mod notifications;
-pub mod persistence;
 pub mod scheduler;
+pub mod web;

@@ -1,25 +1,30 @@
-mod application;
-mod domain;
+mod auth;
+mod birthdays;
+mod channels;
+mod cli;
 mod infrastructure;
-mod interface;
+mod reminders;
+mod users;
 
 use std::path::Path;
 use std::sync::Arc;
 
+use axum::http::header;
 use clap::Parser;
+use tower_http::compression::CompressionLayer;
 use tracing_subscriber::EnvFilter;
 
-use application::auth_service::AuthService;
-use application::birthday_commands::BirthdayCommandService;
-use application::birthday_queries::BirthdayQueryService;
-use application::notification_commands::NotificationCommandService;
-use application::reminder_job::ReminderJobService;
-use application::user_commands::UserCommandService;
-use infrastructure::auth::oidc::OidcClient;
+use auth::application::auth_service::AuthService;
+use auth::infrastructure::oidc::OidcClient;
+use birthdays::application::commands::BirthdayCommandService;
+use birthdays::application::queries::BirthdayQueryService;
+use channels::application::commands::NotificationCommandService;
+use cli::commands::{Cli, Commands};
 use infrastructure::config::AppConfig;
 use infrastructure::database::{DatabasePool, Repositories};
-use interface::cli::commands::{Cli, Commands};
-use interface::web::server::{self, AppState};
+use infrastructure::web::server::{self, AppState};
+use reminders::application::reminder_job::ReminderJobService;
+use users::application::commands::UserCommandService;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -51,10 +56,10 @@ async fn main() -> anyhow::Result<()> {
         if Uid::effective().is_root() {
             let user = &config.server.run_as_user;
             let group = &config.server.run_as_group;
-            match users::get_user_by_name(user) {
+            match unix_users::get_user_by_name(user) {
                 Some(u) => {
                     let target_uid = Uid::from_raw(u.uid());
-                    let target_gid = users::get_group_by_name(group)
+                    let target_gid = unix_users::get_group_by_name(group)
                         .map(|g| Gid::from_raw(g.gid()))
                         .unwrap_or(Gid::from_raw(u.primary_group_id()));
                     if let Err(e) = setgid(target_gid) {
@@ -199,13 +204,36 @@ async fn main() -> anyhow::Result<()> {
             config.server.listen.clone()
         };
 
-        let router = server::create_router(state, db.clone()).await?;
+        let compression_layer = CompressionLayer::new().compress_when(
+            |_status: axum::http::StatusCode,
+             _version: axum::http::Version,
+             headers: &axum::http::HeaderMap,
+             _extensions: &axum::http::Extensions| {
+                // Only compress if the Content-Type header matches our criteria
+                headers
+                    .get(header::CONTENT_TYPE)
+                    .and_then(|val| val.to_str().ok())
+                    .map(|mime| {
+                        mime.starts_with("text/")
+                            || mime.starts_with("application/javascript")
+                            || mime.starts_with("application/json")
+                            || mime.starts_with("image/svg+xml")
+                            || mime.starts_with("application/wasm")
+                            || mime.starts_with("application/manifest+json")
+                    })
+                    .unwrap_or(false)
+            },
+        );
+
+        let router = server::create_router(state, db.clone())
+            .await?
+            .layer(compression_layer);
 
         tracing::info!("Starting server on {}", listen);
         let listener = tokio::net::TcpListener::bind(&listen).await?;
         axum::serve(listener, router).await?;
     } else {
-        interface::cli::handlers::handle_command(
+        cli::handlers::handle_command(
             cli.command,
             &db,
             &user_repo,
