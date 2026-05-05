@@ -4,14 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Birthday Reminders{% endblock %}</title>
-    <script>
-    (function() {
-        var t = document.documentElement.getAttribute('data-theme');
-        if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-    })();
-    </script>
     <link rel="stylesheet" href="/static/tailwind.css">
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#0f766e">
@@ -19,24 +11,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Birthdays">
     <link rel="apple-touch-icon" href="/static/icon-180.png">
+    <script type="module" src="/static/main.js"></script>
+    <script nomodule src="/static/main.legacy.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
-<body class="selection:bg-teal-200 selection:text-slate-900 dark:selection:bg-teal-800 dark:selection:text-slate-100">
+<body class="selection:bg-teal-200 selection:text-slate-900 dark:selection:bg-teal-800 dark:selection:text-slate-100" {% block body_attributes %}{% endblock %}>
     {% block body %}{% endblock %}
     {% block footer %}{% endblock %}
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/static/sw.js");
-        }
-        // Listen for system theme changes when in auto mode
-        (function() {
-            var theme = document.documentElement.getAttribute('data-theme');
-            if (theme === 'auto') {
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-                    document.documentElement.classList.toggle('dark', e.matches);
-                });
-            }
-        })();
-    </script>
 </body>
 </html>

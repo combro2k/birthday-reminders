@@ -29,7 +29,7 @@ else
 fi
 
 # Install data files
-cp -r static/* "$STATICDIR/"
+cp -av static/. "$STATICDIR/"
 
 # Create service user if it doesn't exist
 if ! id birthday-reminders >/dev/null 2>&1; then

@@ -8,18 +8,18 @@ use sqlx::mysql::MySqlPoolOptions;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::sqlite::SqlitePoolOptions;
 
-use crate::domain::repository::{BirthdayRepository, NotificationChannelRepository};
-use crate::domain::user_repository::UserRepository;
-use crate::infrastructure::persistence::mysql_birthday_repo::MysqlBirthdayRepo;
-use crate::infrastructure::persistence::mysql_notification_repo::MysqlNotificationRepo;
-use crate::infrastructure::persistence::mysql_user_repo::MysqlUserRepo;
-use crate::infrastructure::persistence::pg_birthday_repo::PgBirthdayRepo;
-// use crate::infrastructure::persistence::sqlite_migration_util;
-use crate::infrastructure::persistence::pg_notification_repo::PgNotificationRepo;
-use crate::infrastructure::persistence::pg_user_repo::PgUserRepo;
-use crate::infrastructure::persistence::sqlite_birthday_repo::SqliteBirthdayRepo;
-use crate::infrastructure::persistence::sqlite_notification_repo::SqliteNotificationRepo;
-use crate::infrastructure::persistence::sqlite_user_repo::SqliteUserRepo;
+use crate::birthdays::domain::repository::BirthdayRepository;
+use crate::birthdays::infrastructure::mysql_repo::MysqlBirthdayRepo;
+use crate::birthdays::infrastructure::pg_repo::PgBirthdayRepo;
+use crate::birthdays::infrastructure::sqlite_repo::SqliteBirthdayRepo;
+use crate::channels::domain::repository::NotificationChannelRepository;
+use crate::channels::infrastructure::mysql_repo::MysqlNotificationRepo;
+use crate::channels::infrastructure::pg_repo::PgNotificationRepo;
+use crate::channels::infrastructure::sqlite_repo::SqliteNotificationRepo;
+use crate::users::domain::repository::UserRepository;
+use crate::users::infrastructure::mysql_repo::MysqlUserRepo;
+use crate::users::infrastructure::pg_repo::PgUserRepo;
+use crate::users::infrastructure::sqlite_repo::SqliteUserRepo;
 
 /// The database pool, which can be either PostgreSQL or SQLite.
 #[derive(Clone)]

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block theme %}{{ user.theme.as_str() }}{% endblock %}
+{% block theme %}{{ user.theme.as_str() }}{% endblock %}{% block body_attributes %}id="page-birthdays-list"{% endblock %}
 
 {% block title %}All Birthdays - Birthday Reminders{% endblock %}
 
@@ -94,8 +94,7 @@
                 <td data-label="Notes">{{ b.notes.as_deref().unwrap_or("-") }}</td>
                 <td data-label="Actions" class="actions">
                     <a href="/birthdays/{{ b.id }}/edit" class="btn btn-small">Edit</a>
-                    <form method="POST" action="/birthdays/{{ b.id }}/delete" class="inline"
-                          onsubmit="return confirm('Delete {{ b.name }}?')">
+                    <form method="POST" action="/birthdays/{{ b.id }}/delete" class="inline delete-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-small btn-danger">Delete</button>
                     </form>

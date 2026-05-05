@@ -2,7 +2,6 @@ PREFIX ?= /opt/birthday-reminders
 BINDIR = $(PREFIX)/bin
 CONFDIR = $(PREFIX)/etc
 DATADIR = $(PREFIX)/data
-STATICDIR = $(PREFIX)/static
 
 BINARY = target/release/birthday-reminders
 VERSION = $(shell grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
@@ -23,7 +22,6 @@ install: build
 	install -d $(DESTDIR)$(BINDIR)
 	install -d $(DESTDIR)$(CONFDIR)
 	install -d $(DESTDIR)$(DATADIR)
-	install -d $(DESTDIR)$(STATICDIR)
 	install -m 755 $(BINARY) $(DESTDIR)$(BINDIR)/birthday-reminders
 	@if [ ! -f $(DESTDIR)$(CONFDIR)/config.yaml ]; then \
 		install -m 640 config.yaml.example $(DESTDIR)$(CONFDIR)/config.yaml; \
@@ -31,20 +29,19 @@ install: build
 		echo "Config already exists, installing as config.yaml.new"; \
 		install -m 640 config.yaml.example $(DESTDIR)$(CONFDIR)/config.yaml.new; \
 	fi
-	cp -r static/* $(DESTDIR)$(STATICDIR)/
+	rm -rf $(DESTDIR)$(PREFIX)/static
 	@echo ""
 	@echo "Installed to $(DESTDIR)$(PREFIX)"
 	@echo "  Binary:     $(DESTDIR)$(BINDIR)/birthday-reminders"
 	@echo "  Config:     $(DESTDIR)$(CONFDIR)/config.yaml"
 	@echo "  Data:       $(DESTDIR)$(DATADIR)/"
-	@echo "  Static:     $(DESTDIR)$(STATICDIR)/"
+	@echo "  Static:     (Embedded in binary)"
 
 package: build
 	rm -rf $(PACKAGE_DIR)
 	mkdir -p $(PACKAGE_DIR)
 	cp $(BINARY) $(PACKAGE_DIR)/
 	cp config.yaml.example $(PACKAGE_DIR)/
-	cp -r static $(PACKAGE_DIR)/
 	cp -r package $(PACKAGE_DIR)/
 	cp package/install.sh $(PACKAGE_DIR)/install.sh
 	chmod +x $(PACKAGE_DIR)/install.sh
@@ -60,7 +57,7 @@ package: build
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/birthday-reminders
 	rm -rf $(DESTDIR)$(MIGRATIONSDIR)
-	rm -rf $(DESTDIR)$(STATICDIR)
+	rm -rf $(DESTDIR)$(PREFIX)/static
 	rm -rf $(DESTDIR)$(DATADIR)
 	if [ -d $(DESTDIR)$(CONFDIR) ]; then \
 	  echo "NOTE: Config at $(DESTDIR)$(CONFDIR) was preserved. Remove manually if desired."; \

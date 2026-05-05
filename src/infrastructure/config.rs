@@ -33,8 +33,6 @@ pub struct ServerConfig {
     pub session_secret: String,
     /// Encryption key for notification channel secrets (required).
     pub encryption_key: String,
-    #[serde(default = "default_static_dir")]
-    pub static_dir: String,
     #[serde(default)]
     pub trusted_proxies: Vec<String>,
     /// User to drop privileges to after startup (required)
@@ -110,10 +108,6 @@ fn default_true() -> bool {
 
 fn default_role() -> String {
     "user".to_string()
-}
-
-fn default_static_dir() -> String {
-    "/opt/birthday-reminders/static".to_string()
 }
 
 fn default_scheme() -> String {
@@ -283,7 +277,6 @@ mod tests {
             scheme: "https".to_string(),
             session_secret: "x".repeat(32),
             encryption_key: "key".to_string(),
-            static_dir: "/tmp/static".to_string(),
             trusted_proxies: vec![],
             run_as_user: "birthday-reminders".to_string(),
             run_as_group: "birthday-reminders".to_string(),

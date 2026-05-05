@@ -1,0 +1,88 @@
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+
+use crate::reminders::domain::reminder::PendingReminder;
+
+/// Supported notification channel types
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ChannelKind {
+    Gotify,
+    Email,
+    Telegram,
+    Signal,
+    Whatsapp,
+    Discord,
+    Sms,
+}
+
+impl ChannelKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ChannelKind::Gotify => "gotify",
+            ChannelKind::Email => "email",
+            ChannelKind::Telegram => "telegram",
+            ChannelKind::Signal => "signal",
+            ChannelKind::Whatsapp => "whatsapp",
+            ChannelKind::Discord => "discord",
+            ChannelKind::Sms => "sms",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "gotify" => Some(ChannelKind::Gotify),
+            "email" => Some(ChannelKind::Email),
+            "telegram" => Some(ChannelKind::Telegram),
+            "signal" => Some(ChannelKind::Signal),
+            "whatsapp" => Some(ChannelKind::Whatsapp),
+            "discord" => Some(ChannelKind::Discord),
+            "sms" => Some(ChannelKind::Sms),
+            _ => None,
+        }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            ChannelKind::Gotify => "Gotify",
+            ChannelKind::Email => "Email",
+            ChannelKind::Telegram => "Telegram",
+            ChannelKind::Signal => "Signal",
+            ChannelKind::Whatsapp => "WhatsApp",
+            ChannelKind::Discord => "Discord",
+            ChannelKind::Sms => "SMS (Twilio)",
+        }
+    }
+
+    /// Returns only channel kinds that have a working implementation
+    pub fn implemented() -> &'static [ChannelKind] {
+        &[
+            ChannelKind::Gotify,
+            ChannelKind::Email,
+            ChannelKind::Telegram,
+            ChannelKind::Discord,
+            ChannelKind::Sms,
+        ]
+    }
+}
+
+/// Port trait for sending notifications
+#[async_trait]
+pub trait NotificationSender: Send + Sync {
+    async fn send(&self, reminder: &PendingReminder) -> Result<(), NotificationError>;
+
+    /// Send a test message to verify the channel is configured correctly
+    async fn test(&self) -> Result<(), NotificationError>;
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum NotificationError {
+    #[error("Channel not implemented: {0}")]
+    NotImplemented(String),
+
+    #[error("Failed to send notification: {0}")]
+    SendFailed(String),
+
+    #[error("Invalid configuration: {0}")]
+    InvalidConfig(String),
+}

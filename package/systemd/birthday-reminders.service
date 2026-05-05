@@ -23,8 +23,8 @@ PrivateDevices=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
-# Allow read access to etc and static, write to data
-ReadOnlyPaths=/opt/birthday-reminders/etc /opt/birthday-reminders/static
+# Allow read access to etc and write to data
+ReadOnlyPaths=/opt/birthday-reminders/etc
 ReadWritePaths=/opt/birthday-reminders/data
 
 [Install]
