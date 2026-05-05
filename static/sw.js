@@ -1,6 +1,6 @@
-const APP_CACHE = 'birthday-reminders-app-v3';
-const CDN_CACHE = 'birthday-reminders-cdn-v3';
-const API_CACHE = 'birthday-reminders-api-v3';
+const APP_CACHE = 'birthday-reminders-app-v4';
+const CDN_CACHE = 'birthday-reminders-cdn-v4';
+const API_CACHE = 'birthday-reminders-api-v4';
 
 const SHELL_URLS = [
     '/',
@@ -53,6 +53,20 @@ async function cacheFirst(request, cacheName) {
     return response;
 }
 
+async function staleWhileRevalidate(request, cacheName) {
+    const cache = await caches.open(cacheName);
+    const cachedResponse = await cache.match(request);
+
+    const fetchPromise = fetch(request).then((networkResponse) => {
+        if (networkResponse.ok) {
+            cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+    }).catch(() => { /* Network failure is ignored if we have cache */ });
+
+    return cachedResponse || fetchPromise;
+}
+
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(APP_CACHE).then((cache) => cache.addAll(SHELL_URLS))
@@ -95,7 +109,11 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (isStaticAsset(request)) {
-        event.respondWith(cacheFirst(request, APP_CACHE));
+        if (url.pathname.endsWith('.css')) {
+            event.respondWith(staleWhileRevalidate(request, APP_CACHE));
+        } else {
+            event.respondWith(cacheFirst(request, APP_CACHE));
+        }
         return;
     }
 

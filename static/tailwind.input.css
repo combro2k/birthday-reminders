@@ -360,14 +360,13 @@
 }
 
 /* ===== Dark Mode ===== */
-@layer base {
-  .dark body {
-    @apply bg-slate-900 text-slate-100;
-    background-image:
-      radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.1), transparent 40%),
-      radial-gradient(circle at 95% 10%, rgba(234, 179, 8, 0.08), transparent 35%),
-      linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-  }
+.dark body {
+  @apply bg-slate-900 text-slate-100;
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.1), transparent 40%),
+    radial-gradient(circle at 95% 10%, rgba(234, 179, 8, 0.08), transparent 35%),
+    linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
 
   .dark h1,
   .dark h2,
@@ -382,9 +381,7 @@
   .dark a:hover {
     @apply text-brand-300;
   }
-}
 
-@layer components {
   .dark .auth-container {
     @apply border-slate-700 bg-slate-800/95 shadow-xl;
   }
@@ -556,4 +553,3 @@
       @apply text-slate-400;
     }
   }
-}
