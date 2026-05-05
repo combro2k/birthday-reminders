@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block theme %}{{ user.theme.as_str() }}{% endblock %}
+
 {% block title %}Dashboard - Birthday Reminders{% endblock %}
 
 {% block body %}
@@ -66,4 +68,9 @@
     </div>
     {% endif %}
 </main>
+{% endblock %}
+{% block footer %}
+<footer class="text-center text-xs text-gray-400 dark:text-gray-600 py-4">
+    Birthday Reminders v{{ self.app_version() }}
+</footer>
 {% endblock %}

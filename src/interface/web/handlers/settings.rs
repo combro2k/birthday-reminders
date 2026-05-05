@@ -157,6 +157,13 @@ pub struct DateFormatForm {
     pub date_format: String,
 }
 
+#[derive(Deserialize)]
+pub struct ThemeForm {
+    pub theme: String,
+}
+
+const ALLOWED_THEMES: [&str; 3] = ["light", "dark", "auto"];
+
 pub async fn update_date_format(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
@@ -193,6 +200,57 @@ pub async fn update_date_format(
                     updated_user,
                     None,
                     Some("Date format updated".to_string()),
+                    csrf_token,
+                    reminder_days,
+                )
+                .to_string(),
+            )
+            .into_response()
+        }
+        Err(e) => Html(
+            profile_template(user, Some(e.to_string()), None, csrf_token, reminder_days)
+                .to_string(),
+        )
+        .into_response(),
+    }
+}
+
+pub async fn update_theme(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<User>,
+    session: Session,
+    Form(form): Form<ThemeForm>,
+) -> impl IntoResponse {
+    let csrf_token = get_csrf_token(&session).await;
+    let reminder_days = get_user_reminder_days(&state, &user).await;
+
+    if !ALLOWED_THEMES.contains(&form.theme.as_str()) {
+        return Html(
+            profile_template(
+                user,
+                Some("Invalid theme selection".to_string()),
+                None,
+                csrf_token,
+                reminder_days,
+            )
+            .to_string(),
+        )
+        .into_response();
+    }
+
+    match state
+        .user_command_service
+        .update_theme(&user.id, &form.theme)
+        .await
+    {
+        Ok(()) => {
+            let mut updated_user = user;
+            updated_user.theme = crate::domain::user::Theme::from_str(&form.theme);
+            Html(
+                profile_template(
+                    updated_user,
+                    None,
+                    Some("Theme updated".to_string()),
                     csrf_token,
                     reminder_days,
                 )

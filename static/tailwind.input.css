@@ -358,3 +358,202 @@
     }
   }
 }
+
+/* ===== Dark Mode ===== */
+@layer base {
+  .dark body {
+    @apply bg-slate-900 text-slate-100;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.1), transparent 40%),
+      radial-gradient(circle at 95% 10%, rgba(234, 179, 8, 0.08), transparent 35%),
+      linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3 {
+    @apply text-slate-100;
+  }
+
+  .dark a {
+    @apply text-brand-400;
+  }
+
+  .dark a:hover {
+    @apply text-brand-300;
+  }
+}
+
+@layer components {
+  .dark .auth-container {
+    @apply border-slate-700 bg-slate-800/95 shadow-xl;
+  }
+
+  .dark .auth-container h2 {
+    @apply text-slate-400;
+  }
+
+  .dark .navbar {
+    @apply border-b-slate-700/90 bg-slate-900/90;
+  }
+
+  .dark .nav-brand {
+    @apply text-slate-100;
+  }
+
+  .dark .nav-links a,
+  .dark .navbar .btn-link {
+    @apply border-slate-700 bg-slate-800 text-slate-300;
+  }
+
+  .dark .nav-links a:hover,
+  .dark .navbar .btn-link:hover,
+  .dark .nav-links a.active {
+    @apply border-brand-600 bg-brand-900/50 text-brand-300;
+  }
+
+  .dark .card {
+    @apply border-slate-700 bg-slate-800/95;
+  }
+
+  .dark .birthday-card,
+  .dark .channel-card {
+    @apply border-slate-700 bg-slate-800/95;
+  }
+
+  .dark .birthday-card.today {
+    @apply border-emerald-700 bg-emerald-900/40;
+  }
+
+  .dark .birthday-card.soon {
+    @apply border-amber-700 bg-amber-900/40;
+  }
+
+  .dark .channel-card.configured {
+    @apply border-emerald-700;
+  }
+
+  .dark .card-body p {
+    @apply text-slate-300;
+  }
+
+  .dark .notes {
+    @apply text-slate-400;
+  }
+
+  .dark .table {
+    @apply border-slate-700 bg-slate-800;
+  }
+
+  .dark .table th,
+  .dark .table td {
+    @apply border-b-slate-700;
+  }
+
+  .dark .table thead th {
+    @apply bg-slate-700/50 text-slate-300;
+  }
+
+  .dark .table th a {
+    @apply text-slate-300;
+  }
+
+  .dark .table th a:hover,
+  .dark .table th a.active {
+    @apply text-brand-300;
+  }
+
+  .dark .form-group label {
+    @apply text-slate-300;
+  }
+
+  .dark .form-group input,
+  .dark .form-group textarea,
+  .dark .form-group select {
+    @apply border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-brand-500 focus:ring-brand-800;
+  }
+
+  .dark .checkbox-label {
+    @apply border-slate-700 bg-slate-800 text-slate-200;
+  }
+
+  .dark .btn-secondary {
+    @apply border-slate-600 bg-slate-700 text-slate-200 hover:bg-slate-600;
+  }
+
+  .dark .btn-link {
+    @apply text-slate-300;
+  }
+
+  .dark .badge {
+    @apply bg-brand-900/50 text-brand-300;
+  }
+
+  .dark .badge-success {
+    @apply bg-emerald-900/50 text-emerald-300;
+  }
+
+  .dark .badge-muted {
+    @apply bg-slate-700 text-slate-300;
+  }
+
+  .dark .alert {
+    @apply border-slate-700;
+  }
+
+  .dark .alert-error {
+    @apply border-rose-800 bg-rose-900/40 text-rose-300;
+  }
+
+  .dark .alert-success {
+    @apply border-emerald-800 bg-emerald-900/40 text-emerald-300;
+  }
+
+  .dark .alert-warning {
+    @apply border-amber-800 bg-amber-900/40 text-amber-300;
+  }
+
+  .dark .alert pre {
+    @apply border-slate-700 bg-slate-800;
+  }
+
+  .dark .empty-state {
+    @apply border-slate-600 bg-slate-800/80 text-slate-400;
+  }
+
+  .dark .divider::before {
+    @apply border-t-slate-700;
+  }
+
+  .dark .divider span {
+    @apply bg-slate-900 text-slate-400;
+  }
+
+  .dark pre.token,
+  .dark details.help-text pre,
+  .dark .card pre {
+    @apply border-slate-700 bg-slate-900 text-slate-200;
+  }
+
+  .dark details.help-text {
+    @apply border-slate-700 bg-slate-800;
+  }
+
+  .dark details.help-text summary {
+    @apply text-brand-400;
+  }
+
+  @media (max-width: 768px) {
+    .dark .table tr {
+      @apply border-slate-700 bg-slate-800;
+    }
+
+    .dark .table td {
+      @apply border-b-slate-700;
+    }
+
+    .dark .table td::before {
+      @apply text-slate-400;
+    }
+  }
+}

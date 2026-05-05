@@ -7,6 +7,12 @@ use crate::domain::notification::ChannelKind;
 use crate::domain::repository::NotificationChannelRecord;
 use crate::domain::user::User;
 
+pub trait AppVersion {
+    fn app_version(&self) -> &'static str {
+        env!("CARGO_PKG_VERSION")
+    }
+}
+
 // ---- Auth Templates ----
 
 #[derive(Template)]
@@ -144,6 +150,15 @@ pub struct AdminUsersTemplate {
     pub success: Option<String>,
     pub csrf_token: String,
 }
+
+impl AppVersion for DashboardTemplate {}
+impl AppVersion for BirthdayListTemplate {}
+impl AppVersion for BirthdayFormTemplate {}
+impl AppVersion for ChannelsTemplate {}
+impl AppVersion for ChannelFormTemplate {}
+impl AppVersion for ProfileTemplate {}
+impl AppVersion for ApiTokensTemplate {}
+impl AppVersion for AdminUsersTemplate {}
 
 // ---- View Models ----
 

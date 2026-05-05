@@ -71,6 +71,22 @@ impl UserCommandService {
         Ok(())
     }
 
+    pub async fn update_theme(
+        &self,
+        user_id: &UserId,
+        theme: &str,
+    ) -> anyhow::Result<()> {
+        let update = UpdateUser {
+            theme: Some(theme.to_string()),
+            ..Default::default()
+        };
+        self.user_repo
+            .update(user_id, update)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to update theme: {}", e))?;
+        Ok(())
+    }
+
     pub async fn delete_user(&self, user_id: &UserId) -> anyhow::Result<()> {
         self.user_repo
             .delete(user_id)

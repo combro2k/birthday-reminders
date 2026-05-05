@@ -3,7 +3,7 @@ use sqlx::MySqlPool;
 use uuid::Uuid;
 
 use crate::domain::repository::RepositoryError;
-use crate::domain::user::{AuthMethod, Role, User, UserId};
+use crate::domain::user::{AuthMethod, Role, Theme, User, UserId};
 use crate::domain::user_repository::{NewUser, UpdateUser, UserRepository};
 
 pub struct MysqlUserRepo {
@@ -26,6 +26,7 @@ struct UserRow {
     auth_method: String,
     oidc_subject: Option<String>,
     date_format: String,
+    theme: String,
     created_at: chrono::NaiveDateTime,
     updated_at: chrono::NaiveDateTime,
 }
@@ -45,6 +46,7 @@ impl TryFrom<UserRow> for User {
             auth_method: AuthMethod::from_str(&row.auth_method),
             oidc_subject: row.oidc_subject,
             date_format: row.date_format,
+            theme: Theme::from_str(&row.theme),
             created_at: chrono::DateTime::from_naive_utc_and_offset(row.created_at, chrono::Utc),
             updated_at: chrono::DateTime::from_naive_utc_and_offset(row.updated_at, chrono::Utc),
         })
@@ -58,8 +60,8 @@ impl UserRepository for MysqlUserRepo {
         let now = chrono::Utc::now().naive_utc();
 
         sqlx::query(
-            "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, theme, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id.to_string())
         .bind(&new.username)
@@ -68,6 +70,7 @@ impl UserRepository for MysqlUserRepo {
         .bind(new.role.as_str())
         .bind(new.auth_method.as_str())
         .bind(&new.oidc_subject)
+        .bind(Theme::default().as_str())
         .bind(now)
         .bind(now)
         .execute(&self.pool)
@@ -90,6 +93,7 @@ impl UserRepository for MysqlUserRepo {
             auth_method: new.auth_method,
             oidc_subject: new.oidc_subject,
             date_format: "%d-%m-%Y".to_string(),
+            theme: Theme::default(),
             created_at: chrono::DateTime::from_naive_utc_and_offset(now, chrono::Utc),
             updated_at: chrono::DateTime::from_naive_utc_and_offset(now, chrono::Utc),
         })
@@ -97,7 +101,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_by_id(&self, id: &UserId) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users WHERE id = ?",
         )
         .bind(id.0.to_string())
@@ -111,7 +115,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_by_username(&self, username: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users WHERE username = ?",
         )
         .bind(username)
@@ -125,7 +129,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users WHERE oidc_subject = ?",
         )
         .bind(subject)
@@ -139,7 +143,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_all(&self) -> Result<Vec<User>, RepositoryError> {
         let rows = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -165,10 +169,11 @@ impl UserRepository for MysqlUserRepo {
             None => current.oidc_subject,
         };
         let date_format = update.date_format.unwrap_or(current.date_format);
+        let theme = update.theme.map(|t| Theme::from_str(&t)).unwrap_or(current.theme);
 
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
-             auth_method = ?, oidc_subject = ?, date_format = ?, updated_at = UTC_TIMESTAMP(6)
+             auth_method = ?, oidc_subject = ?, date_format = ?, theme = ?, updated_at = UTC_TIMESTAMP(6)
              WHERE id = ?",
         )
         .bind(&username)
@@ -178,6 +183,7 @@ impl UserRepository for MysqlUserRepo {
         .bind(auth_method.as_str())
         .bind(&oidc_subject)
         .bind(&date_format)
+        .bind(theme.as_str())
         .bind(id.0.to_string())
         .execute(&self.pool)
         .await

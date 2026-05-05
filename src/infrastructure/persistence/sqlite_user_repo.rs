@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::domain::repository::RepositoryError;
-use crate::domain::user::{AuthMethod, Role, User, UserId};
+use crate::domain::user::{AuthMethod, Role, Theme, User, UserId};
 use crate::domain::user_repository::{NewUser, UpdateUser, UserRepository};
 
 pub struct SqliteUserRepo {
@@ -26,6 +26,7 @@ struct UserRow {
     auth_method: String,
     oidc_subject: Option<String>,
     date_format: String,
+    theme: String,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -41,6 +42,7 @@ impl From<UserRow> for User {
             auth_method: AuthMethod::from_str(&row.auth_method),
             oidc_subject: row.oidc_subject,
             date_format: row.date_format,
+            theme: Theme::from_str(&row.theme),
             created_at: row.created_at,
             updated_at: row.updated_at,
         }
@@ -54,8 +56,8 @@ impl UserRepository for SqliteUserRepo {
         let now = chrono::Utc::now();
 
         sqlx::query(
-            "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, theme, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id.to_string())
         .bind(&new.username)
@@ -64,6 +66,7 @@ impl UserRepository for SqliteUserRepo {
         .bind(new.role.as_str())
         .bind(new.auth_method.as_str())
         .bind(&new.oidc_subject)
+        .bind(Theme::default().as_str())
         .bind(&now)
         .bind(&now)
         .execute(&self.pool)
@@ -86,6 +89,7 @@ impl UserRepository for SqliteUserRepo {
             auth_method: new.auth_method,
             oidc_subject: new.oidc_subject,
             date_format: "%d-%m-%Y".to_string(), // Default date format
+            theme: Theme::default(),
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
         })
@@ -104,7 +108,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users
              WHERE
                 CASE
@@ -139,7 +143,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users WHERE username = ?",
         )
         .bind(username)
@@ -163,7 +167,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users WHERE oidc_subject = ?",
         )
         .bind(subject)
@@ -187,7 +191,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, created_at, updated_at
+                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -212,11 +216,12 @@ impl UserRepository for SqliteUserRepo {
             None => current.oidc_subject,
         };
         let date_format = update.date_format.unwrap_or(current.date_format);
+        let theme = update.theme.map(|t| Theme::from_str(&t)).unwrap_or(current.theme);
         let now = chrono::Utc::now();
 
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
-             auth_method = ?, oidc_subject = ?, date_format = ?, updated_at = ?
+             auth_method = ?, oidc_subject = ?, date_format = ?, theme = ?, updated_at = ?
              WHERE
                 CASE
                     WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
@@ -236,6 +241,7 @@ impl UserRepository for SqliteUserRepo {
         .bind(auth_method.as_str())
         .bind(&oidc_subject)
         .bind(&date_format)
+        .bind(theme.as_str())
         .bind(&now)
         .bind(id.0.to_string())
         .execute(&self.pool)

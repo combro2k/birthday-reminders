@@ -22,6 +22,7 @@ pub struct UpdateUser {
     pub auth_method: Option<super::user::AuthMethod>,
     pub oidc_subject: Option<Option<String>>,
     pub date_format: Option<String>,
+    pub theme: Option<String>,
 }
 
 #[async_trait]
