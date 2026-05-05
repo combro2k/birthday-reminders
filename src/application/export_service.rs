@@ -83,6 +83,7 @@ pub struct NotificationExportRow {
     user_id: String,
     channel_type: String,
     enabled: bool,
+    config: String,
     created_at: String,
     updated_at: String,
 }
@@ -251,8 +252,8 @@ impl ExportService {
     async fn fetch_notifications(&self, user_id: &UserId, db: &DatabasePool) -> anyhow::Result<Vec<NotificationExportRow>> {
         match db {
             DatabasePool::Postgres(pool) => {
-                let rows = sqlx::query_as::<_, (String, String, String, bool, String, String)>(
-                    "SELECT id, user_id, channel_type, enabled, created_at, updated_at FROM notification_channels WHERE user_id = $1 ORDER BY channel_type",
+                let rows = sqlx::query_as::<_, (String, String, String, bool, String, String, String)>(
+                    "SELECT id, user_id, channel_type, enabled, config::text AS config, created_at, updated_at FROM notification_channels WHERE user_id = $1 ORDER BY channel_type",
                 )
                 .bind(user_id.0)
                 .fetch_all(pool)
@@ -260,12 +261,13 @@ impl ExportService {
 
                 Ok(rows
                     .into_iter()
-                    .map(|(id, user_id, channel_type, enabled, created_at, updated_at)| {
+                    .map(|(id, user_id, channel_type, enabled, config, created_at, updated_at)| {
                         NotificationExportRow {
                             id,
                             user_id,
                             channel_type,
                             enabled,
+                            config,
                             created_at,
                             updated_at,
                         }
@@ -273,8 +275,8 @@ impl ExportService {
                     .collect())
             }
             DatabasePool::Mysql(pool) => {
-                let rows = sqlx::query_as::<_, (String, String, String, bool, String, String)>(
-                    "SELECT id, user_id, channel_type, enabled, created_at, updated_at FROM notification_channels WHERE user_id = ? ORDER BY channel_type",
+                let rows = sqlx::query_as::<_, (String, String, String, bool, String, String, String)>(
+                    "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at FROM notification_channels WHERE user_id = ? ORDER BY channel_type",
                 )
                 .bind(user_id.0.to_string())
                 .fetch_all(pool)
@@ -282,12 +284,13 @@ impl ExportService {
 
                 Ok(rows
                     .into_iter()
-                    .map(|(id, user_id, channel_type, enabled, created_at, updated_at)| {
+                    .map(|(id, user_id, channel_type, enabled, config, created_at, updated_at)| {
                         NotificationExportRow {
                             id,
                             user_id,
                             channel_type,
                             enabled,
+                            config,
                             created_at,
                             updated_at,
                         }
@@ -295,8 +298,8 @@ impl ExportService {
                     .collect())
             }
             DatabasePool::Sqlite(pool) => {
-                let rows = sqlx::query_as::<_, (String, String, String, bool, String, String)>(
-                    "SELECT id, user_id, channel_type, enabled, created_at, updated_at FROM notification_channels WHERE user_id = ? ORDER BY channel_type",
+                let rows = sqlx::query_as::<_, (String, String, String, bool, String, String, String)>(
+                    "SELECT id, user_id, channel_type, enabled, config, created_at, updated_at FROM notification_channels WHERE user_id = ? ORDER BY channel_type",
                 )
                 .bind(user_id.0.to_string())
                 .fetch_all(pool)
@@ -304,12 +307,13 @@ impl ExportService {
 
                 Ok(rows
                     .into_iter()
-                    .map(|(id, user_id, channel_type, enabled, created_at, updated_at)| {
+                    .map(|(id, user_id, channel_type, enabled, config, created_at, updated_at)| {
                         NotificationExportRow {
                             id,
                             user_id,
                             channel_type,
                             enabled,
+                            config,
                             created_at,
                             updated_at,
                         }
