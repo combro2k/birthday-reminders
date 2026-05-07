@@ -107,20 +107,20 @@ pub async fn update_password(
     }
 
     // Verify current password
-    if let Some(ref hash) = user.password_hash {
-        if !crate::auth::infrastructure::password::verify_password(&form.current_password, hash) {
-            return Html(
-                profile_template(
-                    user,
-                    Some("Current password is incorrect".to_string()),
-                    None,
-                    csrf_token,
-                    reminder_days,
-                )
-                .to_string(),
+    if let Some(ref hash) = user.password_hash
+        && !crate::auth::infrastructure::password::verify_password(&form.current_password, hash)
+    {
+        return Html(
+            profile_template(
+                user,
+                Some("Current password is incorrect".to_string()),
+                None,
+                csrf_token,
+                reminder_days,
             )
-            .into_response();
-        }
+            .to_string(),
+        )
+        .into_response();
     }
 
     match state

@@ -128,13 +128,13 @@ fn default_days_before() -> Vec<u32> {
 
 impl ServerConfig {
     pub fn public_base_url(&self) -> anyhow::Result<Url> {
-        if let Some(base_url) = self.base_url.as_deref().map(str::trim) {
-            if !base_url.is_empty() {
-                let url = Url::parse(base_url)
-                    .with_context(|| format!("Invalid server.base_url: {base_url}"))?;
-                validate_public_url(&url)?;
-                return Ok(url);
-            }
+        if let Some(base_url) = self.base_url.as_deref().map(str::trim)
+            && !base_url.is_empty()
+        {
+            let url = Url::parse(base_url)
+                .with_context(|| format!("Invalid server.base_url: {base_url}"))?;
+            validate_public_url(&url)?;
+            return Ok(url);
         }
 
         let server_name = self

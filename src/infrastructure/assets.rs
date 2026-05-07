@@ -41,13 +41,13 @@ pub async fn static_handler(uri: Uri) -> impl IntoResponse {
             // PWA Fallback logic:
             // If the request doesn't contain a dot (likely a route like /birthdays/list),
             // serve index.html to let the frontend router handle it.
-            if !final_path.contains('.') {
-                if let Some(index) = Assets::get("index.html") {
-                    return Response::builder()
-                        .header(header::CONTENT_TYPE, "text/html")
-                        .body(Body::from(index.data))
-                        .unwrap();
-                }
+            if !final_path.contains('.')
+                && let Some(index) = Assets::get("index.html")
+            {
+                return Response::builder()
+                    .header(header::CONTENT_TYPE, "text/html")
+                    .body(Body::from(index.data))
+                    .unwrap();
             }
 
             StatusCode::NOT_FOUND.into_response()

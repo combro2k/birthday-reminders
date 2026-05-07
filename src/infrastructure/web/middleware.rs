@@ -41,15 +41,13 @@ pub async fn auth_middleware(
     }
 
     // Try API token from Authorization header
-    if let Some(auth_header) = request.headers().get("authorization") {
-        if let Ok(header_str) = auth_header.to_str() {
-            if let Some(token) = header_str.strip_prefix("Bearer ") {
-                if let Some(user) = validate_bearer_token(token, &state).await {
-                    request.extensions_mut().insert(user);
-                    return next.run(request).await;
-                }
-            }
-        }
+    if let Some(auth_header) = request.headers().get("authorization")
+        && let Ok(header_str) = auth_header.to_str()
+        && let Some(token) = header_str.strip_prefix("Bearer ")
+        && let Some(user) = validate_bearer_token(token, &state).await
+    {
+        request.extensions_mut().insert(user);
+        return next.run(request).await;
     }
 
     // Check if this is an API request or browser request
