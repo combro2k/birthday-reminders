@@ -677,13 +677,15 @@ The binary, static files, and migrations can be rebuilt from source.
 
 Before publishing a new version, complete all of the following:
 
-You can run all Rust release checks in one command:
+You can run all release checks in one command:
 
 ```bash
 ./scripts/release-check.sh
 ```
 
 - Document the version bump and changes in [CHANGELOG.md](CHANGELOG.md).
+- Ensure [Cargo.toml](Cargo.toml) and [package.json](package.json) use the exact same version.
+- Run `npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify` successfully on every version bump.
 - Run `cargo fmt` and ensure it passes.
 - If functionality was added or changed, run `cargo test` and ensure tests pass.
 - Run `cargo clippy` and ensure it passes.
