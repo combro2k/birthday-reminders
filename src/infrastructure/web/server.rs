@@ -165,14 +165,12 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         ))
         .layer(middleware::from_fn(csrf_middleware));
 
-    let app = Router::new()
+    Router::new()
         .merge(public)
         .merge(protected)
         .route("/static/{*path}", get(static_handler))
         .layer(session_layer)
-        .with_state(state);
-
-    app
+        .with_state(state)
 }
 
 async fn health_check(State(state): State<Arc<AppState>>) -> impl axum::response::IntoResponse {

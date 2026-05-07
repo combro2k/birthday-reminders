@@ -12,6 +12,7 @@ use crate::users::domain::user::Role;
 
 use super::commands::Commands;
 
+#[allow(clippy::too_many_arguments)]
 pub async fn handle_command(
     cmd: Commands,
     db: &DatabasePool,
@@ -165,6 +166,7 @@ pub async fn handle_command(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_export_command(
     admin: bool,
     token: Option<String>,
@@ -265,31 +267,29 @@ async fn handle_export_command(
             }
 
             // API tokens
-            if let Some(ref uid) = user_id {
-                if let Ok(csv) = export_svc.export_api_tokens(uid, db).await {
-                    exports.push(("api_tokens.csv", csv));
-                }
+            if let Some(ref uid) = user_id
+                && let Ok(csv) = export_svc.export_api_tokens(uid, db).await
+            {
+                exports.push(("api_tokens.csv", csv));
             }
 
             // Notifications
-            if let Some(ref uid) = user_id {
-                if let Ok(csv) = export_svc.export_notifications(uid, db).await {
-                    exports.push(("notifications.csv", csv));
-                }
+            if let Some(ref uid) = user_id
+                && let Ok(csv) = export_svc.export_notifications(uid, db).await
+            {
+                exports.push(("notifications.csv", csv));
             }
 
             // Reminder settings
-            if let Some(ref uid) = user_id {
-                if let Ok(csv) = export_svc.export_reminder_settings(uid, db).await {
-                    exports.push(("reminders.csv", csv));
-                }
+            if let Some(ref uid) = user_id
+                && let Ok(csv) = export_svc.export_reminder_settings(uid, db).await
+            {
+                exports.push(("reminders.csv", csv));
             }
 
             // Users (admin only)
-            if admin {
-                if let Ok(csv) = export_svc.export_all_users().await {
-                    exports.push(("users.csv", csv));
-                }
+            if admin && let Ok(csv) = export_svc.export_all_users().await {
+                exports.push(("users.csv", csv));
             }
 
             if let Some(ref output_dir) = output {

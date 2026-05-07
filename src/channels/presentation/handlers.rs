@@ -265,6 +265,7 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn channel_form_template(
     user: User,
     channel_type: String,
@@ -381,10 +382,10 @@ fn channel_form_template(
                 }
             }
             ChannelKind::Discord => {
-                if let Ok(cfg) = serde_json::from_value::<DiscordConfig>(existing.config.clone()) {
-                    if template.discord_webhook_url.is_empty() {
-                        template.discord_webhook_url = cfg.webhook_url;
-                    }
+                if let Ok(cfg) = serde_json::from_value::<DiscordConfig>(existing.config.clone())
+                    && template.discord_webhook_url.is_empty()
+                {
+                    template.discord_webhook_url = cfg.webhook_url;
                 }
             }
             ChannelKind::Sms => {

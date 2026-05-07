@@ -68,10 +68,11 @@ impl AuthMethod {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum Theme {
     Light,
     Dark,
+    #[default]
     Auto,
 }
 
@@ -90,12 +91,6 @@ impl Theme {
             "dark" => Theme::Dark,
             _ => Theme::Auto,
         }
-    }
-}
-
-impl Default for Theme {
-    fn default() -> Self {
-        Theme::Auto
     }
 }
 

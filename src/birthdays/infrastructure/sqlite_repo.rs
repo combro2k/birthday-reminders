@@ -76,8 +76,8 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         .bind(&new.city)
         .bind(&new.country)
         .bind(&new.notes)
-        .bind(&now)
-        .bind(&now)
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::Database(e.to_string()))?;
@@ -177,7 +177,7 @@ impl BirthdayRepository for SqliteBirthdayRepo {
         .bind(&city)
         .bind(&country)
         .bind(&notes)
-        .bind(&now)
+        .bind(now)
         .bind(id.0.to_string())
         .execute(&self.pool)
         .await

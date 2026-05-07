@@ -15,6 +15,7 @@ impl BirthdayCommandService {
         Self { repo }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn add(
         &self,
         user_id: &UserId,
@@ -60,6 +61,7 @@ impl BirthdayCommandService {
         Ok(birthday)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn update(
         &self,
         id: uuid::Uuid,
@@ -146,6 +148,7 @@ impl BirthdayCommandService {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn validate_birthday_input(
     name: &str,
     birth_date: NaiveDate,
@@ -179,40 +182,40 @@ fn validate_birthday_input(
         }
     }
 
-    if let Some(phone) = phone_number {
-        if phone.len() > 50 {
-            anyhow::bail!("Phone number cannot exceed 50 characters");
-        }
+    if let Some(phone) = phone_number
+        && phone.len() > 50
+    {
+        anyhow::bail!("Phone number cannot exceed 50 characters");
     }
 
-    if let Some(a) = address {
-        if a.len() > 255 {
-            anyhow::bail!("Address cannot exceed 255 characters");
-        }
+    if let Some(a) = address
+        && a.len() > 255
+    {
+        anyhow::bail!("Address cannot exceed 255 characters");
     }
 
-    if let Some(p) = postal_code {
-        if p.len() > 20 {
-            anyhow::bail!("Postal code cannot exceed 20 characters");
-        }
+    if let Some(p) = postal_code
+        && p.len() > 20
+    {
+        anyhow::bail!("Postal code cannot exceed 20 characters");
     }
 
-    if let Some(c) = city {
-        if c.len() > 100 {
-            anyhow::bail!("City cannot exceed 100 characters");
-        }
+    if let Some(c) = city
+        && c.len() > 100
+    {
+        anyhow::bail!("City cannot exceed 100 characters");
     }
 
-    if let Some(c) = country {
-        if c.len() > 100 {
-            anyhow::bail!("Country cannot exceed 100 characters");
-        }
+    if let Some(c) = country
+        && c.len() > 100
+    {
+        anyhow::bail!("Country cannot exceed 100 characters");
     }
 
-    if let Some(n) = notes {
-        if n.len() > 2000 {
-            anyhow::bail!("Notes cannot exceed 2000 characters");
-        }
+    if let Some(n) = notes
+        && n.len() > 2000
+    {
+        anyhow::bail!("Notes cannot exceed 2000 characters");
     }
 
     Ok(())

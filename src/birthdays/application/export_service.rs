@@ -455,10 +455,11 @@ impl ExportService {
     /// Write single CSV file
     pub fn write_csv_file(&self, content: &str, output_path: &str) -> anyhow::Result<()> {
         let path = Path::new(output_path);
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() && parent != Path::new("") {
-                std::fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+            && parent != Path::new("")
+        {
+            std::fs::create_dir_all(parent)?;
         }
 
         let mut file = std::fs::File::create(path)?;

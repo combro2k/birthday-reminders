@@ -67,8 +67,8 @@ impl UserRepository for SqliteUserRepo {
         .bind(new.auth_method.as_str())
         .bind(&new.oidc_subject)
         .bind(Theme::default().as_str())
-        .bind(&now)
-        .bind(&now)
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| {
@@ -245,7 +245,7 @@ impl UserRepository for SqliteUserRepo {
         .bind(&oidc_subject)
         .bind(&date_format)
         .bind(theme.as_str())
-        .bind(&now)
+        .bind(now)
         .bind(id.0.to_string())
         .execute(&self.pool)
         .await

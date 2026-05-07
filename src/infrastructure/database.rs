@@ -39,10 +39,10 @@ impl DatabasePool {
                 .unwrap_or(url);
 
             // Create parent directories if needed
-            if let Some(parent) = std::path::Path::new(path).parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)?;
-                }
+            if let Some(parent) = std::path::Path::new(path).parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent)?;
             }
 
             let pool = SqlitePoolOptions::new()
