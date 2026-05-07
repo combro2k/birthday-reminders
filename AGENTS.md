@@ -22,6 +22,7 @@ Templates must be co-located with their respective domains to maintain encapsula
 * **Encapsulation**: Do not allow infrastructure details to leak into the `domain` layer.
 * **Explicit Mapping**: Use the "Newtype" pattern or dedicated DTOs when moving data between the `infrastructure` and `domain` layers.
 * **Modularity**: Each domain should be a self-contained module in `mod.rs` or defined as a workspace member if the project grows significantly.
+* **Shared repository error type**: Domain repository traits **MUST** use `crate::infrastructure::error::RepositoryError` as the error type. Do not define per-domain error types for repository operations.
 
 ## 4. Static Asset Management
 Static assets should follow a predictable hierarchy that mirrors the domain structure, similar to templates.
@@ -36,6 +37,12 @@ The project uses a modular frontend structure where page-specific logic is dynam
 
 **Body ID Naming Convention**: `page-[domain]-[view]`
 This ID must correspond to the module path in `/static/[domain]/[view].js`.
+
+The ID is set via the `body_attributes` template block in `base.html`. Every page template that needs JS must override it:
+```
+{% block body_attributes %}id="page-[domain]-[view]"{% endblock %}
+```
+Without this block the dynamic import in `main.js` will silently find no match and load no page module.
 Primary domains identified:
 - `birthdays`: `page-birthdays-list`, `page-birthdays-edit`
 - `channels`: `page-channels-list`, `page-channels-edit` (Notification Channels)
@@ -48,24 +55,29 @@ Primary domains identified:
 - **DO NOT** place feature-specific scripts (like `list.js`) directly in the `/static/` root.
 - Always verify the file path matches the dynamic import path defined in the `switch` statement in `main.js`.
 
-## 5. Quality Checks
-After completing any editing task, run the following commands (in order) before considering the work done:
+## 5. Database Migrations
+Every schema change **MUST** include matching migration files for all three database backends:
 
-```bash
-cargo fmt
-cargo test
-cargo clippy
+```
+migrations/sqlite/YYYYMMDDnnnn_description.sql
+migrations/mysql/YYYYMMDDnnnn_description.sql
+migrations/postgres/YYYYMMDDnnnn_description.sql
 ```
 
-All three must pass without errors. Clippy warnings that are pre-existing and unrelated to the changes may be ignored, but no new warnings should be introduced.
+- The timestamp prefix and filename stem **MUST** be identical across all three backends.
+- SQLite, MySQL, and PostgreSQL have different SQL dialects — each file must use syntax appropriate for its backend.
+- Migrations that require no schema changes on a particular backend (e.g. when a type is already correct) **MUST** still have a corresponding file, with a comment explaining why no change is needed.
 
-If any templates or CSS-related files were modified (e.g., files in `/templates/`, `/static/tailwind.input.css`, or changes that affect Tailwind utility classes), rebuild the CSS:
+## 6. Quality Checks
+After completing any editing task, run the release check script before considering the work done:
 
 ```bash
-npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
+bash scripts/release-check.sh
 ```
 
-## 6. Release and Compliance Requirements
+The script verifies version consistency between `Cargo.toml` and `package.json`, rebuilds the Tailwind CSS, and runs `cargo fmt`, `cargo test`, and `cargo clippy` with strict flags. It must exit without errors.
+
+## 7. Release and Compliance Requirements
 
 - **Changelog is mandatory for every version bump**: Each version bump **MUST** be documented in `CHANGELOG.md` with a clear summary of what changed.
 - **Version consistency is mandatory for every version bump**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
@@ -74,12 +86,7 @@ npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
     - Commit the version bump changes. Commit all relevant files for the version bump; if it is unclear whether all changed files should be included, ask the user before committing.
     - Create a Git tag for the version.
     - Push only when the user explicitly asks for a push.
-- **Release validation is mandatory**:
-    - `cargo fmt` **MUST** be run and pass.
-    - `cargo test` **MUST** be run when functionality is added or changed, and all tests must pass.
-    - `cargo clippy` **MUST** be run and pass.
-    - `npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify` **MUST** be run successfully on every version bump.
-    - The release **MUST** have no errors.
+- **Release validation is mandatory**: `bash scripts/release-check.sh` **MUST** be run and pass without errors on every version bump.
 - **No personal or private information in the codebase**:
     - The repository **MUST NOT** contain personal/private data or secrets.
     - This includes (but is not limited to): tokens, passwords, usernames, API keys, credentials, private identifiers, or similar sensitive values.
