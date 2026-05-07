@@ -673,6 +673,25 @@ systemctl start birthday-reminders
 
 The binary, static files, and migrations can be rebuilt from source.
 
+## Release Checklist
+
+Before publishing a new version, complete all of the following:
+
+You can run all Rust release checks in one command:
+
+```bash
+./scripts/release-check.sh
+```
+
+- Document the version bump and changes in [CHANGELOG.md](CHANGELOG.md).
+- Run `cargo fmt` and ensure it passes.
+- If functionality was added or changed, run `cargo test` and ensure tests pass.
+- Run `cargo clippy` and ensure it passes.
+- Ensure the release has no errors.
+- Verify the codebase does not contain personal/private information or secrets (for example: tokens, passwords, usernames, API keys, credentials, or private identifiers).
+
+These requirements are also enforced in [AGENTS.md](AGENTS.md).
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

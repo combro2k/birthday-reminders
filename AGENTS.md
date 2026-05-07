@@ -64,3 +64,15 @@ If any templates or CSS-related files were modified (e.g., files in `/templates/
 ```bash
 npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
 ```
+
+## 6. Release and Compliance Requirements
+
+- **Changelog is mandatory for every version bump**: Every release/version bump **MUST** be documented in `/CHANGELOG.md` with a clear summary of what changed.
+- **Release validation is mandatory**:
+    - `cargo fmt` **MUST** be run and pass.
+    - `cargo test` **MUST** be run when functionality is added or changed, and all tests must pass.
+    - `cargo clippy` **MUST** be run and pass.
+    - The release **MUST** have no errors.
+- **No personal or private information in the codebase**:
+    - The repository **MUST NOT** contain personal/private data or secrets.
+    - This includes (but is not limited to): tokens, passwords, usernames, API keys, credentials, private identifiers, or similar sensitive values.
