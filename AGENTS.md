@@ -69,6 +69,11 @@ npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
 
 - **Changelog is mandatory for every version bump**: Each version bump **MUST** be documented in `CHANGELOG.md` with a clear summary of what changed.
 - **Version consistency is mandatory for every version bump**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
+- **Version bump workflow is mandatory**: A version bump **MUST** explicitly include all of the following steps:
+    - Update the version in all required files. If the exact target version is assumed rather than provided, explicitly ask the user to confirm the version before proceeding.
+    - Commit the version bump changes. Commit all relevant files for the version bump; if it is unclear whether all changed files should be included, ask the user before committing.
+    - Create a Git tag for the version.
+    - Push only when the user explicitly asks for a push.
 - **Release validation is mandatory**:
     - `cargo fmt` **MUST** be run and pass.
     - `cargo test` **MUST** be run when functionality is added or changed, and all tests must pass.
