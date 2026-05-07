@@ -67,11 +67,13 @@ npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
 
 ## 6. Release and Compliance Requirements
 
-- **Changelog is mandatory for every version bump**: Every release/version bump **MUST** be documented in `/CHANGELOG.md` with a clear summary of what changed.
+- **Changelog is mandatory for every version bump**: Each version bump **MUST** be documented in `CHANGELOG.md` with a clear summary of what changed.
+- **Version consistency is mandatory for every version bump**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
 - **Release validation is mandatory**:
     - `cargo fmt` **MUST** be run and pass.
     - `cargo test` **MUST** be run when functionality is added or changed, and all tests must pass.
     - `cargo clippy` **MUST** be run and pass.
+    - `npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify` **MUST** be run successfully on every version bump.
     - The release **MUST** have no errors.
 - **No personal or private information in the codebase**:
     - The repository **MUST NOT** contain personal/private data or secrets.
