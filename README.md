@@ -675,24 +675,19 @@ The binary, static files, and migrations can be rebuilt from source.
 
 ## Release Checklist
 
-Before publishing a new version, complete all of the following:
-
-You can run all release checks in one command:
+Before publishing a new version, run the release check script:
 
 ```bash
-./scripts/release-check.sh
+bash scripts/release-check.sh
 ```
 
-- Document the version bump and changes in [CHANGELOG.md](CHANGELOG.md).
-- Ensure [Cargo.toml](Cargo.toml) and [package.json](package.json) use the exact same version.
-- Run `npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify` successfully on every version bump.
-- Run `cargo fmt` and ensure it passes.
-- If functionality was added or changed, run `cargo test` and ensure tests pass.
-- Run `cargo clippy` and ensure it passes.
-- Ensure the release has no errors.
-- Verify the codebase does not contain personal/private information or secrets (for example: tokens, passwords, usernames, API keys, credentials, or private identifiers).
+This verifies version consistency between `Cargo.toml` and `package.json`, rebuilds the Tailwind CSS, and runs `cargo fmt`, `cargo test`, and `cargo clippy` with strict flags. It must exit without errors.
 
-These requirements are also enforced in [AGENTS.md](AGENTS.md).
+Also ensure:
+- Changes are documented in [CHANGELOG.md](CHANGELOG.md).
+- The codebase does not contain personal/private information or secrets (tokens, passwords, API keys, credentials, etc.).
+
+Full release workflow requirements are enforced in [AGENTS.md](AGENTS.md).
 
 ## License
 
