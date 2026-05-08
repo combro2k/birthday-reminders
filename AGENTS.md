@@ -85,7 +85,7 @@ The script runs `cargo clean` only when there are Git changes in `src/`, `static
 - **Version bump workflow is mandatory**: A version bump **MUST** explicitly include all of the following steps:
     - Update the version in all required files. If the exact target version is assumed rather than provided, explicitly ask the user to confirm the version before proceeding.
     - If the user asks for a version bump without specifying a target version, calculate and suggest:
-        - Next minor version (`x.(y+1).0`) as the default/recommended option.
+        - Next minor version (`x.x.(y+1)`) as the default/recommended option.
         - Next major version (`(x+1).0.0`) as an alternative option.
             Present these choices using an input selector (interactive option picker), with next minor preselected/recommended, while still allowing explicit freeform version input.
       Always ask for explicit confirmation before applying any version change.
