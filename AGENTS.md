@@ -87,6 +87,7 @@ The script runs `cargo clean` only when there are Git changes in `src/`, `static
     - If the user asks for a version bump without specifying a target version, calculate and suggest:
         - Next minor version (`x.(y+1).0`) as the default/recommended option.
         - Next major version (`(x+1).0.0`) as an alternative option.
+            Present these choices using an input selector (interactive option picker), with next minor preselected/recommended, while still allowing explicit freeform version input.
       Always ask for explicit confirmation before applying any version change.
     - Commit the version bump changes. Commit all relevant files for the version bump; if it is unclear whether all changed files should be included, ask the user before committing.
     - Create a Git tag for the version.

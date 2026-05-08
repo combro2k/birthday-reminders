@@ -9,15 +9,22 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ### Added
 
 ### Changed
+
+### Fixed
+
+### Security
+
+## [1.1.0] - 2026-05-08
+
+### Changed
 - Updated default runtime and install paths to use system locations consistently:
   - Default CLI config path is now `/etc/birthday-reminders/config.yaml`
   - `package/install.sh`, `package/uninstall.sh`, and `Makefile` now default to `/usr/bin`, `/etc/birthday-reminders`, and `/var/lib/birthday-reminders`
   - Default SQLite URL in `config.yaml.example` now points to `/var/lib/birthday-reminders/birthday_reminders.db?mode=rwc`
 - Updated README examples and operational docs to match the system-path defaults above
-
-### Fixed
-
-### Security
+- Updated `scripts/release-check.sh` to run `cargo clean` conditionally, only when Git changes are present in `src/`, `static/`, `templates/`, `tests/`, or `migrations/`
+- Updated `AGENTS.md` and `README.md` to document the conditional `cargo clean` behavior in the release-check workflow
+- Updated `AGENTS.md` release guidance so version bumps without an explicit target suggest next minor by default (with next major as alternative) and always require confirmation before applying
 
 ## [1.0.6] - 2026-05-08
 
