@@ -1,7 +1,6 @@
-PREFIX ?= /opt/birthday-reminders
-BINDIR = $(PREFIX)/bin
-CONFDIR = $(PREFIX)/etc
-DATADIR = $(PREFIX)/data
+BINDIR ?= /usr/bin
+CONFDIR ?= /etc/birthday-reminders
+DATADIR ?= /var/lib/birthday-reminders
 
 BINARY = target/release/birthday-reminders
 VERSION = $(shell grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
@@ -29,9 +28,8 @@ install: build
 		echo "Config already exists, installing as config.yaml.new"; \
 		install -m 640 config.yaml.example $(DESTDIR)$(CONFDIR)/config.yaml.new; \
 	fi
-	rm -rf $(DESTDIR)$(PREFIX)/static
 	@echo ""
-	@echo "Installed to $(DESTDIR)$(PREFIX)"
+	@echo "Installed birthday-reminders"
 	@echo "  Binary:     $(DESTDIR)$(BINDIR)/birthday-reminders"
 	@echo "  Config:     $(DESTDIR)$(CONFDIR)/config.yaml"
 	@echo "  Data:       $(DESTDIR)$(DATADIR)/"
@@ -80,8 +78,6 @@ packages: package-tar package-deb package-apk
 # Uninstall everything installed by 'make install'.
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/birthday-reminders
-	rm -rf $(DESTDIR)$(MIGRATIONSDIR)
-	rm -rf $(DESTDIR)$(PREFIX)/static
 	rm -rf $(DESTDIR)$(DATADIR)
 	if [ -d $(DESTDIR)$(CONFDIR) ]; then \
 	  echo "NOTE: Config at $(DESTDIR)$(CONFDIR) was preserved. Remove manually if desired."; \
