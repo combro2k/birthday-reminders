@@ -16,7 +16,7 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 ## Prerequisites
 
 ### Runtime Requirements
-- **Rust** 1.85+ (edition 2024)
+- **Rust** 1.95+ (edition 2024)
 - **Node.js** 20+ and **npm** (for Tailwind CSS build)
 - **PostgreSQL** 13+, **MySQL** 8.0+, or **SQLite** 3.35+
 - A running database instance (for PostgreSQL or MySQL)
