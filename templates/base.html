@@ -1,8 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{% block theme %}auto{% endblock %}">
+<html lang="en" data-theme="{% block theme %}dark{% endblock %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
+    <script>
+        (function bootstrapTheme() {
+            var root = document.documentElement;
+            var theme = root.getAttribute('data-theme') || 'dark';
+            var supportsMedia = typeof window.matchMedia === 'function';
+            var prefersDark = supportsMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var resolved = theme === 'auto' ? (prefersDark ? 'dark' : 'light') : theme;
+
+            root.classList.toggle('dark', resolved === 'dark');
+            root.classList.toggle('light', resolved === 'light');
+        })();
+    </script>
     <title>{% block title %}Birthday Reminders{% endblock %}</title>
     <link rel="stylesheet" href="/static/tailwind.css">
     <link rel="manifest" href="/static/manifest.json">

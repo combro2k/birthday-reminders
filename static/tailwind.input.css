@@ -359,8 +359,8 @@
   }
 }
 
-/* ===== Dark Mode ===== */
-.dark body {
+/* ===== Dark-First Theme ===== */
+body {
   @apply bg-slate-900 text-slate-100;
   background-image:
     radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.1), transparent 40%),
@@ -368,188 +368,383 @@
     linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
 }
 
-  .dark h1,
-  .dark h2,
-  .dark h3 {
+  h1,
+  h2,
+  h3 {
     @apply text-slate-100;
   }
 
-  .dark a {
+  a {
     @apply text-brand-400;
   }
 
-  .dark a:hover {
+  a:hover {
     @apply text-brand-300;
   }
 
-  .dark .auth-container {
+  .auth-container {
     @apply border-slate-700 bg-slate-800/95 shadow-xl;
   }
 
-  .dark .auth-container h2 {
+  .auth-container h2 {
     @apply text-slate-400;
   }
 
-  .dark .navbar {
+  .navbar {
     @apply border-b-slate-700/90 bg-slate-900/90;
   }
 
-  .dark .nav-brand {
+  .nav-brand {
     @apply text-slate-100;
   }
 
-  .dark .nav-links a,
-  .dark .navbar .btn-link {
+  .nav-links a,
+  .navbar .btn-link {
     @apply border-slate-700 bg-slate-800 text-slate-300;
   }
 
-  .dark .nav-links a:hover,
-  .dark .navbar .btn-link:hover,
-  .dark .nav-links a.active {
+  .nav-links a:hover,
+  .navbar .btn-link:hover,
+  .nav-links a.active {
     @apply border-brand-600 bg-brand-900/50 text-brand-300;
   }
 
-  .dark .card {
+  .card {
     @apply border-slate-700 bg-slate-800/95;
   }
 
-  .dark .birthday-card,
-  .dark .channel-card {
+  .birthday-card,
+  .channel-card {
     @apply border-slate-700 bg-slate-800/95;
   }
 
-  .dark .birthday-card.today {
+  .birthday-card.today {
     @apply border-emerald-700 bg-emerald-900/40;
   }
 
-  .dark .birthday-card.soon {
+  .birthday-card.soon {
     @apply border-amber-700 bg-amber-900/40;
   }
 
-  .dark .channel-card.configured {
+  .channel-card.configured {
     @apply border-emerald-700;
   }
 
-  .dark .card-body p {
+  .card-body p {
     @apply text-slate-300;
   }
 
-  .dark .notes {
+  .notes {
     @apply text-slate-400;
   }
 
-  .dark .table {
+  .table {
     @apply border-slate-700 bg-slate-800;
   }
 
-  .dark .table th,
-  .dark .table td {
+  .table th,
+  .table td {
     @apply border-b-slate-700;
   }
 
-  .dark .table thead th {
+  .table thead th {
     @apply bg-slate-700/50 text-slate-300;
   }
 
-  .dark .table th a {
+  .table th a {
     @apply text-slate-300;
   }
 
-  .dark .table th a:hover,
-  .dark .table th a.active {
+  .table th a:hover,
+  .table th a.active {
     @apply text-brand-300;
   }
 
-  .dark .form-group label {
+  .form-group label {
     @apply text-slate-300;
   }
 
-  .dark .form-group input,
-  .dark .form-group textarea,
-  .dark .form-group select {
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
     @apply border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-brand-500 focus:ring-brand-800;
   }
 
-  .dark .checkbox-label {
+  .checkbox-label {
     @apply border-slate-700 bg-slate-800 text-slate-200;
   }
 
-  .dark .btn-secondary {
+  .btn-secondary {
     @apply border-slate-600 bg-slate-700 text-slate-200 hover:bg-slate-600;
   }
 
-  .dark .btn-link {
+  .btn-link {
     @apply text-slate-300;
   }
 
-  .dark .badge {
+  .badge {
     @apply bg-brand-900/50 text-brand-300;
   }
 
-  .dark .badge-success {
+  .badge-success {
     @apply bg-emerald-900/50 text-emerald-300;
   }
 
-  .dark .badge-muted {
+  .badge-muted {
     @apply bg-slate-700 text-slate-300;
   }
 
-  .dark .alert {
+  .alert {
     @apply border-slate-700;
   }
 
-  .dark .alert-error {
+  .alert-error {
     @apply border-rose-800 bg-rose-900/40 text-rose-300;
   }
 
-  .dark .alert-success {
+  .alert-success {
     @apply border-emerald-800 bg-emerald-900/40 text-emerald-300;
   }
 
-  .dark .alert-warning {
+  .alert-warning {
     @apply border-amber-800 bg-amber-900/40 text-amber-300;
   }
 
-  .dark .alert pre {
+  .alert pre {
     @apply border-slate-700 bg-slate-800;
   }
 
-  .dark .empty-state {
+  .empty-state {
     @apply border-slate-600 bg-slate-800/80 text-slate-400;
   }
 
-  .dark .divider::before {
+  .divider::before {
     @apply border-t-slate-700;
   }
 
-  .dark .divider span {
+  .divider span {
     @apply bg-slate-900 text-slate-400;
   }
 
-  .dark pre.token,
-  .dark details.help-text pre,
-  .dark .card pre {
+  pre.token,
+  details.help-text pre,
+  .card pre {
     @apply border-slate-700 bg-slate-900 text-slate-200;
   }
 
-  .dark details.help-text {
+  details.help-text {
     @apply border-slate-700 bg-slate-800;
   }
 
-  .dark details.help-text summary {
+  details.help-text summary {
     @apply text-brand-400;
   }
 
   @media (max-width: 768px) {
-    .dark .table tr {
+    .table tr {
       @apply border-slate-700 bg-slate-800;
     }
 
-    .dark .table td {
+    .table td {
       @apply border-b-slate-700;
     }
 
-    .dark .table td::before {
+    .table td::before {
       @apply text-slate-400;
     }
   }
+
+/* ===== Explicit Light Theme ===== */
+.light body {
+  @apply bg-stone-100 text-slate-900;
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.2), transparent 40%),
+    radial-gradient(circle at 95% 10%, rgba(234, 179, 8, 0.2), transparent 35%),
+    linear-gradient(180deg, #f7f8f5 0%, #f2f2ef 100%);
+}
+
+.light h1,
+.light h2,
+.light h3 {
+  @apply text-slate-900;
+}
+
+.light a {
+  @apply text-brand-700;
+}
+
+.light a:hover {
+  @apply text-brand-800;
+}
+
+.light .auth-container {
+  @apply border-stone-200 bg-white/95 shadow-xl;
+}
+
+.light .auth-container h2 {
+  @apply text-stone-500;
+}
+
+.light .navbar {
+  @apply border-b-stone-200/90 bg-white/90;
+}
+
+.light .nav-brand {
+  @apply text-slate-900;
+}
+
+.light .nav-links a,
+.light .navbar .btn-link {
+  @apply border-stone-200 bg-stone-50 text-slate-600;
+}
+
+.light .nav-links a:hover,
+.light .navbar .btn-link:hover,
+.light .nav-links a.active {
+  @apply border-brand-300 bg-brand-50 text-brand-800;
+}
+
+.light .card {
+  @apply border-stone-200 bg-white/95;
+}
+
+.light .birthday-card,
+.light .channel-card {
+  @apply border-stone-200 bg-white/95;
+}
+
+.light .birthday-card.today {
+  @apply border-emerald-300 bg-emerald-50;
+}
+
+.light .birthday-card.soon {
+  @apply border-amber-300 bg-amber-50;
+}
+
+.light .channel-card.configured {
+  @apply border-emerald-300;
+}
+
+.light .card-body p {
+  @apply text-slate-700;
+}
+
+.light .notes {
+  @apply text-stone-500;
+}
+
+.light .table {
+  @apply border-stone-200 bg-white shadow-sm;
+}
+
+.light .table th,
+.light .table td {
+  @apply border-b-stone-200;
+}
+
+.light .table thead th {
+  @apply bg-stone-100 text-stone-600;
+}
+
+.light .table th a {
+  @apply text-stone-600;
+}
+
+.light .table th a:hover,
+.light .table th a.active {
+  @apply text-brand-800;
+}
+
+.light .form-group label {
+  @apply text-slate-700;
+}
+
+.light .form-group input,
+.light .form-group textarea,
+.light .form-group select {
+  @apply border-stone-300 bg-white text-slate-900 placeholder:text-stone-400 focus:border-brand-500 focus:ring-brand-200;
+}
+
+.light .checkbox-label {
+  @apply border-stone-200 bg-stone-50 text-slate-800;
+}
+
+.light .btn-secondary {
+  @apply border-stone-300 bg-stone-50 text-slate-700 hover:bg-stone-100;
+}
+
+.light .btn-link {
+  @apply text-slate-600;
+}
+
+.light .badge {
+  @apply bg-brand-50 text-brand-800;
+}
+
+.light .badge-success {
+  @apply bg-emerald-100 text-emerald-800;
+}
+
+.light .badge-muted {
+  @apply bg-stone-200 text-stone-700;
+}
+
+.light .alert {
+  @apply border-stone-200;
+}
+
+.light .alert-error {
+  @apply border-rose-200 bg-rose-50 text-rose-800;
+}
+
+.light .alert-success {
+  @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+}
+
+.light .alert-warning {
+  @apply border-amber-200 bg-amber-50 text-amber-800;
+}
+
+.light .alert pre {
+  @apply border-stone-200 bg-white;
+}
+
+.light .empty-state {
+  @apply border-stone-300 bg-white/80 text-slate-600;
+}
+
+.light .divider::before {
+  @apply border-t-stone-200;
+}
+
+.light .divider span {
+  @apply bg-white text-stone-500;
+}
+
+.light pre.token,
+.light details.help-text pre,
+.light .card pre {
+  @apply border-stone-200 bg-stone-50 text-slate-900;
+}
+
+.light details.help-text {
+  @apply border-stone-200 bg-stone-50;
+}
+
+.light details.help-text summary {
+  @apply text-brand-700;
+}
+
+@media (max-width: 768px) {
+  .light .table tr {
+    @apply border-stone-200 bg-white;
+  }
+
+  .light .table td {
+    @apply border-b-stone-200;
+  }
+
+  .light .table td::before {
+    @apply text-stone-500;
+  }
+}

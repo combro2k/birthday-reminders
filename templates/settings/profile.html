@@ -80,15 +80,15 @@
 
     <div class="card mt-2">
         <h3>Theme</h3>
-        <p>Choose how the app looks:</p>
+        <p>Dark is the default. Choose a specific look or follow your system setting:</p>
         <form method="POST" action="/settings/theme">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group">
                 <label for="theme">Appearance</label>
                 <select id="theme" name="theme">
-                    <option value="auto" {% if user.theme.as_str() == "auto" %}selected{% endif %}>Auto (system preference)</option>
+                    <option value="dark" {% if user.theme.as_str() == "dark" %}selected{% endif %}>Dark (default)</option>
                     <option value="light" {% if user.theme.as_str() == "light" %}selected{% endif %}>Light</option>
-                    <option value="dark" {% if user.theme.as_str() == "dark" %}selected{% endif %}>Dark</option>
+                    <option value="auto" {% if user.theme.as_str() == "auto" %}selected{% endif %}>Auto (system preference)</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary mt-1">Save Theme</button>

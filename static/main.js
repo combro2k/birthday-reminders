@@ -4,10 +4,26 @@
  * Global Initialization
  */
 (function initGlobal() {
-    // 1. Initial Theme Setup (Prevent FOUC as much as possible)
+    // 1. Initial Theme Setup
+    const root = document.documentElement;
     const theme = document.documentElement.getAttribute('data-theme');
-    const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.classList.toggle('dark', isDark);
+    const resolveTheme = () => {
+        if (theme === 'light') {
+            return 'light';
+        }
+        if (theme === 'dark') {
+            return 'dark';
+        }
+
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    const applyTheme = (resolvedTheme) => {
+        root.classList.toggle('dark', resolvedTheme === 'dark');
+        root.classList.toggle('light', resolvedTheme === 'light');
+    };
+
+    applyTheme(resolveTheme());
 
     // 2. Service Worker Registration
     if ("serviceWorker" in navigator) {
@@ -17,7 +33,7 @@
     // 3. System Theme Change Listener
     if (theme === 'auto') {
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            document.documentElement.classList.toggle('dark', e.matches);
+            applyTheme(e.matches ? 'dark' : 'light');
         });
     }
 })();
