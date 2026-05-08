@@ -9,6 +9,11 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ### Added
 
 ### Changed
+- Updated default runtime and install paths to use system locations consistently:
+  - Default CLI config path is now `/etc/birthday-reminders/config.yaml`
+  - `package/install.sh`, `package/uninstall.sh`, and `Makefile` now default to `/usr/bin`, `/etc/birthday-reminders`, and `/var/lib/birthday-reminders`
+  - Default SQLite URL in `config.yaml.example` now points to `/var/lib/birthday-reminders/birthday_reminders.db?mode=rwc`
+- Updated README examples and operational docs to match the system-path defaults above
 
 ### Fixed
 

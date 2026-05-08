@@ -1,7 +1,7 @@
 database:
   # Database connection URL (supports sqlite://, mysql:// and postgres://) [required]
   # For SQLite, add ?mode=rwc to create the file if it does not exist
-  url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db?mode=rwc"
+  url: "sqlite:///var/lib/birthday-reminders/birthday_reminders.db?mode=rwc"
   # PostgreSQL example:
   # url: "postgres://birthday:birthday@localhost:5432/birthday_reminders"
   # MySQL example:
@@ -23,8 +23,8 @@ server:
   # Encryption key for notification channel secrets [required]
   # Generate with: openssl rand -base64 32
   encryption_key: "generate-a-random-key-for-encryption-here"
-  # Path to static files directory (default: "/opt/birthday-reminders/static")
-  # static_dir: "/opt/birthday-reminders/static"
+  # Path to static files directory (default: "/var/lib/birthday-reminders/static")
+  # static_dir: "/var/lib/birthday-reminders/static"
   # Trust forwarded IP headers only from these proxy IPs or CIDR ranges (default: [])
   # trusted_proxies:
   #   - "127.0.0.1"

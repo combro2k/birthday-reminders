@@ -1,11 +1,10 @@
 #!/bin/sh
 set -e
 
-PREFIX="${PREFIX:-/opt/birthday-reminders}"
-BINDIR="$PREFIX/bin"
-CONFDIR="$PREFIX/etc"
-DATADIR="$PREFIX/data"
-STATICDIR="$PREFIX/static"
+BINDIR="${BINDIR:-/usr/bin}"
+CONFDIR="${CONFDIR:-/etc/birthday-reminders}"
+DATADIR="${DATADIR:-/var/lib/birthday-reminders}"
+STATICDIR="${STATICDIR:-$DATADIR/static}"
 
 # Remove installed files and directories
 rm -f "$BINDIR/birthday-reminders"

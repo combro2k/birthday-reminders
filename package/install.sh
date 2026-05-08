@@ -1,13 +1,12 @@
 #!/bin/sh
 set -e
 
-PREFIX="${PREFIX:-/opt/birthday-reminders}"
-BINDIR="$PREFIX/bin"
-CONFDIR="$PREFIX/etc"
-DATADIR="$PREFIX/data"
-STATICDIR="$PREFIX/static"
+BINDIR="${BINDIR:-/usr/bin}"
+CONFDIR="${CONFDIR:-/etc/birthday-reminders}"
+DATADIR="${DATADIR:-/var/lib/birthday-reminders}"
+STATICDIR="${STATICDIR:-$DATADIR/static}"
 
-echo "Installing birthday-reminders to $PREFIX ..."
+echo "Installing birthday-reminders to system paths ..."
 
 # Create directories
 install -d "$BINDIR"
@@ -34,16 +33,17 @@ cp -av static/. "$STATICDIR/"
 # Create service user if it doesn't exist
 if ! id birthday-reminders >/dev/null 2>&1; then
     if command -v useradd >/dev/null 2>&1; then
-        useradd -r -s /usr/sbin/nologin -d "$PREFIX" birthday-reminders
+        useradd -r -s /usr/sbin/nologin -d "$DATADIR" birthday-reminders
     elif command -v adduser >/dev/null 2>&1; then
         addgroup -S birthday-reminders 2>/dev/null || true
-        adduser -S -D -H -h "$PREFIX" -s /sbin/nologin -G birthday-reminders birthday-reminders
+        adduser -S -D -H -h "$DATADIR" -s /sbin/nologin -G birthday-reminders birthday-reminders
     fi
     echo "  Created service user: birthday-reminders"
 fi
 
 # Set ownership
-chown -R birthday-reminders: "$PREFIX" 2>/dev/null || true
+chown -R birthday-reminders: "$DATADIR" 2>/dev/null || true
+chown -R root:birthday-reminders "$CONFDIR" 2>/dev/null || true
 
 # Install service file
 if [ -d /run/systemd/system ]; then
@@ -61,7 +61,6 @@ echo "Installation complete!"
 echo "  Binary:     $BINDIR/birthday-reminders"
 echo "  Config:     $CONFDIR/config.yaml"
 echo "  Data:       $DATADIR/"
-echo "  Migrations: $MIGRATIONSDIR/"
 echo "  Static:     $STATICDIR/"
 echo ""
 echo "Next steps:"

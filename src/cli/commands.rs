@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 #[command(about = "Birthday reminder application with web UI and notifications")]
 pub struct Cli {
     /// Path to config file
-    #[arg(short, long, default_value = "config.yaml")]
+    #[arg(short, long, default_value = "/etc/birthday-reminders/config.yaml")]
     pub config: String,
 
     /// Enable debug output to stderr

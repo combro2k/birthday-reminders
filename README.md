@@ -51,14 +51,15 @@ You can also run `make build`, which now builds Tailwind CSS before compiling Ru
 ### 2. Configure
 
 ```bash
-cp config.yaml.example config.yaml
-# Edit config.yaml with your settings
+sudo install -d -m 755 /etc/birthday-reminders
+sudo install -m 640 config.yaml.example /etc/birthday-reminders/config.yaml
+# Edit /etc/birthday-reminders/config.yaml with your settings
 ```
 
 ### 3. Create a user
 
 ```bash
-./target/release/birthday-reminders -c config.yaml create-user \
+./target/release/birthday-reminders create-user \
   --username admin \
   --email admin@example.com \
   --password changeme \
@@ -68,7 +69,7 @@ cp config.yaml.example config.yaml
 ### 4. Start the server
 
 ```bash
-./target/release/birthday-reminders -c config.yaml serve
+./target/release/birthday-reminders serve
 ```
 
 The app will be available at `http://localhost:3000` by default.
@@ -85,7 +86,7 @@ The generated files are written to `static/` and referenced by `static/manifest.
 
 ## Configuration
 
-Configuration is stored in a YAML file (default: `config.yaml`). See [`config.yaml.example`](config.yaml.example) for a fully commented example.
+Configuration is stored in a YAML file (default: `/etc/birthday-reminders/config.yaml`). See [`config.yaml.example`](config.yaml.example) for a fully commented example.
 
 ### Database
 
@@ -94,7 +95,7 @@ Supports SQLite, MySQL, and PostgreSQL:
 ```yaml
 database:
   # SQLite (default, simplest for single-user/small deployments)
-  url: "sqlite://birthday_reminders.db"
+  url: "sqlite:///var/lib/birthday-reminders/birthday_reminders.db?mode=rwc"
   max_connections: 10
 ```
 
@@ -122,7 +123,7 @@ Each backend track has:
 
   ```yaml
   database:
-    url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db?mode=rwc"
+    url: "sqlite:///var/lib/birthday-reminders/birthday_reminders.db?mode=rwc"
   ```
   The `?mode=rwc` ensures the database file is created if it does not exist.
 
@@ -133,7 +134,7 @@ If you started with SQLite and want to move to PostgreSQL:
 1. **Export data from SQLite:**
 
    ```bash
-   sqlite3 birthday_reminders.db .dump > backup.sql
+  sqlite3 /var/lib/birthday-reminders/birthday_reminders.db .dump > backup.sql
    ```
 
 2. **Create the PostgreSQL database:**
@@ -145,7 +146,7 @@ If you started with SQLite and want to move to PostgreSQL:
 3. **Start the app once with the new PostgreSQL URL** to run migrations:
 
    ```bash
-   birthday-reminders -c config.yaml serve
+  birthday-reminders serve
    # Stop after it starts successfully (Ctrl+C)
    ```
 
@@ -170,7 +171,7 @@ If you started with SQLite and want to move to PostgreSQL:
    psql birthday_reminders -c "\copy notification_channels FROM 'channels.csv' CSV HEADER"
    ```
 
-5. **Update `config.yaml`** to use the PostgreSQL URL and restart.
+5. **Update `/etc/birthday-reminders/config.yaml`** to use the PostgreSQL URL and restart.
 
 ### Server
 
@@ -391,7 +392,7 @@ Commands:
   check-reminders  Manually trigger reminder check for all users
 
 Options:
-  -c, --config <PATH>  Path to config file [default: config.yaml]
+  -c, --config <PATH>  Path to config file [default: /etc/birthday-reminders/config.yaml]
 ```
 
 Commands that require `--token` also accept the `BIRTHDAY_API_TOKEN` environment variable:
@@ -405,7 +406,7 @@ The `serve` command accepts a `--port` (`-p`) flag to override the listen port f
 
 ```bash
 # Start on a custom port
-birthday-reminders -c config.yaml serve --port 8080
+birthday-reminders serve --port 8080
 ```
 
 ### Examples
@@ -580,16 +581,17 @@ docker compose exec app /app/bin/birthday-reminders \
 ### Using Make
 
 ```bash
-# Build and install to /opt/birthday-reminders (default)
+# Build and install to system paths (default)
 make install
 
-# Or install to a custom prefix
-make install PREFIX=/usr/local
+# Or stage files for packaging with DESTDIR
+make install DESTDIR=/tmp/birthday-reminders-stage
 ```
 
 This installs:
-- Binary → `<prefix>/bin/birthday-reminders`
-- Config → `<prefix>/etc/config.yaml`
+- Binary → `/usr/bin/birthday-reminders`
+- Config → `/etc/birthday-reminders/config.yaml`
+- Data directory → `/var/lib/birthday-reminders/`
 - Migrations → (Embedded in binary)
 - Static files → (Embedded in binary)
 
@@ -610,7 +612,7 @@ The `install.sh` script automatically detects systemd or OpenRC, creates a servi
 
 ```bash
 # Create service user
-useradd -r -s /usr/sbin/nologin -d /opt/birthday-reminders birthday-reminders
+useradd -r -s /usr/sbin/nologin -d /var/lib/birthday-reminders birthday-reminders
 
 # Install and enable the service
 cp package/systemd/birthday-reminders.service /etc/systemd/system/
@@ -622,7 +624,7 @@ systemctl enable --now birthday-reminders
 
 ```bash
 # Create service user
-adduser -S -D -H -h /opt/birthday-reminders -s /sbin/nologin birthday-reminders
+adduser -S -D -H -h /var/lib/birthday-reminders -s /sbin/nologin birthday-reminders
 addgroup -S birthday-reminders
 
 # Install and enable the service
@@ -632,23 +634,27 @@ rc-update add birthday-reminders default
 rc-service birthday-reminders start
 ```
 
-When installed to `/opt/birthday-reminders`, the default config uses absolute paths:
+For service-style Linux installs, the default config uses absolute paths:
 
 ```yaml
 database:
-  url: "sqlite:///opt/birthday-reminders/data/birthday_reminders.db"
+  url: "sqlite:///var/lib/birthday-reminders/birthday_reminders.db?mode=rwc"
 
 server:
-  static_dir: "/opt/birthday-reminders/static"
+  static_dir: "/var/lib/birthday-reminders/static"
 ```
 
 ### Directory Layout
 
 ```
-/opt/birthday-reminders/
-├── bin/            # Binary
-├── etc/            # Configuration (config.yaml)
-├── data/           # Runtime data (SQLite database)
+/usr/bin/
+└── birthday-reminders
+
+/etc/birthday-reminders/
+└── config.yaml
+
+/var/lib/birthday-reminders/
+└── birthday_reminders.db
 ```
 
 ## Backup & Restore
@@ -657,14 +663,14 @@ server:
 
 ```bash
 # Backup (while the app is running — SQLite WAL mode allows safe reads)
-cp /opt/birthday-reminders/data/birthday_reminders.db /backups/birthday_reminders_$(date +%F).db
+cp /var/lib/birthday-reminders/birthday_reminders.db /backups/birthday_reminders_$(date +%F).db
 
 # Or use the SQLite backup command for a consistent snapshot
-sqlite3 /opt/birthday-reminders/data/birthday_reminders.db ".backup /backups/birthday_reminders_$(date +%F).db"
+sqlite3 /var/lib/birthday-reminders/birthday_reminders.db ".backup /backups/birthday_reminders_$(date +%F).db"
 
 # Restore
 systemctl stop birthday-reminders
-cp /backups/birthday_reminders_2026-04-29.db /opt/birthday-reminders/data/birthday_reminders.db
+cp /backups/birthday_reminders_2026-04-29.db /var/lib/birthday-reminders/birthday_reminders.db
 systemctl start birthday-reminders
 ```
 
@@ -725,7 +731,7 @@ The following configuration fields have defaults and are optional unless marked 
 |-------|---------|-------------|
 | `database.max_connections` | `10` | Max DB connections |
 | `server.scheme` | `"http"` | Public URL scheme used with `server_name` |
-| `server.static_dir` | `/opt/birthday-reminders/static` | Path to static files |
+| `server.static_dir` | `/var/lib/birthday-reminders/static` | Path to static files |
 | `server.trusted_proxies` | `[]` | Proxy IPs/CIDRs allowed to supply forwarded client IP headers |
 | `auth.allow_registration` | `false` | Allow user self-registration |
 | `auth.oidc.enabled` | `false` | Enable OIDC authentication |
@@ -737,7 +743,7 @@ The following configuration fields have defaults and are optional unless marked 
 | `logging.output` | `"stdout"` | Log output target |
 | `logging.level` | `"info"` | Log level filter |
 
-All path defaults (such as `static_dir`) are now absolute by default, e.g. `/opt/birthday-reminders/static`.
+All path defaults (such as `static_dir`) are now absolute by default, e.g. `/var/lib/birthday-reminders/static`.
 
 `server.base_url` is optional. When omitted, the app derives the public URL from `server.scheme://server.server_name`. `server.server_name` itself has no default and must be provided whenever `server.base_url` is not set.
 
