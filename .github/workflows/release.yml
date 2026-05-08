@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build and release packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install frontend dependencies and build CSS
+        run: npm ci && npm run build:css
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build GNU binary (Debian/amd64)
+        run: cargo build --release
+
+      - name: Build musl binary (Alpine/amd64) via Docker
+        run: |
+          docker build --target builder -t birthday-reminders-builder .
+          docker create --name birthday-reminders-extract birthday-reminders-builder
+          docker cp birthday-reminders-extract:/app/target/release/birthday-reminders ./birthday-reminders-musl
+          docker rm birthday-reminders-extract
+
+      - name: Install nfpm
+        run: |
+          echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" \
+            | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update -qq
+          sudo apt-get install -y nfpm
+
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Package .deb (Debian/Ubuntu)
+        run: |
+          mkdir -p target/package
+          cp target/release/birthday-reminders ./birthday-reminders
+          VERSION=${{ env.VERSION }} nfpm package --packager deb -t target/package/
+          rm birthday-reminders
+
+      - name: Package .apk (Alpine)
+        run: |
+          cp ./birthday-reminders-musl ./birthday-reminders
+          VERSION=${{ env.VERSION }} nfpm package --packager apk -t target/package/
+          rm birthday-reminders
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/package/*.deb
+            target/package/*.apk
+          generate_release_notes: true

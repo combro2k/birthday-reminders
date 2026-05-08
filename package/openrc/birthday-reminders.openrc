@@ -3,13 +3,13 @@
 name="birthday-reminders"
 description="Birthday Reminders"
 
-command="/opt/birthday-reminders/bin/birthday-reminders"
-command_args="--config /opt/birthday-reminders/etc/config.yaml serve"
+command="/usr/bin/birthday-reminders"
+command_args="--config /etc/birthday-reminders/config.yaml serve"
 command_user="root:root"
 command_background=true
 
 pidfile="/run/${RC_SVCNAME}.pid"
-directory="/opt/birthday-reminders"
+directory="/var/lib/birthday-reminders"
 
 depend() {
 	need net

@@ -8,7 +8,7 @@ VERSION = $(shell grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
 PACKAGE_NAME = birthday-reminders-$(VERSION)
 PACKAGE_DIR = target/package/$(PACKAGE_NAME)
 
-.PHONY: all build build-css install uninstall clean package
+.PHONY: all build build-css install uninstall clean package-tar package-deb package-apk packages
 
 all: build
 
@@ -37,7 +37,7 @@ install: build
 	@echo "  Data:       $(DESTDIR)$(DATADIR)/"
 	@echo "  Static:     (Embedded in binary)"
 
-package: build
+package-tar: build
 	rm -rf $(PACKAGE_DIR)
 	mkdir -p $(PACKAGE_DIR)
 	cp $(BINARY) $(PACKAGE_DIR)/
@@ -52,6 +52,30 @@ package: build
 	@echo ""
 	@echo "Package created: target/package/$(PACKAGE_NAME).tar.gz"
 	@echo "Copy to target server and run: tar xzf $(PACKAGE_NAME).tar.gz && cd $(PACKAGE_NAME) && ./install.sh"
+
+package-deb: build
+	@command -v nfpm >/dev/null 2>&1 || { echo "ERROR: nfpm not found. See https://nfpm.goreleaser.com/install/"; exit 1; }
+	mkdir -p target/package
+	cp $(BINARY) ./birthday-reminders
+	VERSION=$(VERSION) nfpm package --packager deb -t target/package/
+	rm -f ./birthday-reminders
+	@echo ""
+	@echo "Package created: target/package/birthday-reminders_$(VERSION)_amd64.deb"
+
+package-apk: build-css
+	@command -v nfpm >/dev/null 2>&1 || { echo "ERROR: nfpm not found. See https://nfpm.goreleaser.com/install/"; exit 1; }
+	@command -v docker >/dev/null 2>&1 || { echo "ERROR: docker not found, required for musl/Alpine build"; exit 1; }
+	mkdir -p target/package
+	docker build --target builder -t birthday-reminders-builder .
+	docker create --name birthday-reminders-apk-extract birthday-reminders-builder
+	docker cp birthday-reminders-apk-extract:/app/target/release/birthday-reminders ./birthday-reminders
+	docker rm birthday-reminders-apk-extract
+	VERSION=$(VERSION) nfpm package --packager apk -t target/package/
+	rm -f ./birthday-reminders
+	@echo ""
+	@echo "Package created: target/package/birthday-reminders_$(VERSION)_amd64.apk"
+
+packages: package-tar package-deb package-apk
 
 # Uninstall everything installed by 'make install'.
 uninstall:
