@@ -16,6 +16,7 @@ RUN cargo build --release --locked && rm -rf src target/release/birthday-reminde
 COPY src/ src/
 COPY migrations/ migrations/
 COPY static/ static/
+COPY templates/ templates/
 RUN touch src/main.rs && cargo build --release --locked
 
 # Prepare minimal runtime filesystem with non-root identity

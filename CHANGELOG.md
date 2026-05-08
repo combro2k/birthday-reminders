@@ -7,10 +7,22 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ## [Unreleased]
 
 ### Added
+- **WhatsApp Cloud API channel**: Users can now send birthday reminders via Meta's WhatsApp Cloud API.
+  - Requires a Meta WhatsApp Business Account with a phone number ID and permanent access token.
+  - Supports E.164 formatted recipient phone numbers.
+  - Includes automatic retry with exponential backoff for transient failures (rate limits and server errors).
+  - Per-user/channel rate limiting (500ms minimum interval) prevents burst traffic to WhatsApp API.
+  - Test notification endpoint available to verify channel configuration.
 
 ### Changed
+- Notification channels page now groups providers by category (Email, SMS, Push Notifications, Messaging Apps) to make configuration options easier to scan.
+- WhatsApp channel is now fully implemented and appears in the Messaging Apps group (no longer Coming Soon).
+- README Notification Channels section updated to include WhatsApp Cloud API setup guide with credential requirements and phone number format documentation.
+- README removed manual JSON configuration examples from Proton Mail and Ntfy setup sections; configuration is now done exclusively through the web UI.
+- Removed unused `NotificationError::NotImplemented` variant to satisfy strict linting.
 
 ### Fixed
+- Docker build now includes the previously missing templates build folder during image build, resolving build failures caused by absent template files.
 
 ### Security
 

@@ -34,39 +34,50 @@
     <div class="alert alert-error">{{ msg }}</div>
     {% endif %}
 
-    <div class="channels-grid">
-        {% for ch in available %}
-        <div class="channel-card {% if ch.configured %}configured{% endif %}">
-            <h3>{{ ch.display_name }}</h3>
-            {% if ch.configured %}
-                {% if let Some(enabled) = ch.enabled %}
-                    {% if enabled %}
-                    <span class="badge badge-success">Enabled</span>
+    <div class="channels-groups">
+        {% for group in groups %}
+        <section class="channels-group">
+            <h2 class="channels-group-label">{{ group.label }}</h2>
+            <div class="channels-grid">
+                {% for ch in group.channels %}
+                <div class="channel-card {% if ch.configured %}configured{% endif %} {% if !ch.implemented %}coming-soon{% endif %}">
+                    <h3>{{ ch.display_name }}</h3>
+                    {% if !ch.implemented %}
+                    <span class="badge badge-muted">Coming Soon</span>
+                    {% elif ch.configured %}
+                        {% if let Some(enabled) = ch.enabled %}
+                            {% if enabled %}
+                            <span class="badge badge-success">Enabled</span>
+                            {% else %}
+                            <span class="badge badge-muted">Disabled</span>
+                            {% endif %}
+                        {% endif %}
                     {% else %}
-                    <span class="badge badge-muted">Disabled</span>
+                    <span class="badge badge-muted">Not configured</span>
                     {% endif %}
-                {% endif %}
-            {% else %}
-            <span class="badge badge-muted">Not configured</span>
-            {% endif %}
-            <div class="channel-card-actions">
-                <a href="/notifications/{{ ch.kind }}" class="btn btn-small mt-1">
-                    {% if ch.configured %}Edit{% else %}Configure{% endif %}
-                </a>
-                {% if ch.configured %}
-                <form method="POST" action="/notifications/{{ ch.kind }}/test" class="inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="source" value="list">
-                    <button type="submit" class="btn btn-small btn-secondary mt-1">Test</button>
-                </form>
-                <form method="POST" action="/notifications/{{ ch.kind }}/delete" class="inline channel-remove-form"
-                      data-confirm="Remove {{ ch.display_name }} channel?">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-small btn-danger mt-1">Remove</button>
-                </form>
-                {% endif %}
+                    {% if ch.implemented %}
+                    <div class="channel-card-actions">
+                        <a href="/notifications/{{ ch.kind }}" class="btn btn-small mt-1">
+                            {% if ch.configured %}Edit{% else %}Configure{% endif %}
+                        </a>
+                        {% if ch.configured %}
+                        <form method="POST" action="/notifications/{{ ch.kind }}/test" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="source" value="list">
+                            <button type="submit" class="btn btn-small btn-secondary mt-1">Test</button>
+                        </form>
+                        <form method="POST" action="/notifications/{{ ch.kind }}/delete" class="inline channel-remove-form"
+                              data-confirm="Remove {{ ch.display_name }} channel?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-small btn-danger mt-1">Remove</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
-        </div>
+        </section>
         {% endfor %}
     </div>
 </main>
