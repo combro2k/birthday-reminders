@@ -82,23 +82,24 @@ The script runs `cargo clean` only when there are Git changes in `src/`, `static
 
 - **Start from a fresh branch for requested changes on `master`**: If the operator asks for code or file changes while the current branch is `master`, do **not** start editing on `master`.
 - **Request and suggest a branch name first**: Before making changes, explicitly ask the operator for the branch name and provide a sensible suggested name based on the requested work.
+- **Version-update branch naming on `master`**: When the operator asks to update the version number and the current branch is `master`, suggest and use `release/vx.x.x` where `x.x.x` is the actual target version (for example `release/v1.2.3`). This naming convention applies only when starting from `master`.
 - **Create the branch before editing**: Once the operator confirms the branch name, create and switch to that branch so the work starts from a clean slate.
 
 ## 8. Release and Compliance Requirements
 
-- **Changelog is mandatory for every version bump**: Each version bump **MUST** be documented in `CHANGELOG.md` with a clear summary of what changed.
-- **Version consistency is mandatory for every version bump**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
-- **Version bump workflow is mandatory**: A version bump **MUST** explicitly include all of the following steps:
+- **Changelog is mandatory for every version update**: Each version update **MUST** be documented in `CHANGELOG.md` with a clear summary of what changed.
+- **Version consistency is mandatory for every version update**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
+- **Version update workflow is mandatory**: A version update **MUST** explicitly include all of the following steps:
     - Update the version in all required files. If the exact target version is assumed rather than provided, explicitly ask the user to confirm the version before proceeding.
-    - If the user asks for a version bump without specifying a target version, calculate and suggest:
+    - If the user asks for a version update without specifying a target version, calculate and suggest:
         - Next minor version (`x.x.(y+1)`) as the default/recommended option.
         - Next major version (`(x+1).0.0`) as an alternative option.
             Present these choices using an input selector (interactive option picker), with next minor preselected/recommended, while still allowing explicit freeform version input.
       Always ask for explicit confirmation before applying any version change.
-    - Commit scope policy for version bumps: All files, including version-bump files.
+    - Commit scope policy for version updates: All files, including version-update files.
     - Create a Git tag for the version.
     - Push only when the user explicitly asks for a push.
-- **Release validation is mandatory**: `bash scripts/release-check.sh` **MUST** be run and pass without errors on every version bump.
+- **Release validation is mandatory**: `bash scripts/release-check.sh` **MUST** be run and pass without errors on every version update.
     - `cargo clean` is conditional inside the script and only runs when relevant code/assets/test/migration paths changed.
 - **No personal or private information in the codebase**:
     - The repository **MUST NOT** contain personal/private data or secrets.
