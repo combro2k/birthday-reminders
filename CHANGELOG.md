@@ -14,6 +14,12 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.1.6] - 2026-05-08
+
+### Changed
+- Hardened Docker image build and runtime: switched to a `scratch` runtime stage with non-root execution (`UID/GID 10001`) and locked Rust dependency builds for reproducibility.
+- Added explicit CA certificate handling in the container image to preserve outbound TLS functionality for integrations that require HTTPS/TLS.
+
 ## [1.1.5] - 2026-05-08
 
 ### Changed
