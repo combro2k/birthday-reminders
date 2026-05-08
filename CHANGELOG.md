@@ -14,6 +14,25 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.0.3] - 2026-05-08
+
+### Added
+- GitHub Actions release workflow for automated .deb and .apk package builds on version tags
+- Makefile targets for local package generation: `make package-deb`, `make package-apk`, `make packages`
+- nfpm configuration for Debian and Alpine Linux packaging with FHS-compliant paths
+- Package lifecycle scripts (postinstall, preremove) for both Debian and Alpine
+
+### Changed
+- Switched binary and configuration paths to follow Filesystem Hierarchy Standard (FHS)
+  - Binary moved from `/opt/birthday-reminders/bin/` to `/usr/bin/`
+  - Configuration moved from `/opt/birthday-reminders/etc/` to `/etc/birthday-reminders/`
+  - Data directory moved from `/opt/birthday-reminders/data/` to `/var/lib/birthday-reminders/`
+- Updated systemd and OpenRC service files to use new FHS paths
+- Existing `make package` command renamed to `make package-tar` for tarball generation
+
+### Fixed
+- Dockerfile missing `COPY static/ static/` in builder stage, required for rust-embed compilation
+
 ## [1.0.2] - 2026-05-08
 
 ### Changed
