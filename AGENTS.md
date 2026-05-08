@@ -78,7 +78,13 @@ bash scripts/release-check.sh
 The script verifies version consistency between `Cargo.toml` and `package.json`, rebuilds the Tailwind CSS, and runs `cargo fmt`, `cargo test`, and `cargo clippy` with strict flags. It must exit without errors.
 The script runs `cargo clean` only when there are Git changes in `src/`, `static/`, `templates/`, `tests/`, or `migrations/`; otherwise it skips clean to keep checks faster.
 
-## 7. Release and Compliance Requirements
+## 7. Branch Workflow
+
+- **Start from a fresh branch for requested changes on `master`**: If the operator asks for code or file changes while the current branch is `master`, do **not** start editing on `master`.
+- **Request and suggest a branch name first**: Before making changes, explicitly ask the operator for the branch name and provide a sensible suggested name based on the requested work.
+- **Create the branch before editing**: Once the operator confirms the branch name, create and switch to that branch so the work starts from a clean slate.
+
+## 8. Release and Compliance Requirements
 
 - **Changelog is mandatory for every version bump**: Each version bump **MUST** be documented in `CHANGELOG.md` with a clear summary of what changed.
 - **Version consistency is mandatory for every version bump**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
