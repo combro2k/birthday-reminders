@@ -14,6 +14,11 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.1.5] - 2026-05-08
+
+### Changed
+- Raised the Rust toolchain baseline to 1.95 across project metadata, documentation, Docker build image, and GitHub Actions workflows
+
 ## [1.1.4] - 2026-05-08
 
 ### Fixed
