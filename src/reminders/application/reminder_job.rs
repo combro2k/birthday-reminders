@@ -1,6 +1,8 @@
 use std::sync::Arc;
+use std::{collections::HashMap, time::Duration};
 
 use chrono::{Datelike, Local};
+use tokio::time::{Instant, sleep};
 use tracing::{error, info, warn};
 
 use crate::auth::infrastructure::crypto;
@@ -136,6 +138,8 @@ impl ReminderJobService {
         }
 
         let year = today.year();
+        let mut last_send_by_user_channel: HashMap<String, Instant> = HashMap::new();
+        let whatsapp_min_interval = Duration::from_millis(500);
 
         for reminder in &due {
             for channel in &channels {
@@ -162,6 +166,17 @@ impl ReminderJobService {
 
                 if already {
                     continue;
+                }
+
+                if channel.channel_type == "whatsapp" {
+                    let limiter_key = format!("{}:{}", user_id.0, channel.channel_type);
+                    if let Some(last_send) = last_send_by_user_channel.get(&limiter_key) {
+                        let elapsed = last_send.elapsed();
+                        if elapsed < whatsapp_min_interval {
+                            sleep(whatsapp_min_interval - elapsed).await;
+                        }
+                    }
+                    last_send_by_user_channel.insert(limiter_key, Instant::now());
                 }
 
                 // Build sender and send

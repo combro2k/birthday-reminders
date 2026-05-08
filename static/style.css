@@ -65,9 +65,12 @@ body {
 .notes { color: var(--text-muted); font-style: italic; }
 
 /* Channels */
+.channels-groups { display: flex; flex-direction: column; gap: 2rem; }
+.channels-group-label { font-size: 1rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; }
 .channels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
 .channel-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; }
 .channel-card.configured { border-color: var(--success); }
+.channel-card.coming-soon { opacity: .5; cursor: default; }
 .channel-card-actions { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .5rem; }
 
 /* Table */

@@ -6,7 +6,7 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 
 - **Web UI** — manage birthdays, contact details, notification channels, and user settings
 - **CLI** — add/list/remove birthdays with contact details and manage users from the terminal
-- **Notifications** — Email, Gotify, Telegram, Signal, and WhatsApp
+- **Notifications** — Email, SMS (Twilio), Gotify, Ntfy, Pushover, Telegram, Discord, Signal, and WhatsApp (Meta Cloud API)
 - **Scheduled reminders** — configurable cron schedule with customizable lead days
 - **Authentication** — local accounts with Argon2 password hashing, or OIDC (Keycloak, Authentik, Zitadel, and others)
 - **Encryption** — notification channel secrets encrypted at rest using XChaCha20-Poly1305
@@ -464,14 +464,75 @@ These same fields are also available in the web form when creating or editing a 
 
 Users can configure one or more notification channels in the web UI under **Settings → Notification Channels**:
 
+Channels are grouped by type in the UI:
+
+**Email**
+
 | Channel | Description |
 |---------|-------------|
-| **Email** | SMTP-based email notifications |
-| **Gotify** | Push notifications via a Gotify server |
-| **Telegram** | Messages via Telegram Bot API |
-| **Signal** | Messages via Signal messenger |
-| **WhatsApp** | Messages via WhatsApp Business API |
+| **Email** | SMTP-based email via Gmail, Outlook, Proton, or any custom SMTP server |
+
+**SMS**
+
+| Channel | Description |
+|---------|-------------|
+| **SMS (Twilio)** | Text messages via Twilio |
+
+**Push Notifications**
+
+| Channel | Description |
+|---------|-------------|
+| **Gotify** | Push notifications via a self-hosted Gotify server |
 | **Ntfy** | HTTP-based push notifications via ntfy.sh or self-hosted |
+| **Pushover** | Push notifications via the Pushover service |
+
+**Messaging Apps**
+
+| Channel | Description |
+|---------|-------------|
+| **Telegram** | Messages via Telegram Bot API |
+| **Discord** | Messages via a Discord webhook |
+| **Signal** | Messages via signal-cli |
+| **WhatsApp** | Messages via Meta WhatsApp Cloud API |
+
+### WhatsApp Cloud API Setup
+
+To configure WhatsApp reminders, you'll need a Meta WhatsApp Business Account:
+
+#### Prerequisites
+
+1. **Create a Meta Business Account** (if you don't have one):
+   - Go to [developers.facebook.com](https://developers.facebook.com)
+   - Create a new app for WhatsApp Business
+   - Create a WhatsApp Business Account under your Meta Business Account
+
+2. **Get Your Phone Number ID**:
+   - In the Meta App Dashboard, go to **WhatsApp** → **API Setup**
+   - Under "Phone Number ID", copy your numerical phone number ID (not the actual phone number)
+
+3. **Generate a Permanent Access Token**:
+   - In the Meta App Dashboard, go to **Settings** → **User Tokens** or **App Roles** → **Access Tokens**
+   - Create or use an existing access token with `whatsapp_business_messaging` permission
+   - **Important**: Use a permanent token, not a user token, to avoid expiration
+
+#### Configuration
+
+In the Birthday Reminders web UI under **Notifications** → **Configure WhatsApp**:
+
+- **Phone Number ID**: Paste your numerical phone number ID from Meta App Dashboard
+- **Access Token**: Paste your permanent access token (treat as a password; it will be encrypted at rest)
+- **Recipient Phone**: Enter the destination phone number in E.164 format:
+  - Format: country code + area code + number, no spaces or special characters
+  - Example: `15551234567` (United States)
+  - Example: `441234567890` (United Kingdom)
+  - Example: `33123456789` (France)
+
+#### Important Notes
+
+- **Rate Limiting**: WhatsApp Cloud API enforces rate limits. Birthday Reminders applies per-user/channel pacing (500ms minimum interval between sends) to avoid hitting limits.
+- **Recipient Pre-Registration**: The recipient phone number must be pre-registered in your WhatsApp Business Account or have an active WhatsApp conversation with your business account.
+- **API Versions**: Birthday Reminders uses the Meta Graph API v22.0. If you have an older phone number ID, you may need to upgrade it in the Meta App Dashboard.
+- **Test Notification**: Use the "Send Test Notification" button to verify your configuration before the first reminder.
 
 ### Proton Mail Email Setup
 
@@ -489,34 +550,12 @@ Email channels support two Proton modes:
 - Username: your Proton email address
 - Password: your generated SMTP token
 
-Example:
-
-```json
-{
-  "provider": "proton_smtp",
-  "username": "you@proton.me",
-  "password": "your-smtp-token",
-  "to": "you@proton.me"
-}
-```
-
 #### Proton Bridge (local)
 
 - Provider: `proton`
 - Host: `127.0.0.1`
 - Port: `1025`
 - Security: `STARTTLS`
-
-Example:
-
-```json
-{
-  "provider": "proton",
-  "username": "you@proton.me",
-  "password": "bridge-password",
-  "to": "you@proton.me"
-}
-```
 
 Proton SMTP uses SMTP token credentials. Do not use your Proton account login password in third-party SMTP clients.
 
@@ -529,60 +568,11 @@ Ntfy is a simple HTTP-based pub-sub notification service. Birthday Reminders can
 
 #### Using ntfy.sh (Official Service - Recommended for Most Users)
 
-Leave the "Server URL" field empty or set it to `https://ntfy.sh`:
-
-```json
-{
-  "server_url": "https://ntfy.sh",
-  "topic": "my-birthdays",
-  "priority_default": 3,
-  "auth_type": "none"
-}
-```
-
-For private topics, add authentication:
-
-**With Basic Auth (Username + Password):**
-```json
-{
-  "server_url": "https://ntfy.sh",
-  "topic": "my-birthdays-private",
-  "priority_default": 3,
-  "priority_tomorrow": 4,
-  "priority_today": 5,
-  "auth_type": "basic",
-  "username": "your-username",
-  "password": "your-password"
-}
-```
-
-**With Bearer Token:**
-```json
-{
-  "server_url": "https://ntfy.sh",
-  "topic": "my-birthdays-private",
-  "priority_default": 3,
-  "auth_type": "bearer",
-  "token": "your-bearer-token"
-}
-```
+Leave the "Server URL" field empty or set it to `https://ntfy.sh`. For private topics, choose an authentication mode in the channel form: none, basic auth (username + password), or bearer token.
 
 #### Self-Hosted Ntfy
 
-Deploy ntfy yourself for complete privacy. Refer to [Ntfy documentation](https://docs.ntfy.sh/) for installation.
-
-Example config for self-hosted:
-
-```json
-{
-  "server_url": "https://ntfy.example.com",
-  "topic": "birthdays",
-  "priority_default": 3,
-  "auth_type": "basic",
-  "username": "user@example.com",
-  "password": "secure-password"
-}
-```
+Deploy ntfy yourself for complete privacy. Refer to [Ntfy documentation](https://docs.ntfy.sh/) for installation. Set the Server URL to your self-hosted instance and configure authentication as needed.
 
 Priority mapping supports values from 1 (lowest) to 5 (highest):
 - `priority_default` applies to reminders in 2+ days

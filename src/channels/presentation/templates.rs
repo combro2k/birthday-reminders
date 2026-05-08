@@ -7,7 +7,7 @@ use crate::users::domain::user::User;
 #[template(path = "notifications/channels.html")]
 pub struct ChannelsTemplate {
     pub user: User,
-    pub available: Vec<ChannelKindView>,
+    pub groups: Vec<ChannelGroupView>,
     pub csrf_token: String,
     pub test_success: Option<String>,
     pub test_error: Option<String>,
@@ -34,8 +34,9 @@ pub struct ChannelFormTemplate {
     pub telegram_chat_id: String,
     pub signal_api_url: String,
     pub signal_recipient: String,
-    pub whatsapp_api_url: String,
-    pub whatsapp_recipient: String,
+    pub whatsapp_phone_number_id: String,
+    pub whatsapp_access_token: String,
+    pub whatsapp_recipient_phone: String,
     pub discord_webhook_url: String,
     pub sms_account_sid: String,
     pub sms_auth_token: String,
@@ -63,10 +64,18 @@ impl AppVersion for ChannelFormTemplate {}
 // ---- View Models ----
 
 #[derive(Debug, Clone)]
+pub struct ChannelGroupView {
+    pub label: String,
+    pub channels: Vec<ChannelKindView>,
+}
+
+#[derive(Debug, Clone)]
 pub struct ChannelKindView {
     pub kind: String,
     pub display_name: String,
     pub configured: bool,
     /// `Some(true/false)` = configured + enabled state; `None` = not configured
     pub enabled: Option<bool>,
+    /// False for channels that are stubbed but not yet fully implemented
+    pub implemented: bool,
 }

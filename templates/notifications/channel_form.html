@@ -148,16 +148,22 @@
 
         {% if channel_type == "whatsapp" %}
         <div class="form-group">
-            <label for="whatsapp_api_url">WhatsApp API URL</label>
-            <input id="whatsapp_api_url" name="whatsapp_api_url" type="url" value="{{ whatsapp_api_url }}" required>
+            <label for="whatsapp_phone_number_id">Phone Number ID</label>
+            <input id="whatsapp_phone_number_id" name="whatsapp_phone_number_id" type="text" value="{{ whatsapp_phone_number_id }}" required>
         </div>
         <div class="form-group">
-            <label for="whatsapp_recipient">Recipient</label>
-            <input id="whatsapp_recipient" name="whatsapp_recipient" type="text" value="{{ whatsapp_recipient }}" required>
+            <label for="whatsapp_access_token">Access Token</label>
+            <input id="whatsapp_access_token" name="whatsapp_access_token" type="password" value="{{ whatsapp_access_token }}" required>
         </div>
-        <div class="alert alert-warning">
-            WhatsApp sending is not yet fully implemented. Configuration can still be saved for future use.
+        <div class="form-group">
+            <label for="whatsapp_recipient_phone">Recipient Phone</label>
+            <input id="whatsapp_recipient_phone" name="whatsapp_recipient_phone" type="text" placeholder="15551234567" value="{{ whatsapp_recipient_phone }}" required>
+            <small>Use E.164 format without plus sign, for example 15551234567.</small>
         </div>
+        <details class="help-text">
+            <summary>WhatsApp Cloud API setup help</summary>
+            <p>Use your Meta WhatsApp Cloud API phone number ID and a permanent access token with messaging permissions.</p>
+        </details>
         {% endif %}
 
         {% if channel_type == "discord" %}

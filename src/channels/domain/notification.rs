@@ -3,6 +3,26 @@ use serde::{Deserialize, Serialize};
 
 use crate::reminders::domain::reminder::PendingReminder;
 
+/// Broad category grouping for UI display
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ChannelCategory {
+    Email,
+    Sms,
+    Push,
+    Messaging,
+}
+
+impl ChannelCategory {
+    pub fn label(&self) -> &'static str {
+        match self {
+            ChannelCategory::Email => "Email",
+            ChannelCategory::Sms => "SMS",
+            ChannelCategory::Push => "Push Notifications",
+            ChannelCategory::Messaging => "Messaging Apps",
+        }
+    }
+}
+
 /// Supported notification channel types
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -62,12 +82,41 @@ impl ChannelKind {
         }
     }
 
+    pub fn category(&self) -> ChannelCategory {
+        match self {
+            ChannelKind::Email => ChannelCategory::Email,
+            ChannelKind::Sms => ChannelCategory::Sms,
+            ChannelKind::Gotify | ChannelKind::Ntfy | ChannelKind::Pushover => {
+                ChannelCategory::Push
+            }
+            ChannelKind::Telegram
+            | ChannelKind::Signal
+            | ChannelKind::Whatsapp
+            | ChannelKind::Discord => ChannelCategory::Messaging,
+        }
+    }
+
+    pub fn all() -> &'static [ChannelKind] {
+        &[
+            ChannelKind::Email,
+            ChannelKind::Sms,
+            ChannelKind::Gotify,
+            ChannelKind::Ntfy,
+            ChannelKind::Pushover,
+            ChannelKind::Telegram,
+            ChannelKind::Signal,
+            ChannelKind::Whatsapp,
+            ChannelKind::Discord,
+        ]
+    }
+
     /// Returns only channel kinds that have a working implementation
     pub fn implemented() -> &'static [ChannelKind] {
         &[
             ChannelKind::Gotify,
             ChannelKind::Email,
             ChannelKind::Telegram,
+            ChannelKind::Whatsapp,
             ChannelKind::Discord,
             ChannelKind::Sms,
             ChannelKind::Ntfy,
@@ -87,9 +136,6 @@ pub trait NotificationSender: Send + Sync {
 
 #[derive(Debug, thiserror::Error)]
 pub enum NotificationError {
-    #[error("Channel not implemented: {0}")]
-    NotImplemented(String),
-
     #[error("Failed to send notification: {0}")]
     SendFailed(String),
 

@@ -113,11 +113,12 @@ pub struct SignalConfig {
     pub recipient: String,
 }
 
-/// WhatsApp channel configuration (user-provided, stub)
+/// WhatsApp Cloud API channel configuration (Meta)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhatsappConfig {
-    pub api_url: String,
-    pub recipient: String,
+    pub phone_number_id: String,
+    pub access_token: String,
+    pub recipient_phone: String,
 }
 
 /// Discord channel configuration (user-provided, stub)

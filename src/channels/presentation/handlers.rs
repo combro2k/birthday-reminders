@@ -9,14 +9,14 @@ use serde::Deserialize;
 use tower_sessions::Session;
 
 use crate::auth::infrastructure::session::get_csrf_token;
-use crate::channels::domain::notification::ChannelKind;
+use crate::channels::domain::notification::{ChannelCategory, ChannelKind};
 use crate::channels::domain::notification_config::{
     DiscordConfig, EmailConfig, EmailProvider, GotifyConfig, NtfyAuthType, NtfyConfig,
     PushoverConfig, SignalConfig, SmsConfig, SmtpSecurity, TelegramConfig, WhatsappConfig,
 };
 use crate::channels::domain::repository::NotificationChannelRecord;
 use crate::channels::presentation::templates::{
-    ChannelFormTemplate, ChannelKindView, ChannelsTemplate,
+    ChannelFormTemplate, ChannelGroupView, ChannelKindView, ChannelsTemplate,
 };
 use crate::infrastructure::web::server::AppState;
 use crate::users::domain::user::User;
@@ -50,22 +50,45 @@ pub async fn list_channels(
         .map(|r| (r.channel_type.clone(), r))
         .collect();
 
-    let available: Vec<ChannelKindView> = ChannelKind::implemented()
+    let implemented_kinds = ChannelKind::implemented();
+    let category_order = [
+        ChannelCategory::Email,
+        ChannelCategory::Sms,
+        ChannelCategory::Push,
+        ChannelCategory::Messaging,
+    ];
+    let groups: Vec<ChannelGroupView> = category_order
         .iter()
-        .map(|k| {
-            let rec = record_map.get(k.as_str());
-            ChannelKindView {
-                kind: k.as_str().to_string(),
-                display_name: k.display_name().to_string(),
-                configured: rec.is_some(),
-                enabled: rec.map(|r| r.enabled),
+        .map(|cat| {
+            let channels = ChannelKind::all()
+                .iter()
+                .filter(|k| k.category() == *cat)
+                .map(|k| {
+                    let rec = record_map.get(k.as_str());
+                    let implemented = implemented_kinds.contains(k);
+                    ChannelKindView {
+                        kind: k.as_str().to_string(),
+                        display_name: k.display_name().to_string(),
+                        configured: implemented && rec.is_some(),
+                        enabled: if implemented {
+                            rec.map(|r| r.enabled)
+                        } else {
+                            None
+                        },
+                        implemented,
+                    }
+                })
+                .collect();
+            ChannelGroupView {
+                label: cat.label().to_string(),
+                channels,
             }
         })
         .collect();
 
     let template = ChannelsTemplate {
         user,
-        available,
+        groups,
         csrf_token,
         test_success: params.test_ok,
         test_error: params.test_err,
@@ -124,8 +147,9 @@ pub struct ChannelConfigForm {
     pub telegram_chat_id: Option<String>,
     pub signal_api_url: Option<String>,
     pub signal_recipient: Option<String>,
-    pub whatsapp_api_url: Option<String>,
-    pub whatsapp_recipient: Option<String>,
+    pub whatsapp_phone_number_id: Option<String>,
+    pub whatsapp_access_token: Option<String>,
+    pub whatsapp_recipient_phone: Option<String>,
     pub discord_webhook_url: Option<String>,
     pub sms_account_sid: Option<String>,
     pub sms_auth_token: Option<String>,
@@ -285,10 +309,17 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
         }
         ChannelKind::Whatsapp => {
             let cfg = WhatsappConfig {
-                api_url: required_field(form.whatsapp_api_url.as_deref(), "WhatsApp API URL")?,
-                recipient: required_field(
-                    form.whatsapp_recipient.as_deref(),
-                    "WhatsApp recipient",
+                phone_number_id: required_field(
+                    form.whatsapp_phone_number_id.as_deref(),
+                    "WhatsApp phone number ID",
+                )?,
+                access_token: required_field(
+                    form.whatsapp_access_token.as_deref(),
+                    "WhatsApp access token",
+                )?,
+                recipient_phone: required_field(
+                    form.whatsapp_recipient_phone.as_deref(),
+                    "WhatsApp recipient phone",
                 )?,
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
@@ -399,8 +430,9 @@ fn channel_form_template(
         telegram_chat_id: trim_or_empty(form.telegram_chat_id.as_deref()),
         signal_api_url: trim_or_empty(form.signal_api_url.as_deref()),
         signal_recipient: trim_or_empty(form.signal_recipient.as_deref()),
-        whatsapp_api_url: trim_or_empty(form.whatsapp_api_url.as_deref()),
-        whatsapp_recipient: trim_or_empty(form.whatsapp_recipient.as_deref()),
+        whatsapp_phone_number_id: trim_or_empty(form.whatsapp_phone_number_id.as_deref()),
+        whatsapp_access_token: trim_or_empty(form.whatsapp_access_token.as_deref()),
+        whatsapp_recipient_phone: trim_or_empty(form.whatsapp_recipient_phone.as_deref()),
         discord_webhook_url: trim_or_empty(form.discord_webhook_url.as_deref()),
         sms_account_sid: trim_or_empty(form.sms_account_sid.as_deref()),
         sms_auth_token: trim_or_empty(form.sms_auth_token.as_deref()),
@@ -486,11 +518,14 @@ fn channel_form_template(
             }
             ChannelKind::Whatsapp => {
                 if let Ok(cfg) = serde_json::from_value::<WhatsappConfig>(existing.config.clone()) {
-                    if template.whatsapp_api_url.is_empty() {
-                        template.whatsapp_api_url = cfg.api_url;
+                    if template.whatsapp_phone_number_id.is_empty() {
+                        template.whatsapp_phone_number_id = cfg.phone_number_id;
                     }
-                    if template.whatsapp_recipient.is_empty() {
-                        template.whatsapp_recipient = cfg.recipient;
+                    if template.whatsapp_access_token.is_empty() {
+                        template.whatsapp_access_token = cfg.access_token;
+                    }
+                    if template.whatsapp_recipient_phone.is_empty() {
+                        template.whatsapp_recipient_phone = cfg.recipient_phone;
                     }
                 }
             }
