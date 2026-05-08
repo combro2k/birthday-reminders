@@ -76,6 +76,7 @@ bash scripts/release-check.sh
 ```
 
 The script verifies version consistency between `Cargo.toml` and `package.json`, rebuilds the Tailwind CSS, and runs `cargo fmt`, `cargo test`, and `cargo clippy` with strict flags. It must exit without errors.
+The script runs `cargo clean` only when there are Git changes in `src/`, `static/`, `templates/`, `tests/`, or `migrations/`; otherwise it skips clean to keep checks faster.
 
 ## 7. Release and Compliance Requirements
 
@@ -83,10 +84,15 @@ The script verifies version consistency between `Cargo.toml` and `package.json`,
 - **Version consistency is mandatory for every version bump**: `package.json` and `Cargo.toml` **MUST** have the exact same version.
 - **Version bump workflow is mandatory**: A version bump **MUST** explicitly include all of the following steps:
     - Update the version in all required files. If the exact target version is assumed rather than provided, explicitly ask the user to confirm the version before proceeding.
+    - If the user asks for a version bump without specifying a target version, calculate and suggest:
+        - Next minor version (`x.(y+1).0`) as the default/recommended option.
+        - Next major version (`(x+1).0.0`) as an alternative option.
+      Always ask for explicit confirmation before applying any version change.
     - Commit the version bump changes. Commit all relevant files for the version bump; if it is unclear whether all changed files should be included, ask the user before committing.
     - Create a Git tag for the version.
     - Push only when the user explicitly asks for a push.
 - **Release validation is mandatory**: `bash scripts/release-check.sh` **MUST** be run and pass without errors on every version bump.
+    - `cargo clean` is conditional inside the script and only runs when relevant code/assets/test/migration paths changed.
 - **No personal or private information in the codebase**:
     - The repository **MUST NOT** contain personal/private data or secrets.
     - This includes (but is not limited to): tokens, passwords, usernames, API keys, credentials, private identifiers, or similar sensitive values.
