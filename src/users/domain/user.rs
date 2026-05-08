@@ -105,6 +105,9 @@ pub struct User {
     pub oidc_subject: Option<String>,
     pub date_format: String,
     pub theme: Theme,
+    pub dashboard_upcoming_days: u32,
+    pub birthday_sort_field: String,
+    pub birthday_sort_desc: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }

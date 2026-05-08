@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block theme %}{{ user.theme.as_str() }}{% endblock %}
+{% block body_attributes %}id="page-users-profile"{% endblock %}
 
 {% block title %}Profile - Birthday Reminders{% endblock %}
 
@@ -96,6 +97,49 @@
     </div>
 
     <div class="card mt-2">
+        <h3>Dashboard Upcoming Window</h3>
+        <p>Choose how far ahead the dashboard should look for upcoming birthdays:</p>
+        <form method="POST" action="/settings/dashboard-window">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="dashboard_upcoming_days">Upcoming range</label>
+                <select id="dashboard_upcoming_days" name="dashboard_upcoming_days">
+                    <option value="30" {% if user.dashboard_upcoming_days == 30 %}selected{% endif %}>30 days</option>
+                    <option value="45" {% if user.dashboard_upcoming_days == 45 %}selected{% endif %}>45 days</option>
+                    <option value="60" {% if user.dashboard_upcoming_days == 60 %}selected{% endif %}>60 days</option>
+                    <option value="75" {% if user.dashboard_upcoming_days == 75 %}selected{% endif %}>75 days</option>
+                    <option value="90" {% if user.dashboard_upcoming_days == 90 %}selected{% endif %}>90 days</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-1">Save Dashboard Window</button>
+        </form>
+    </div>
+
+    <div class="card mt-2">
+        <h3>All Birthdays Default Sorting</h3>
+        <p>Set your default ordering for the birthdays list. You can still override from the table headers.</p>
+        <form method="POST" action="/settings/birthday-sort">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="birthday_sort_field">Sort by</label>
+                <select id="birthday_sort_field" name="birthday_sort_field">
+                    <option value="date" {% if user.birthday_sort_field == "date" %}selected{% endif %}>Closest birthday (days until next)</option>
+                    <option value="name" {% if user.birthday_sort_field == "name" %}selected{% endif %}>Name</option>
+                    <option value="age" {% if user.birthday_sort_field == "age" %}selected{% endif %}>Age / birth date</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="birthday_sort_direction">Direction</label>
+                <select id="birthday_sort_direction" name="birthday_sort_direction">
+                    <option value="asc" {% if !user.birthday_sort_desc %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if user.birthday_sort_desc %}selected{% endif %}>Descending</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-1">Save Sorting Preference</button>
+        </form>
+    </div>
+
+    <div class="card mt-2">
         <h3>Reminder Preferences</h3>
         <p>Choose how many days before a birthday you'd like to be reminded:</p>
         <form method="POST" action="/settings/reminders">
@@ -103,37 +147,49 @@
             <input type="hidden" name="days_before" id="days_before_value" value="{{ reminder_days_csv }}">
             <div class="checkbox-group">
                 <label class="checkbox-label">
-                    <input type="checkbox" value="14" {% if reminder_days.contains(&14) %}checked{% endif %} onchange="updateDays(this)">
+                    <input type="checkbox" value="90" class="js-reminder-day" {% if reminder_days.contains(&90) %}checked{% endif %}>
+                    90 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="75" class="js-reminder-day" {% if reminder_days.contains(&75) %}checked{% endif %}>
+                    75 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="60" class="js-reminder-day" {% if reminder_days.contains(&60) %}checked{% endif %}>
+                    60 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="45" class="js-reminder-day" {% if reminder_days.contains(&45) %}checked{% endif %}>
+                    45 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="30" class="js-reminder-day" {% if reminder_days.contains(&30) %}checked{% endif %}>
+                    30 days before
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" value="14" class="js-reminder-day" {% if reminder_days.contains(&14) %}checked{% endif %}>
                     14 days before
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" value="7" {% if reminder_days.contains(&7) %}checked{% endif %} onchange="updateDays(this)">
+                    <input type="checkbox" value="7" class="js-reminder-day" {% if reminder_days.contains(&7) %}checked{% endif %}>
                     7 days before
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" value="3" {% if reminder_days.contains(&3) %}checked{% endif %} onchange="updateDays(this)">
+                    <input type="checkbox" value="3" class="js-reminder-day" {% if reminder_days.contains(&3) %}checked{% endif %}>
                     3 days before
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" value="1" {% if reminder_days.contains(&1) %}checked{% endif %} onchange="updateDays(this)">
+                    <input type="checkbox" value="1" class="js-reminder-day" {% if reminder_days.contains(&1) %}checked{% endif %}>
                     1 day before
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" value="0" {% if reminder_days.contains(&0) %}checked{% endif %} onchange="updateDays(this)">
+                    <input type="checkbox" value="0" class="js-reminder-day" {% if reminder_days.contains(&0) %}checked{% endif %}>
                     On the day
                 </label>
             </div>
             <button type="submit" class="btn btn-primary mt-1">Save Preferences</button>
         </form>
     </div>
-
-    <script>
-    function updateDays() {
-        const checked = document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked');
-        const values = Array.from(checked).map(cb => cb.value);
-        document.getElementById('days_before_value').value = values.join(',');
-    }
-    </script>
 
     <div class="mt-2">
         <a href="/settings/api-tokens" class="btn btn-secondary">Manage API Tokens</a>

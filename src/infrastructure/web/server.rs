@@ -146,6 +146,14 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         .route("/settings/reminders", post(settings::update_reminder_days))
         .route("/settings/theme", post(settings::update_theme))
         .route(
+            "/settings/dashboard-window",
+            post(settings::update_dashboard_window),
+        )
+        .route(
+            "/settings/birthday-sort",
+            post(settings::update_birthday_sort_preferences),
+        )
+        .route(
             "/settings/api-tokens",
             get(settings::api_tokens_page).post(settings::create_api_token),
         )

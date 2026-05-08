@@ -24,6 +24,9 @@ pub struct UpdateUser {
     pub oidc_subject: Option<Option<String>>,
     pub date_format: Option<String>,
     pub theme: Option<String>,
+    pub dashboard_upcoming_days: Option<u32>,
+    pub birthday_sort_field: Option<String>,
+    pub birthday_sort_desc: Option<bool>,
 }
 
 #[async_trait]

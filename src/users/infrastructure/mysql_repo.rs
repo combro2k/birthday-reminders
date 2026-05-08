@@ -27,6 +27,9 @@ struct UserRow {
     oidc_subject: Option<String>,
     date_format: String,
     theme: String,
+    dashboard_upcoming_days: i32,
+    birthday_sort_field: String,
+    birthday_sort_desc: bool,
     created_at: chrono::NaiveDateTime,
     updated_at: chrono::NaiveDateTime,
 }
@@ -47,6 +50,9 @@ impl TryFrom<UserRow> for User {
             oidc_subject: row.oidc_subject,
             date_format: row.date_format,
             theme: Theme::from_str(&row.theme),
+            dashboard_upcoming_days: u32::try_from(row.dashboard_upcoming_days).unwrap_or(30),
+            birthday_sort_field: row.birthday_sort_field,
+            birthday_sort_desc: row.birthday_sort_desc,
             created_at: chrono::DateTime::from_naive_utc_and_offset(row.created_at, chrono::Utc),
             updated_at: chrono::DateTime::from_naive_utc_and_offset(row.updated_at, chrono::Utc),
         })
@@ -60,8 +66,8 @@ impl UserRepository for MysqlUserRepo {
         let now = chrono::Utc::now().naive_utc();
 
         sqlx::query(
-            "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, theme, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id.to_string())
         .bind(&new.username)
@@ -71,6 +77,9 @@ impl UserRepository for MysqlUserRepo {
         .bind(new.auth_method.as_str())
         .bind(&new.oidc_subject)
         .bind(Theme::default().as_str())
+        .bind(30_i32)
+        .bind("date")
+        .bind(false)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
@@ -94,6 +103,9 @@ impl UserRepository for MysqlUserRepo {
             oidc_subject: new.oidc_subject,
             date_format: "%d-%m-%Y".to_string(),
             theme: Theme::default(),
+            dashboard_upcoming_days: 30,
+            birthday_sort_field: "date".to_string(),
+            birthday_sort_desc: false,
             created_at: chrono::DateTime::from_naive_utc_and_offset(now, chrono::Utc),
             updated_at: chrono::DateTime::from_naive_utc_and_offset(now, chrono::Utc),
         })
@@ -101,7 +113,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_by_id(&self, id: &UserId) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE id = ?",
         )
         .bind(id.0.to_string())
@@ -115,7 +127,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_by_username(&self, username: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE username = ?",
         )
         .bind(username)
@@ -129,7 +141,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE oidc_subject = ?",
         )
         .bind(subject)
@@ -143,7 +155,7 @@ impl UserRepository for MysqlUserRepo {
 
     async fn find_all(&self) -> Result<Vec<User>, RepositoryError> {
         let rows = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -173,10 +185,19 @@ impl UserRepository for MysqlUserRepo {
             .theme
             .map(|t| Theme::from_str(&t))
             .unwrap_or(current.theme);
+        let dashboard_upcoming_days = update
+            .dashboard_upcoming_days
+            .unwrap_or(current.dashboard_upcoming_days);
+        let birthday_sort_field = update
+            .birthday_sort_field
+            .unwrap_or(current.birthday_sort_field);
+        let birthday_sort_desc = update
+            .birthday_sort_desc
+            .unwrap_or(current.birthday_sort_desc);
 
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
-             auth_method = ?, oidc_subject = ?, date_format = ?, theme = ?, updated_at = UTC_TIMESTAMP(6)
+             auth_method = ?, oidc_subject = ?, date_format = ?, theme = ?, dashboard_upcoming_days = ?, birthday_sort_field = ?, birthday_sort_desc = ?, updated_at = UTC_TIMESTAMP(6)
              WHERE id = ?",
         )
         .bind(&username)
@@ -187,6 +208,9 @@ impl UserRepository for MysqlUserRepo {
         .bind(&oidc_subject)
         .bind(&date_format)
         .bind(theme.as_str())
+        .bind(dashboard_upcoming_days as i32)
+        .bind(&birthday_sort_field)
+        .bind(birthday_sort_desc)
         .bind(id.0.to_string())
         .execute(&self.pool)
         .await
