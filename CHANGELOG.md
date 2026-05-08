@@ -14,6 +14,11 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.1.4] - 2026-05-08
+
+### Fixed
+- GitHub Actions CI and release workflows now install and invoke sccache in a way that matches the repository's Cargo wrapper configuration, avoiding pipeline failures caused by a missing hard-coded sccache path
+
 ## [1.1.3] - 2026-05-08
 
 ### Changed
