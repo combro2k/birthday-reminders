@@ -89,7 +89,7 @@ The script runs `cargo clean` only when there are Git changes in `src/`, `static
         - Next major version (`(x+1).0.0`) as an alternative option.
             Present these choices using an input selector (interactive option picker), with next minor preselected/recommended, while still allowing explicit freeform version input.
       Always ask for explicit confirmation before applying any version change.
-    - Commit the version bump changes. Commit all relevant files for the version bump; if it is unclear whether all changed files should be included, ask the user before committing.
+    - Commit scope policy for version bumps: All files, including version-bump files.
     - Create a Git tag for the version.
     - Push only when the user explicitly asks for a push.
 - **Release validation is mandatory**: `bash scripts/release-check.sh` **MUST** be run and pass without errors on every version bump.

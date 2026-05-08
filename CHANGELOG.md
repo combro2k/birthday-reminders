@@ -11,6 +11,29 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ### Changed
 
 ### Fixed
+
+### Security
+
+## [1.1.1] - 2026-05-08
+
+### Added
+- Per-user dashboard upcoming window preference with allowed values 30, 45, 60, 75, and 90 days
+- Per-user default sorting preference for All Birthdays (sort field + direction)
+- Database migrations for SQLite, MySQL, and PostgreSQL to persist dashboard and birthday sorting preferences
+- Unit tests for settings preference validation/parsing and birthdays list sort-resolution behavior
+
+### Changed
+- Added explicit Rust package license metadata in Cargo.toml (`license = "MIT"`) to make crate licensing clear in Cargo ecosystem tooling
+- Updated `AGENTS.md` version bump workflow policy to commit all changed files (including version-bump files) by default.
+- Dashboard upcoming query now uses the authenticated user's configured window instead of a hardcoded 30-day range
+- Dashboard empty-state copy now reflects the user's configured upcoming window
+- All Birthdays default ordering now uses each user's saved sort preference (default: closest birthdays / shortest days until next)
+- All Birthdays query parameters still override saved sort defaults when explicitly provided
+- Settings profile now includes forms to configure dashboard upcoming window and default All Birthdays sorting
+- Reminder preferences now support additional long-range lead times: 30, 45, 60, 75, and 90 days
+- Reminder checkbox handling moved from inline template script to external static module
+
+### Fixed
 - `package/install.sh` now explicitly sets `750` permissions on the data and static directories, preventing the SQLite database from being world-readable when installed via the tar.gz package
 
 ### Security

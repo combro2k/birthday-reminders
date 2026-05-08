@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN dashboard_upcoming_days INTEGER NOT NULL DEFAULT 30;
+ALTER TABLE users ADD COLUMN birthday_sort_field TEXT NOT NULL DEFAULT 'date';
+ALTER TABLE users ADD COLUMN birthday_sort_desc BOOLEAN NOT NULL DEFAULT FALSE;

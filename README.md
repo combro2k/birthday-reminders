@@ -215,7 +215,13 @@ reminders:
   default_days_before: [7, 3, 1, 0]  # Remind 7, 3, and 1 day(s) before + on the day
 ```
 
-The `default_days_before` setting is the global default. Each user can override this from **Settings → Profile → Reminder Preferences** in the web UI, choosing from 14, 7, 3, or 1 day(s) before and/or on the day itself.
+The `default_days_before` setting is the global default. Each user can override this from **Settings → Profile → Reminder Preferences** in the web UI, choosing from 90, 75, 60, 45, 30, 14, 7, 3, or 1 day(s) before and/or on the day itself.
+
+The profile settings page also allows users to configure:
+- **Dashboard Upcoming Window**: 30, 45, 60, 75, or 90 days (default: 30)
+- **All Birthdays Default Sorting**: preferred sort field and direction used when no sort query parameters are provided
+
+By default, the All Birthdays page is configured to sort by closest upcoming birthday (shortest days until next birthday). Users can still temporarily override sorting from table header links, and explicit query parameters continue to take precedence.
 
 ### Logging
 

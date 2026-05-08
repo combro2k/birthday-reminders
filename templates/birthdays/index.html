@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block theme %}{{ user.theme.as_str() }}{% endblock %}
+{% block body_attributes %}id="page-home-dashboard"{% endblock %}
 
 {% block title %}Dashboard - Birthday Reminders{% endblock %}
 
@@ -28,7 +29,7 @@
 
     {% if upcoming.is_empty() %}
     <div class="empty-state">
-        <p>No upcoming birthdays in the next 30 days.</p>
+        <p>No upcoming birthdays in the next {{ user.dashboard_upcoming_days }} days.</p>
         <a href="/birthdays/new" class="btn btn-secondary">Add your first birthday</a>
     </div>
     {% else %}

@@ -27,6 +27,9 @@ struct UserRow {
     oidc_subject: Option<String>,
     date_format: String,
     theme: String,
+    dashboard_upcoming_days: i32,
+    birthday_sort_field: String,
+    birthday_sort_desc: bool,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -43,6 +46,9 @@ impl From<UserRow> for User {
             oidc_subject: row.oidc_subject,
             date_format: row.date_format,
             theme: Theme::from_str(&row.theme),
+            dashboard_upcoming_days: u32::try_from(row.dashboard_upcoming_days).unwrap_or(30),
+            birthday_sort_field: row.birthday_sort_field,
+            birthday_sort_desc: row.birthday_sort_desc,
             created_at: row.created_at,
             updated_at: row.updated_at,
         }
@@ -56,7 +62,7 @@ impl UserRepository for PgUserRepo {
         let row = sqlx::query_as::<_, UserRow>(
             "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
-               RETURNING id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at",
+             RETURNING id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at",
         )
         .bind(id)
         .bind(&new.username)
@@ -79,7 +85,7 @@ impl UserRepository for PgUserRepo {
 
     async fn find_by_id(&self, id: &UserId) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE id = $1",
         )
         .bind(id.0)
@@ -92,7 +98,7 @@ impl UserRepository for PgUserRepo {
 
     async fn find_by_username(&self, username: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE username = $1",
         )
         .bind(username)
@@ -105,7 +111,7 @@ impl UserRepository for PgUserRepo {
 
     async fn find_by_oidc_subject(&self, subject: &str) -> Result<User, RepositoryError> {
         let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE oidc_subject = $1",
         )
         .bind(subject)
@@ -118,7 +124,7 @@ impl UserRepository for PgUserRepo {
 
     async fn find_all(&self) -> Result<Vec<User>, RepositoryError> {
         let rows = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+            "SELECT id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -147,12 +153,21 @@ impl UserRepository for PgUserRepo {
             .theme
             .map(|t| Theme::from_str(&t))
             .unwrap_or(current.theme);
+        let dashboard_upcoming_days = update
+            .dashboard_upcoming_days
+            .unwrap_or(current.dashboard_upcoming_days);
+        let birthday_sort_field = update
+            .birthday_sort_field
+            .unwrap_or(current.birthday_sort_field);
+        let birthday_sort_desc = update
+            .birthday_sort_desc
+            .unwrap_or(current.birthday_sort_desc);
 
         let row = sqlx::query_as::<_, UserRow>(
             "UPDATE users SET username = $1, email = $2, password_hash = $3, role = $4,
-             auth_method = $5, oidc_subject = $6, date_format = $7, theme = $8, updated_at = NOW()
-               WHERE id = $9
-             RETURNING id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at",
+                         auth_method = $5, oidc_subject = $6, date_format = $7, theme = $8, dashboard_upcoming_days = $9, birthday_sort_field = $10, birthday_sort_desc = $11, updated_at = NOW()
+                             WHERE id = $12
+                         RETURNING id, username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at",
         )
         .bind(&username)
         .bind(&email)
@@ -162,6 +177,9 @@ impl UserRepository for PgUserRepo {
         .bind(&oidc_subject)
         .bind(&date_format)
         .bind(theme.as_str())
+        .bind(dashboard_upcoming_days as i32)
+        .bind(&birthday_sort_field)
+        .bind(birthday_sort_desc)
         .bind(id.0)
         .fetch_one(&self.pool)
         .await

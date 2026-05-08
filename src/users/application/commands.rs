@@ -83,6 +83,40 @@ impl UserCommandService {
         Ok(())
     }
 
+    pub async fn update_dashboard_upcoming_days(
+        &self,
+        user_id: &UserId,
+        days: u32,
+    ) -> anyhow::Result<()> {
+        let update = UpdateUser {
+            dashboard_upcoming_days: Some(days),
+            ..Default::default()
+        };
+        self.user_repo
+            .update(user_id, update)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to update dashboard window: {}", e))?;
+        Ok(())
+    }
+
+    pub async fn update_birthday_sort_preferences(
+        &self,
+        user_id: &UserId,
+        sort_field: &str,
+        sort_desc: bool,
+    ) -> anyhow::Result<()> {
+        let update = UpdateUser {
+            birthday_sort_field: Some(sort_field.to_string()),
+            birthday_sort_desc: Some(sort_desc),
+            ..Default::default()
+        };
+        self.user_repo
+            .update(user_id, update)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to update birthday sort preferences: {}", e))?;
+        Ok(())
+    }
+
     pub async fn delete_user(&self, user_id: &UserId) -> anyhow::Result<()> {
         self.user_repo
             .delete(user_id)

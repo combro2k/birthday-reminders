@@ -24,7 +24,7 @@ pub async fn dashboard(
     let csrf_token = get_csrf_token(&session).await;
     let upcoming = state
         .birthday_query_service
-        .get_upcoming(&user.id, 30)
+        .get_upcoming(&user.id, user.dashboard_upcoming_days)
         .await
         .unwrap_or_default();
 
@@ -47,6 +47,24 @@ pub struct ListQuery {
     pub desc: Option<bool>,
 }
 
+fn resolve_sort_preferences(
+    query: &ListQuery,
+    user_sort_field: &str,
+    user_sort_desc: bool,
+) -> (String, bool) {
+    let current_sort = query
+        .sort
+        .clone()
+        .unwrap_or_else(|| user_sort_field.to_string());
+    let is_desc = match query.desc {
+        Some(desc) => desc,
+        None if query.sort.is_some() => false,
+        None => user_sort_desc,
+    };
+
+    (current_sort, is_desc)
+}
+
 pub async fn list_birthdays(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<User>,
@@ -60,12 +78,12 @@ pub async fn list_birthdays(
         .await
         .unwrap_or_default();
 
-    let current_sort = query.sort.as_deref().unwrap_or("name");
-    let is_desc = query.desc.unwrap_or(false);
+    let (current_sort, is_desc) =
+        resolve_sort_preferences(&query, &user.birthday_sort_field, user.birthday_sort_desc);
     let today = Local::now().date_naive();
 
     birthdays.sort_by(|a, b| {
-        let res = match current_sort {
+        let res = match current_sort.as_str() {
             "date" => a
                 .days_until_next_from(today)
                 .cmp(&b.days_until_next_from(today))
@@ -95,11 +113,52 @@ pub async fn list_birthdays(
     let template = BirthdayListTemplate {
         user,
         birthdays: birthday_views,
-        current_sort: current_sort.to_string(),
+        current_sort,
         is_desc,
         csrf_token,
     };
     Html(template.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ListQuery, resolve_sort_preferences};
+
+    #[test]
+    fn uses_user_preferences_when_query_absent() {
+        let query = ListQuery {
+            sort: None,
+            desc: None,
+        };
+
+        let (sort, desc) = resolve_sort_preferences(&query, "date", false);
+        assert_eq!(sort, "date");
+        assert!(!desc);
+    }
+
+    #[test]
+    fn sort_query_overrides_user_sort_and_defaults_to_ascending() {
+        let query = ListQuery {
+            sort: Some("name".to_string()),
+            desc: None,
+        };
+
+        let (sort, desc) = resolve_sort_preferences(&query, "date", true);
+        assert_eq!(sort, "name");
+        assert!(!desc);
+    }
+
+    #[test]
+    fn desc_query_overrides_all_defaults() {
+        let query = ListQuery {
+            sort: Some("age".to_string()),
+            desc: Some(true),
+        };
+
+        let (sort, desc) = resolve_sort_preferences(&query, "date", false);
+        assert_eq!(sort, "age");
+        assert!(desc);
+    }
 }
 
 pub async fn new_birthday_form(

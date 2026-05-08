@@ -27,6 +27,9 @@ struct UserRow {
     oidc_subject: Option<String>,
     date_format: String,
     theme: String,
+    dashboard_upcoming_days: i64,
+    birthday_sort_field: String,
+    birthday_sort_desc: i64,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -43,6 +46,9 @@ impl From<UserRow> for User {
             oidc_subject: row.oidc_subject,
             date_format: row.date_format,
             theme: Theme::from_str(&row.theme),
+            dashboard_upcoming_days: u32::try_from(row.dashboard_upcoming_days).unwrap_or(30),
+            birthday_sort_field: row.birthday_sort_field,
+            birthday_sort_desc: row.birthday_sort_desc != 0,
             created_at: row.created_at,
             updated_at: row.updated_at,
         }
@@ -56,8 +62,8 @@ impl UserRepository for SqliteUserRepo {
         let now = chrono::Utc::now();
 
         sqlx::query(
-            "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, theme, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "INSERT INTO users (id, username, email, password_hash, role, auth_method, oidc_subject, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id.to_string())
         .bind(&new.username)
@@ -67,6 +73,9 @@ impl UserRepository for SqliteUserRepo {
         .bind(new.auth_method.as_str())
         .bind(&new.oidc_subject)
         .bind(Theme::default().as_str())
+        .bind(30_i64)
+        .bind("date")
+        .bind(0_i64)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
@@ -90,6 +99,9 @@ impl UserRepository for SqliteUserRepo {
             oidc_subject: new.oidc_subject,
             date_format: "%d-%m-%Y".to_string(), // Default date format
             theme: Theme::default(),
+            dashboard_upcoming_days: 30,
+            birthday_sort_field: "date".to_string(),
+            birthday_sort_desc: false,
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
         })
@@ -108,7 +120,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+                     username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users
              WHERE
                 CASE
@@ -143,7 +155,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+                     username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE username = ?",
         )
         .bind(username)
@@ -167,7 +179,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+                     username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users WHERE oidc_subject = ?",
         )
         .bind(subject)
@@ -191,7 +203,7 @@ impl UserRepository for SqliteUserRepo {
                     )
                     ELSE id
                 END as id,
-                username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, created_at, updated_at
+                     username, email, password_hash, role, auth_method, oidc_subject, date_format, theme, dashboard_upcoming_days, birthday_sort_field, birthday_sort_desc, created_at, updated_at
              FROM users ORDER BY created_at",
         )
         .fetch_all(&self.pool)
@@ -220,11 +232,20 @@ impl UserRepository for SqliteUserRepo {
             .theme
             .map(|t| Theme::from_str(&t))
             .unwrap_or(current.theme);
+        let dashboard_upcoming_days = update
+            .dashboard_upcoming_days
+            .unwrap_or(current.dashboard_upcoming_days);
+        let birthday_sort_field = update
+            .birthday_sort_field
+            .unwrap_or(current.birthday_sort_field);
+        let birthday_sort_desc = update
+            .birthday_sort_desc
+            .unwrap_or(current.birthday_sort_desc);
         let now = chrono::Utc::now();
 
         sqlx::query(
             "UPDATE users SET username = ?, email = ?, password_hash = ?, role = ?,
-             auth_method = ?, oidc_subject = ?, date_format = ?, theme = ?, updated_at = ?
+             auth_method = ?, oidc_subject = ?, date_format = ?, theme = ?, dashboard_upcoming_days = ?, birthday_sort_field = ?, birthday_sort_desc = ?, updated_at = ?
              WHERE
                 CASE
                     WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
@@ -245,6 +266,9 @@ impl UserRepository for SqliteUserRepo {
         .bind(&oidc_subject)
         .bind(&date_format)
         .bind(theme.as_str())
+        .bind(dashboard_upcoming_days as i64)
+        .bind(&birthday_sort_field)
+        .bind(if birthday_sort_desc { 1_i64 } else { 0_i64 })
         .bind(now)
         .bind(id.0.to_string())
         .execute(&self.pool)
