@@ -11,8 +11,8 @@ use tower_sessions::Session;
 use crate::auth::infrastructure::session::get_csrf_token;
 use crate::channels::domain::notification::ChannelKind;
 use crate::channels::domain::notification_config::{
-    DiscordConfig, EmailConfig, EmailProvider, GotifyConfig, SignalConfig, SmsConfig, SmtpSecurity,
-    TelegramConfig, WhatsappConfig,
+    DiscordConfig, EmailConfig, EmailProvider, GotifyConfig, NtfyAuthType, NtfyConfig,
+    PushoverConfig, SignalConfig, SmsConfig, SmtpSecurity, TelegramConfig, WhatsappConfig,
 };
 use crate::channels::domain::repository::NotificationChannelRecord;
 use crate::channels::presentation::templates::{
@@ -127,6 +127,17 @@ pub struct ChannelConfigForm {
     pub sms_auth_token: Option<String>,
     pub sms_from_number: Option<String>,
     pub sms_to_number: Option<String>,
+    pub ntfy_server_url: Option<String>,
+    pub ntfy_topic: Option<String>,
+    pub ntfy_priority_default: Option<String>,
+    pub ntfy_priority_today: Option<String>,
+    pub ntfy_priority_tomorrow: Option<String>,
+    pub ntfy_auth_type: Option<String>,
+    pub ntfy_username: Option<String>,
+    pub ntfy_password: Option<String>,
+    pub ntfy_token: Option<String>,
+    pub pushover_api_token: Option<String>,
+    pub pushover_user_key: Option<String>,
 }
 
 fn trim_or_empty(value: Option<&str>) -> String {
@@ -177,6 +188,40 @@ fn smtp_security_as_str(security: SmtpSecurity) -> &'static str {
         SmtpSecurity::Starttls => "starttls",
         SmtpSecurity::Tls => "tls",
         SmtpSecurity::None => "none",
+    }
+}
+
+fn parse_ntfy_auth_type(value: Option<&str>) -> Result<NtfyAuthType, String> {
+    match value.map(str::trim).unwrap_or("none") {
+        "none" => Ok(NtfyAuthType::None),
+        "basic" => Ok(NtfyAuthType::Basic),
+        "bearer" => Ok(NtfyAuthType::Bearer),
+        other => Err(format!("Invalid Ntfy auth type: {}", other)),
+    }
+}
+
+fn ntfy_auth_type_as_str(auth_type: NtfyAuthType) -> &'static str {
+    match auth_type {
+        NtfyAuthType::None => "none",
+        NtfyAuthType::Basic => "basic",
+        NtfyAuthType::Bearer => "bearer",
+    }
+}
+
+fn parse_ntfy_priority(value: Option<&str>, field_name: &str) -> Result<Option<u8>, String> {
+    let trimmed = value.map(str::trim).unwrap_or_default();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+
+    let priority = trimmed
+        .parse::<u8>()
+        .map_err(|_| format!("{} must be a number between 1 and 5", field_name))?;
+
+    if (1..=5).contains(&priority) {
+        Ok(Some(priority))
+    } else {
+        Err(format!("{} must be between 1 and 5", field_name))
     }
 }
 
@@ -262,6 +307,59 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
         }
+        ChannelKind::Ntfy => {
+            let server_url = trim_or_empty(form.ntfy_server_url.as_deref());
+            let server_url = if server_url.is_empty() {
+                "https://ntfy.sh".to_string()
+            } else {
+                server_url
+            };
+
+            let auth_type = parse_ntfy_auth_type(form.ntfy_auth_type.as_deref())?;
+            let priority_default =
+                parse_ntfy_priority(form.ntfy_priority_default.as_deref(), "Default priority")?
+                    .unwrap_or(3);
+            let cfg = NtfyConfig {
+                server_url,
+                topic: required_field(form.ntfy_topic.as_deref(), "Ntfy topic")?,
+                priority_default,
+                priority_today: parse_ntfy_priority(
+                    form.ntfy_priority_today.as_deref(),
+                    "Today priority",
+                )?,
+                priority_tomorrow: parse_ntfy_priority(
+                    form.ntfy_priority_tomorrow.as_deref(),
+                    "Tomorrow priority",
+                )?,
+                auth_type,
+                username: match auth_type {
+                    NtfyAuthType::Basic => {
+                        Some(required_field(form.ntfy_username.as_deref(), "Username")?)
+                    }
+                    _ => None,
+                },
+                password: match auth_type {
+                    NtfyAuthType::Basic => {
+                        Some(required_field(form.ntfy_password.as_deref(), "Password")?)
+                    }
+                    _ => None,
+                },
+                token: match auth_type {
+                    NtfyAuthType::Bearer => {
+                        Some(required_field(form.ntfy_token.as_deref(), "Bearer token")?)
+                    }
+                    _ => None,
+                },
+            };
+            serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
+        }
+        ChannelKind::Pushover => {
+            let cfg = PushoverConfig {
+                api_token: required_field(form.pushover_api_token.as_deref(), "API Token")?,
+                user_key: required_field(form.pushover_user_key.as_deref(), "User Key")?,
+            };
+            serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
+        }
     }
 }
 
@@ -304,6 +402,17 @@ fn channel_form_template(
         sms_auth_token: trim_or_empty(form.sms_auth_token.as_deref()),
         sms_from_number: trim_or_empty(form.sms_from_number.as_deref()),
         sms_to_number: trim_or_empty(form.sms_to_number.as_deref()),
+        ntfy_server_url: trim_or_empty(form.ntfy_server_url.as_deref()),
+        ntfy_topic: trim_or_empty(form.ntfy_topic.as_deref()),
+        ntfy_priority_default: trim_or_empty(form.ntfy_priority_default.as_deref()),
+        ntfy_priority_today: trim_or_empty(form.ntfy_priority_today.as_deref()),
+        ntfy_priority_tomorrow: trim_or_empty(form.ntfy_priority_tomorrow.as_deref()),
+        ntfy_auth_type: trim_or_empty(form.ntfy_auth_type.as_deref()),
+        ntfy_username: trim_or_empty(form.ntfy_username.as_deref()),
+        ntfy_password: trim_or_empty(form.ntfy_password.as_deref()),
+        ntfy_token: trim_or_empty(form.ntfy_token.as_deref()),
+        pushover_api_token: trim_or_empty(form.pushover_api_token.as_deref()),
+        pushover_user_key: trim_or_empty(form.pushover_user_key.as_deref()),
         error,
         success,
         csrf_token,
@@ -401,6 +510,53 @@ fn channel_form_template(
                     }
                     if template.sms_to_number.is_empty() {
                         template.sms_to_number = cfg.to_number;
+                    }
+                }
+            }
+            ChannelKind::Ntfy => {
+                if let Ok(cfg) = serde_json::from_value::<NtfyConfig>(existing.config.clone()) {
+                    if template.ntfy_server_url.is_empty() {
+                        template.ntfy_server_url = cfg.server_url;
+                    }
+                    if template.ntfy_topic.is_empty() {
+                        template.ntfy_topic = cfg.topic;
+                    }
+                    if template.ntfy_auth_type.is_empty() {
+                        template.ntfy_auth_type = ntfy_auth_type_as_str(cfg.auth_type).to_string();
+                    }
+                    if template.ntfy_priority_default.is_empty() {
+                        template.ntfy_priority_default = cfg.priority_default.to_string();
+                    }
+                    if template.ntfy_priority_today.is_empty() {
+                        template.ntfy_priority_today = cfg
+                            .priority_today
+                            .map(|p| p.to_string())
+                            .unwrap_or_default();
+                    }
+                    if template.ntfy_priority_tomorrow.is_empty() {
+                        template.ntfy_priority_tomorrow = cfg
+                            .priority_tomorrow
+                            .map(|p| p.to_string())
+                            .unwrap_or_default();
+                    }
+                    if template.ntfy_username.is_empty() {
+                        template.ntfy_username = cfg.username.unwrap_or_default();
+                    }
+                    if template.ntfy_password.is_empty() {
+                        template.ntfy_password = cfg.password.unwrap_or_default();
+                    }
+                    if template.ntfy_token.is_empty() {
+                        template.ntfy_token = cfg.token.unwrap_or_default();
+                    }
+                }
+            }
+            ChannelKind::Pushover => {
+                if let Ok(cfg) = serde_json::from_value::<PushoverConfig>(existing.config.clone()) {
+                    if template.pushover_api_token.is_empty() {
+                        template.pushover_api_token = cfg.api_token;
+                    }
+                    if template.pushover_user_key.is_empty() {
+                        template.pushover_user_key = cfg.user_key;
                     }
                 }
             }

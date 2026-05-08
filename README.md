@@ -471,6 +471,7 @@ Users can configure one or more notification channels in the web UI under **Sett
 | **Telegram** | Messages via Telegram Bot API |
 | **Signal** | Messages via Signal messenger |
 | **WhatsApp** | Messages via WhatsApp Business API |
+| **Ntfy** | HTTP-based push notifications via ntfy.sh or self-hosted |
 
 ### Proton Mail Email Setup
 
@@ -518,6 +519,85 @@ Example:
 ```
 
 Proton SMTP uses SMTP token credentials. Do not use your Proton account login password in third-party SMTP clients.
+
+### Ntfy Setup
+
+Ntfy is a simple HTTP-based pub-sub notification service. Birthday Reminders can send notifications via:
+
+1. **Official service** (`https://ntfy.sh`) — no setup required, public or authenticated topics
+2. **Self-hosted** — deploy your own ntfy server for privacy and control
+
+#### Using ntfy.sh (Official Service - Recommended for Most Users)
+
+Leave the "Server URL" field empty or set it to `https://ntfy.sh`:
+
+```json
+{
+  "server_url": "https://ntfy.sh",
+  "topic": "my-birthdays",
+  "priority_default": 3,
+  "auth_type": "none"
+}
+```
+
+For private topics, add authentication:
+
+**With Basic Auth (Username + Password):**
+```json
+{
+  "server_url": "https://ntfy.sh",
+  "topic": "my-birthdays-private",
+  "priority_default": 3,
+  "priority_tomorrow": 4,
+  "priority_today": 5,
+  "auth_type": "basic",
+  "username": "your-username",
+  "password": "your-password"
+}
+```
+
+**With Bearer Token:**
+```json
+{
+  "server_url": "https://ntfy.sh",
+  "topic": "my-birthdays-private",
+  "priority_default": 3,
+  "auth_type": "bearer",
+  "token": "your-bearer-token"
+}
+```
+
+#### Self-Hosted Ntfy
+
+Deploy ntfy yourself for complete privacy. Refer to [Ntfy documentation](https://docs.ntfy.sh/) for installation.
+
+Example config for self-hosted:
+
+```json
+{
+  "server_url": "https://ntfy.example.com",
+  "topic": "birthdays",
+  "priority_default": 3,
+  "auth_type": "basic",
+  "username": "user@example.com",
+  "password": "secure-password"
+}
+```
+
+Priority mapping supports values from 1 (lowest) to 5 (highest):
+- `priority_default` applies to reminders in 2+ days
+- `priority_tomorrow` (optional) overrides 1-day reminders
+- `priority_today` (optional) overrides same-day reminders
+
+If any priority field is omitted, the default value 3 is used.
+
+#### Receiving Notifications
+
+Subscribe to your topic using:
+- **Web**: `https://ntfy.sh/my-birthdays`
+- **Mobile app**: Download the Ntfy app (iOS/Android) and subscribe to your topic
+- **Command line**: `curl -s ntfy.sh/my-birthdays/json | jq`
+- **Webhooks/Scripts**: Use Ntfy's integration options for advanced workflows
 
 ## Installation
 
