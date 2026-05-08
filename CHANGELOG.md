@@ -11,6 +11,7 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ### Changed
 
 ### Fixed
+- `package/install.sh` now explicitly sets `750` permissions on the data and static directories, preventing the SQLite database from being world-readable when installed via the tar.gz package
 
 ### Security
 

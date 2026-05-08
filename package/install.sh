@@ -9,10 +9,10 @@ STATICDIR="${STATICDIR:-$DATADIR/static}"
 echo "Installing birthday-reminders to system paths ..."
 
 # Create directories
-install -d "$BINDIR"
-install -d "$CONFDIR"
-install -d "$DATADIR"
-install -d "$STATICDIR"
+install -d -m 755 "$BINDIR"
+install -d -m 755 "$CONFDIR"
+install -d -m 750 "$DATADIR"
+install -d -m 750 "$STATICDIR"
 
 # Install binary
 install -m 755 birthday-reminders "$BINDIR/birthday-reminders"
