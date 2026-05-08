@@ -29,6 +29,9 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 - **gitleaks** (for secret scanning; install with `cargo install gitleaks` or use your package manager)
 - **openssl** (for generating encryption keys)
 - **python3** (for PWA asset generation script)
+- **mold** (optional, fast linker for faster builds)
+- **sccache** (optional, shared compilation cache to speed up rebuilds)
+- **clang** (C compiler, required for linking)
 
 ### Optional
 - **Docker** and **docker-compose** (for containerized deployments)

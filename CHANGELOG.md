@@ -14,6 +14,11 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.0.5] - 2026-05-08
+
+### Changed
+- Updated README.md to include mold, sccache, and clang in Build & Development Tools prerequisites
+
 ## [1.0.4] - 2026-05-08
 
 ### Added
