@@ -7,6 +7,16 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+### Security
+
+## [1.1.2] - 2026-05-08
+
+### Added
 - Ntfy notification channel support for both official ntfy.sh and self-hosted servers
 - Pushover notification channel support via the Pushover API (`api_token` + `user_key`)
 - Channel list page remove-confirmation behavior moved to `static/channels/list.js` and wired via `page-channels-list`
