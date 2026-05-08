@@ -14,6 +14,16 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.0.4] - 2026-05-08
+
+### Added
+- Secret scanning with gitleaks integrated into the release check script
+- Gitleaks validation step in GitHub Actions CI pipeline
+
+### Changed
+- Enhanced Prerequisites section in README with categorized build and development tools
+- Expanded documentation of release checklist with detailed step descriptions
+
 ## [1.0.3] - 2026-05-08
 
 ### Added
