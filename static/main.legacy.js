@@ -4,15 +4,32 @@
  * Global Initialization (ES5 compatible for legacy browsers)
  */
 (function initGlobal() {
-    // 1. Initial Theme Setup (Prevent FOUC)
-    var theme = document.documentElement.getAttribute('data-theme');
-    var isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    if (isDark) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
+    // 1. Initial Theme Setup
+    var root = document.documentElement;
+    var theme = root.getAttribute('data-theme');
+    var hasMatchMedia = !!window.matchMedia;
+    var resolveTheme = function() {
+        if (theme === 'light') {
+            return 'light';
+        }
+        if (theme === 'dark') {
+            return 'dark';
+        }
+
+        return hasMatchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    var applyTheme = function(resolvedTheme) {
+        if (resolvedTheme === 'dark') {
+            root.classList.add('dark');
+            root.classList.remove('light');
+        } else {
+            root.classList.add('light');
+            root.classList.remove('dark');
+        }
+    };
+
+    applyTheme(resolveTheme());
 
     // 2. Service Worker Registration
     if ("serviceWorker" in navigator) {
@@ -24,7 +41,7 @@
         var mq = window.matchMedia('(prefers-color-scheme: dark)');
         if (mq.addListener) {
             mq.addListener(function(e) {
-                document.documentElement.classList.toggle('dark', e.matches);
+                applyTheme(e.matches ? 'dark' : 'light');
             });
         }
     }

@@ -71,8 +71,8 @@ impl AuthMethod {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum Theme {
     Light,
-    Dark,
     #[default]
+    Dark,
     Auto,
 }
 
