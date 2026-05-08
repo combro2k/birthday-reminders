@@ -1,7 +1,5 @@
 use askama::Template;
 
-use crate::channels::domain::notification::ChannelKind;
-use crate::channels::domain::repository::NotificationChannelRecord;
 use crate::infrastructure::web::templates::AppVersion;
 use crate::users::domain::user::User;
 
@@ -9,7 +7,6 @@ use crate::users::domain::user::User;
 #[template(path = "notifications/channels.html")]
 pub struct ChannelsTemplate {
     pub user: User,
-    pub channels: Vec<ChannelView>,
     pub available: Vec<ChannelKindView>,
     pub csrf_token: String,
     pub test_success: Option<String>,
@@ -66,28 +63,10 @@ impl AppVersion for ChannelFormTemplate {}
 // ---- View Models ----
 
 #[derive(Debug, Clone)]
-pub struct ChannelView {
-    pub channel_type: String,
-    pub display_name: String,
-    pub enabled: bool,
-}
-
-impl From<NotificationChannelRecord> for ChannelView {
-    fn from(r: NotificationChannelRecord) -> Self {
-        let display_name = ChannelKind::from_str(&r.channel_type)
-            .map(|k| k.display_name().to_string())
-            .unwrap_or_else(|| r.channel_type.clone());
-        Self {
-            channel_type: r.channel_type,
-            display_name,
-            enabled: r.enabled,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct ChannelKindView {
     pub kind: String,
     pub display_name: String,
     pub configured: bool,
+    /// `Some(true/false)` = configured + enabled state; `None` = not configured
+    pub enabled: Option<bool>,
 }

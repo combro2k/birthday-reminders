@@ -68,6 +68,7 @@ body {
 .channels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
 .channel-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; }
 .channel-card.configured { border-color: var(--success); }
+.channel-card-actions { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .5rem; }
 
 /* Table */
 .table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
