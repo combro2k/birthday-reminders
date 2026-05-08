@@ -14,6 +14,11 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.0.6] - 2026-05-08
+
+### Changed
+- Added `cargo clean` to release-check script for more consistent builds
+
 ## [1.0.5] - 2026-05-08
 
 ### Changed
