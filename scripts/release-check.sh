@@ -17,8 +17,18 @@ fi
 
 printf '[release-check] Version check passed (%s)\n' "${cargo_version}"
 
-printf '\n[release-check] Running cargo clean\n'
-cargo clean
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	changed_for_clean="$(git status --porcelain -- src static templates tests migrations)"
+	if [[ -n "${changed_for_clean}" ]]; then
+		printf '\n[release-check] Relevant changes detected (src/static/templates/tests/migrations); running cargo clean\n'
+		cargo clean
+	else
+		printf '\n[release-check] No relevant changes in src/static/templates/tests/migrations; skipping cargo clean\n'
+	fi
+else
+	printf '\n[release-check] Git repository context unavailable; running cargo clean\n'
+	cargo clean
+fi
 
 printf '\n[release-check] Running gitleaks detect\n'
 gitleaks detect

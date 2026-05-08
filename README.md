@@ -705,11 +705,12 @@ bash scripts/release-check.sh
 
 This script performs the following checks in order:
 1. **Version consistency** — verifies `Cargo.toml` and `package.json` have matching versions
-2. **Secret scanning** — runs `gitleaks detect` to ensure no credentials, tokens, or API keys are present
-3. **CSS build** — rebuilds Tailwind CSS
-4. **Code formatting** — runs `cargo fmt --all`
-5. **Tests** — runs `cargo test --all-targets --all-features`
-6. **Linting** — runs `cargo clippy` with strict warnings-as-errors mode
+2. **Conditional clean** — runs `cargo clean` only when Git changes are present in `src/`, `static/`, `templates/`, `tests/`, or `migrations/`
+3. **Secret scanning** — runs `gitleaks detect` to ensure no credentials, tokens, or API keys are present
+4. **CSS build** — rebuilds Tailwind CSS
+5. **Code formatting** — runs `cargo fmt --all`
+6. **Tests** — runs `cargo test --all-targets --all-features`
+7. **Linting** — runs `cargo clippy` with strict warnings-as-errors mode
 
 All checks must pass without errors before release.
 
