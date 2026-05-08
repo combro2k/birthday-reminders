@@ -1,10 +1,13 @@
 use crate::channels::domain::notification::{ChannelKind, NotificationError, NotificationSender};
 use crate::channels::domain::notification_config::*;
+
 use crate::channels::domain::repository::NotificationChannelRecord;
 
 use super::discord::DiscordSender;
 use super::email::EmailSender;
 use super::gotify::GotifySender;
+use super::ntfy::NtfySender;
+use super::pushover::PushoverSender;
 use super::signal::SignalSender;
 use super::sms::SmsSender;
 use super::telegram::TelegramSender;
@@ -53,6 +56,16 @@ pub fn build_sender(
             let config: SmsConfig = serde_json::from_value(record.config.clone())
                 .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
             Ok(Box::new(SmsSender::new(config)))
+        }
+        ChannelKind::Ntfy => {
+            let config: NtfyConfig = serde_json::from_value(record.config.clone())
+                .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
+            Ok(Box::new(NtfySender::new(config)))
+        }
+        ChannelKind::Pushover => {
+            let config: PushoverConfig = serde_json::from_value(record.config.clone())
+                .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
+            Ok(Box::new(PushoverSender::new(config)))
         }
     }
 }

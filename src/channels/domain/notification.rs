@@ -14,6 +14,8 @@ pub enum ChannelKind {
     Whatsapp,
     Discord,
     Sms,
+    Ntfy,
+    Pushover,
 }
 
 impl ChannelKind {
@@ -26,6 +28,8 @@ impl ChannelKind {
             ChannelKind::Whatsapp => "whatsapp",
             ChannelKind::Discord => "discord",
             ChannelKind::Sms => "sms",
+            ChannelKind::Ntfy => "ntfy",
+            ChannelKind::Pushover => "pushover",
         }
     }
 
@@ -38,6 +42,8 @@ impl ChannelKind {
             "whatsapp" => Some(ChannelKind::Whatsapp),
             "discord" => Some(ChannelKind::Discord),
             "sms" => Some(ChannelKind::Sms),
+            "ntfy" => Some(ChannelKind::Ntfy),
+            "pushover" => Some(ChannelKind::Pushover),
             _ => None,
         }
     }
@@ -51,6 +57,8 @@ impl ChannelKind {
             ChannelKind::Whatsapp => "WhatsApp",
             ChannelKind::Discord => "Discord",
             ChannelKind::Sms => "SMS (Twilio)",
+            ChannelKind::Ntfy => "Ntfy",
+            ChannelKind::Pushover => "Pushover",
         }
     }
 
@@ -62,6 +70,8 @@ impl ChannelKind {
             ChannelKind::Telegram,
             ChannelKind::Discord,
             ChannelKind::Sms,
+            ChannelKind::Ntfy,
+            ChannelKind::Pushover,
         ]
     }
 }

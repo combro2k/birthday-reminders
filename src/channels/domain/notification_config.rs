@@ -135,6 +135,64 @@ pub struct SmsConfig {
     pub to_number: String,
 }
 
+/// Pushover channel configuration (user-provided)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PushoverConfig {
+    pub api_token: String,
+    pub user_key: String,
+}
+
+/// Ntfy channel configuration (self-hosted or ntfy.sh)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NtfyConfig {
+    #[serde(default = "default_ntfy_server")]
+    pub server_url: String,
+    pub topic: String,
+    #[serde(default = "default_ntfy_priority")]
+    pub priority_default: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority_today: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority_tomorrow: Option<u8>,
+    #[serde(default)]
+    pub auth_type: NtfyAuthType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+fn default_ntfy_server() -> String {
+    "https://ntfy.sh".to_string()
+}
+
+fn default_ntfy_priority() -> u8 {
+    3
+}
+
+impl NtfyConfig {
+    pub fn priority_for_days_before(&self, days_before: u32) -> u8 {
+        if days_before == 0 {
+            self.priority_today.unwrap_or(self.priority_default)
+        } else if days_before == 1 {
+            self.priority_tomorrow.unwrap_or(self.priority_default)
+        } else {
+            self.priority_default
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum NtfyAuthType {
+    #[default]
+    None,
+    Basic,
+    Bearer,
+}
+
 #[cfg(test)]
 mod tests {
     use super::{EmailConfig, EmailProvider, SmtpSecurity};

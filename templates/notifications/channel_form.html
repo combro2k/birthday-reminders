@@ -191,6 +191,89 @@
         </details>
         {% endif %}
 
+        {% if channel_type == "ntfy" %}
+        <div class="form-group">
+            <label for="ntfy_server_url">Server URL (optional)</label>
+            <input id="ntfy_server_url" name="ntfy_server_url" type="url" placeholder="https://ntfy.sh" value="{{ ntfy_server_url }}">
+            <small>Leave empty to use the official ntfy.sh service</small>
+        </div>
+        <div class="form-group">
+            <label for="ntfy_topic">Topic Name</label>
+            <input id="ntfy_topic" name="ntfy_topic" type="text" placeholder="my-birthdays" value="{{ ntfy_topic }}" required>
+        </div>
+        <div class="form-group">
+            <label for="ntfy_priority_default">Default Priority (1-5)</label>
+            <input id="ntfy_priority_default" name="ntfy_priority_default" type="number" min="1" max="5" placeholder="3" value="{{ ntfy_priority_default }}">
+            <small>Used for reminders in 2+ days. Leave empty for default value 3.</small>
+        </div>
+        <div class="form-group">
+            <label for="ntfy_priority_tomorrow">Tomorrow Priority Override (1-5, optional)</label>
+            <input id="ntfy_priority_tomorrow" name="ntfy_priority_tomorrow" type="number" min="1" max="5" value="{{ ntfy_priority_tomorrow }}">
+            <small>Applied when a birthday is tomorrow (1 day before). Leave empty to use default priority.</small>
+        </div>
+        <div class="form-group">
+            <label for="ntfy_priority_today">Today Priority Override (1-5, optional)</label>
+            <input id="ntfy_priority_today" name="ntfy_priority_today" type="number" min="1" max="5" value="{{ ntfy_priority_today }}">
+            <small>Applied on the birthday day (0 days before). Leave empty to use default priority.</small>
+        </div>
+        <div class="form-group">
+            <label for="ntfy_auth_type">Authentication Type</label>
+            <select id="ntfy_auth_type" name="ntfy_auth_type" onchange="toggleNtfyAuthFields()">
+                <option value="none" {% if ntfy_auth_type == "none" %}selected{% endif %}>None</option>
+                <option value="basic" {% if ntfy_auth_type == "basic" %}selected{% endif %}>Basic (Username + Password)</option>
+                <option value="bearer" {% if ntfy_auth_type == "bearer" %}selected{% endif %}>Bearer Token</option>
+            </select>
+        </div>
+        <div id="ntfy-basic-fields" style="display: none;">
+            <div class="form-group">
+                <label for="ntfy_username">Username</label>
+                <input id="ntfy_username" name="ntfy_username" type="text" value="{{ ntfy_username }}">
+            </div>
+            <div class="form-group">
+                <label for="ntfy_password">Password</label>
+                <input id="ntfy_password" name="ntfy_password" type="password" value="{{ ntfy_password }}">
+            </div>
+        </div>
+        <div id="ntfy-bearer-fields" style="display: none;">
+            <div class="form-group">
+                <label for="ntfy_token">Bearer Token</label>
+                <input id="ntfy_token" name="ntfy_token" type="password" value="{{ ntfy_token }}">
+            </div>
+        </div>
+        <details class="help-text">
+            <summary>Ntfy setup help</summary>
+            <p>Ntfy is a simple HTTP-based pub-sub notification service. You can use the official ntfy.sh or self-host your own instance.</p>
+            <p>Topic names should be unique. For private topics on ntfy.sh or self-hosted instances, add authentication credentials.</p>
+        </details>
+        <script>
+        function toggleNtfyAuthFields() {
+            var authType = document.getElementById("ntfy_auth_type").value;
+            var basicFields = document.getElementById("ntfy-basic-fields");
+            var bearerFields = document.getElementById("ntfy-bearer-fields");
+            basicFields.style.display = authType === "basic" ? "block" : "none";
+            bearerFields.style.display = authType === "bearer" ? "block" : "none";
+        }
+        // Initialize on page load
+        document.addEventListener("DOMContentLoaded", toggleNtfyAuthFields);
+        </script>
+        {% endif %}
+
+        {% if channel_type == "pushover" %}
+        <div class="form-group">
+            <label for="pushover_api_token">API Token</label>
+            <input id="pushover_api_token" name="pushover_api_token" type="password" value="{{ pushover_api_token }}" required>
+        </div>
+        <div class="form-group">
+            <label for="pushover_user_key">User Key</label>
+            <input id="pushover_user_key" name="pushover_user_key" type="text" value="{{ pushover_user_key }}" required>
+        </div>
+        <details class="help-text">
+            <summary>Pushover setup help</summary>
+            <p>Register an application at <a href="https://pushover.net/apps/build" target="_blank" rel="noopener noreferrer">pushover.net/apps/build</a> to get an API token.
+               Your user key is shown on your <a href="https://pushover.net/" target="_blank" rel="noopener noreferrer">Pushover dashboard</a>.</p>
+        </details>
+        {% endif %}
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save</button>
             <a href="/notifications" class="btn btn-secondary">Cancel</a>
