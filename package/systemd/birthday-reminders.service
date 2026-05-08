@@ -9,8 +9,8 @@ Type=simple
 # Run as root, app will drop privileges itself
 User=root
 Group=root
-ExecStart=/opt/birthday-reminders/bin/birthday-reminders --config /opt/birthday-reminders/etc/config.yaml serve
-WorkingDirectory=/opt/birthday-reminders
+ExecStart=/usr/bin/birthday-reminders --config /etc/birthday-reminders/config.yaml serve
+WorkingDirectory=/var/lib/birthday-reminders
 Restart=on-failure
 RestartSec=5
 
@@ -23,9 +23,9 @@ PrivateDevices=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
-# Allow read access to etc and write to data
-ReadOnlyPaths=/opt/birthday-reminders/etc
-ReadWritePaths=/opt/birthday-reminders/data
+# Allow read access to config and write to data
+ReadOnlyPaths=/etc/birthday-reminders
+ReadWritePaths=/var/lib/birthday-reminders
 
 [Install]
 WantedBy=multi-user.target

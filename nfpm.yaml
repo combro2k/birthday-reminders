@@ -1,0 +1,56 @@
+name: birthday-reminders
+arch: amd64
+version: "${VERSION}"
+maintainer: ""
+description: "Birthday reminder and notification service"
+license: "MIT"
+section: misc
+
+contents:
+  # Binary
+  - src: ./birthday-reminders
+    dst: /usr/bin/birthday-reminders
+    file_info:
+      mode: 0755
+
+  # Example config
+  - src: config.yaml.example
+    dst: /etc/birthday-reminders/config.yaml.example
+    file_info:
+      mode: 0644
+
+  # Config directory (created by postinstall, declared here so the packager
+  # registers it as owned)
+  - type: dir
+    dst: /etc/birthday-reminders
+    file_info:
+      mode: 0755
+
+  # Data directory
+  - type: dir
+    dst: /var/lib/birthday-reminders
+    file_info:
+      mode: 0750
+
+  # systemd unit (deb only)
+  - src: package/systemd/birthday-reminders.service
+    dst: /usr/lib/systemd/system/birthday-reminders.service
+    packager: deb
+
+  # OpenRC init script (apk only)
+  - src: package/openrc/birthday-reminders.openrc
+    dst: /etc/init.d/birthday-reminders
+    file_info:
+      mode: 0755
+    packager: apk
+
+overrides:
+  deb:
+    scripts:
+      postinstall: package/scripts/postinstall-deb.sh
+      preremove: package/scripts/preremove-deb.sh
+
+  apk:
+    scripts:
+      postinstall: package/scripts/postinstall-apk.sh
+      preremove: package/scripts/preremove-apk.sh
