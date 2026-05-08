@@ -796,6 +796,19 @@ Also ensure:
 
 Full release workflow requirements are enforced in [AGENTS.md](AGENTS.md).
 
+## Change Workflow
+
+When working on a task, start from a dedicated branch instead of making changes directly on `master`.
+
+For example, if you are implementing a new notification channel, create a branch for that task first and use a pull request to get the change reviewed and merged.
+
+Recommended workflow:
+
+1. Choose or confirm a branch name that matches the task.
+2. Suggest a sensible branch name based on the requested work.
+3. Create and switch to that branch before editing so the work starts from a clean slate.
+4. Open a pull request once the work is ready for review.
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
