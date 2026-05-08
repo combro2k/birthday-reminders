@@ -14,6 +14,11 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ### Security
 
+## [1.1.3] - 2026-05-08
+
+### Changed
+- GitHub Actions CI/Release workflows now install sccache, mold, and clang to match local build configuration
+
 ## [1.1.2] - 2026-05-08
 
 ### Added
