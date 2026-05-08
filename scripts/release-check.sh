@@ -17,6 +17,9 @@ fi
 
 printf '[release-check] Version check passed (%s)\n' "${cargo_version}"
 
+printf '\n[release-check] Running cargo clean\n'
+cargo clean
+
 printf '\n[release-check] Running gitleaks detect\n'
 gitleaks detect
 
