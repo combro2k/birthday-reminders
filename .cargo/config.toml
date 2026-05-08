@@ -1,5 +1,5 @@
 [build]
-rustc-wrapper = "/usr/bin/sccache"
+rustc-wrapper = "sccache"
 # Limit parallel jobs to reduce memory usage (4GB RAM is tight)
 jobs = 4
 

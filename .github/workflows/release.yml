@@ -31,7 +31,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y mold clang
-          cargo install sccache
+          RUSTC_WRAPPER= cargo install sccache --locked
 
       - name: Cache cargo registry and build artifacts
         uses: Swatinem/rust-cache@v2
