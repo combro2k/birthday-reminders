@@ -16,7 +16,7 @@ use crate::channels::domain::notification_config::{
 };
 use crate::channels::domain::repository::NotificationChannelRecord;
 use crate::channels::presentation::templates::{
-    ChannelFormTemplate, ChannelKindView, ChannelView, ChannelsTemplate,
+    ChannelFormTemplate, ChannelKindView, ChannelsTemplate,
 };
 use crate::infrastructure::web::server::AppState;
 use crate::users::domain::user::User;
@@ -45,22 +45,26 @@ pub async fn list_channels(
         .await
         .unwrap_or_default();
 
-    let configured_types: Vec<String> = records.iter().map(|r| r.channel_type.clone()).collect();
-
-    let channels: Vec<ChannelView> = records.into_iter().map(ChannelView::from).collect();
+    let record_map: std::collections::HashMap<String, &NotificationChannelRecord> = records
+        .iter()
+        .map(|r| (r.channel_type.clone(), r))
+        .collect();
 
     let available: Vec<ChannelKindView> = ChannelKind::implemented()
         .iter()
-        .map(|k| ChannelKindView {
-            kind: k.as_str().to_string(),
-            display_name: k.display_name().to_string(),
-            configured: configured_types.contains(&k.as_str().to_string()),
+        .map(|k| {
+            let rec = record_map.get(k.as_str());
+            ChannelKindView {
+                kind: k.as_str().to_string(),
+                display_name: k.display_name().to_string(),
+                configured: rec.is_some(),
+                enabled: rec.map(|r| r.enabled),
+            }
         })
         .collect();
 
     let template = ChannelsTemplate {
         user,
-        channels,
         available,
         csrf_token,
         test_success: params.test_ok,

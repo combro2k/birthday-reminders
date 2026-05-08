@@ -9,12 +9,16 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 ### Added
 - Ntfy notification channel support for both official ntfy.sh and self-hosted servers
 - Pushover notification channel support via the Pushover API (`api_token` + `user_key`)
+- Channel list page remove-confirmation behavior moved to `static/channels/list.js` and wired via `page-channels-list`
 
 ### Changed
 - Ntfy priority header now supports reminder-aware mapping with default value `3` and optional overrides for same-day and next-day reminders
 - Notification channel UI and README documentation expanded with Ntfy setup examples, authentication modes, and priority mapping guidance
+- Notifications channels overview now renders a single card-based list with per-channel enabled/disabled badges and grouped actions
+- Channels handler/template mapping simplified by deriving configured/enabled state directly from channel records per implemented channel kind
 
 ### Fixed
+- Removed inline `onsubmit` handler from notification channel removal form to keep behavior in external static assets
 
 ### Security
 

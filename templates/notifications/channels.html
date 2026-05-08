@@ -4,6 +4,8 @@
 
 {% block title %}Notifications - Birthday Reminders{% endblock %}
 
+{% block body_attributes %}id="page-channels-list"{% endblock %}
+
 {% block body %}
 <nav class="navbar">
     <a href="/" class="nav-brand">🎂 Birthdays</a>
@@ -37,56 +39,36 @@
         <div class="channel-card {% if ch.configured %}configured{% endif %}">
             <h3>{{ ch.display_name }}</h3>
             {% if ch.configured %}
-            <span class="badge badge-success">Configured</span>
+                {% if let Some(enabled) = ch.enabled %}
+                    {% if enabled %}
+                    <span class="badge badge-success">Enabled</span>
+                    {% else %}
+                    <span class="badge badge-muted">Disabled</span>
+                    {% endif %}
+                {% endif %}
             {% else %}
             <span class="badge badge-muted">Not configured</span>
             {% endif %}
-            <a href="/notifications/{{ ch.kind }}" class="btn btn-small mt-1">
-                {% if ch.configured %}Edit{% else %}Configure{% endif %}
-            </a>
-            {% if ch.configured %}
-            <form method="POST" action="/notifications/{{ ch.kind }}/test" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="source" value="list">
-                <button type="submit" class="btn btn-small btn-secondary mt-1">Test</button>
-            </form>
-            {% endif %}
+            <div class="channel-card-actions">
+                <a href="/notifications/{{ ch.kind }}" class="btn btn-small mt-1">
+                    {% if ch.configured %}Edit{% else %}Configure{% endif %}
+                </a>
+                {% if ch.configured %}
+                <form method="POST" action="/notifications/{{ ch.kind }}/test" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="source" value="list">
+                    <button type="submit" class="btn btn-small btn-secondary mt-1">Test</button>
+                </form>
+                <form method="POST" action="/notifications/{{ ch.kind }}/delete" class="inline channel-remove-form"
+                      data-confirm="Remove {{ ch.display_name }} channel?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-small btn-danger mt-1">Remove</button>
+                </form>
+                {% endif %}
+            </div>
         </div>
         {% endfor %}
     </div>
-
-    {% if !channels.is_empty() %}
-    <h2 class="mt-2">Active Channels</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Channel</th>
-                <th>Enabled</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ch in channels %}
-            <tr>
-                <td data-label="Channel">{{ ch.display_name }}</td>
-                <td data-label="Enabled">{% if ch.enabled %}✅{% else %}❌{% endif %}</td>
-                <td data-label="Actions" class="actions">
-                    <a href="/notifications/{{ ch.channel_type }}" class="btn btn-small">Edit</a>
-                    <form method="POST" action="/notifications/{{ ch.channel_type }}/test" class="inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn btn-small btn-secondary">Test</button>
-                    </form>
-                    <form method="POST" action="/notifications/{{ ch.channel_type }}/delete" class="inline"
-                          onsubmit="return confirm('Remove {{ ch.display_name }} channel?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn btn-small btn-danger">Remove</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
 </main>
 {% endblock %}
 {% block footer %}
