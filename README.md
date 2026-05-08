@@ -15,10 +15,23 @@ A self-hosted birthday reminder application with a web UI, CLI, and flexible not
 
 ## Prerequisites
 
+### Runtime Requirements
 - **Rust** 1.85+ (edition 2024)
 - **Node.js** 20+ and **npm** (for Tailwind CSS build)
 - **PostgreSQL** 13+, **MySQL** 8.0+, or **SQLite** 3.35+
-- A running database instance (for PostgreSQL)
+- A running database instance (for PostgreSQL or MySQL)
+
+### Build & Development Tools
+- **cargo** (Rust package manager, included with Rust)
+- **git** (version control)
+- **make** (optional, simplifies build commands)
+- **npm** (included with Node.js)
+- **gitleaks** (for secret scanning; install with `cargo install gitleaks` or use your package manager)
+- **openssl** (for generating encryption keys)
+- **python3** (for PWA asset generation script)
+
+### Optional
+- **Docker** and **docker-compose** (for containerized deployments)
 
 ## Quick Start
 
@@ -681,7 +694,15 @@ Before publishing a new version, run the release check script:
 bash scripts/release-check.sh
 ```
 
-This verifies version consistency between `Cargo.toml` and `package.json`, rebuilds the Tailwind CSS, and runs `cargo fmt`, `cargo test`, and `cargo clippy` with strict flags. It must exit without errors.
+This script performs the following checks in order:
+1. **Version consistency** — verifies `Cargo.toml` and `package.json` have matching versions
+2. **Secret scanning** — runs `gitleaks detect` to ensure no credentials, tokens, or API keys are present
+3. **CSS build** — rebuilds Tailwind CSS
+4. **Code formatting** — runs `cargo fmt --all`
+5. **Tests** — runs `cargo test --all-targets --all-features`
+6. **Linting** — runs `cargo clippy` with strict warnings-as-errors mode
+
+All checks must pass without errors before release.
 
 Also ensure:
 - Changes are documented in [CHANGELOG.md](CHANGELOG.md).

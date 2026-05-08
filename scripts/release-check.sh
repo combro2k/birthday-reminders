@@ -17,6 +17,9 @@ fi
 
 printf '[release-check] Version check passed (%s)\n' "${cargo_version}"
 
+printf '\n[release-check] Running gitleaks detect\n'
+gitleaks detect
+
 printf '\n[release-check] Running Tailwind CSS build\n'
 npx tailwindcss -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
 
