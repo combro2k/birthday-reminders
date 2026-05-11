@@ -145,7 +145,7 @@ pub struct ChannelConfigForm {
     pub email_smtp_security: Option<String>,
     pub telegram_bot_token: Option<String>,
     pub telegram_chat_id: Option<String>,
-    pub signal_api_url: Option<String>,
+    pub signal_sender: Option<String>,
     pub signal_recipient: Option<String>,
     pub whatsapp_phone_number_id: Option<String>,
     pub whatsapp_access_token: Option<String>,
@@ -302,7 +302,7 @@ fn build_config(kind: ChannelKind, form: &ChannelConfigForm) -> Result<serde_jso
         }
         ChannelKind::Signal => {
             let cfg = SignalConfig {
-                api_url: required_field(form.signal_api_url.as_deref(), "Signal API URL")?,
+                sender: required_field(form.signal_sender.as_deref(), "Signal sender number")?,
                 recipient: required_field(form.signal_recipient.as_deref(), "Signal recipient")?,
             };
             serde_json::to_value(cfg).map_err(|e| format!("Failed to encode config: {}", e))
@@ -428,7 +428,7 @@ fn channel_form_template(
         email_smtp_security: trim_or_empty(form.email_smtp_security.as_deref()),
         telegram_bot_token: trim_or_empty(form.telegram_bot_token.as_deref()),
         telegram_chat_id: trim_or_empty(form.telegram_chat_id.as_deref()),
-        signal_api_url: trim_or_empty(form.signal_api_url.as_deref()),
+        signal_sender: trim_or_empty(form.signal_sender.as_deref()),
         signal_recipient: trim_or_empty(form.signal_recipient.as_deref()),
         whatsapp_phone_number_id: trim_or_empty(form.whatsapp_phone_number_id.as_deref()),
         whatsapp_access_token: trim_or_empty(form.whatsapp_access_token.as_deref()),
@@ -508,8 +508,8 @@ fn channel_form_template(
             }
             ChannelKind::Signal => {
                 if let Ok(cfg) = serde_json::from_value::<SignalConfig>(existing.config.clone()) {
-                    if template.signal_api_url.is_empty() {
-                        template.signal_api_url = cfg.api_url;
+                    if template.signal_sender.is_empty() {
+                        template.signal_sender = cfg.sender;
                     }
                     if template.signal_recipient.is_empty() {
                         template.signal_recipient = cfg.recipient;

@@ -102,6 +102,7 @@ async fn main() -> anyhow::Result<()> {
     let notification_svc = NotificationCommandService::new(
         notification_repo.clone(),
         config.server.encryption_key.clone(),
+        config.commands.signal_cli_path.clone(),
     );
 
     let reminder_svc = Arc::new(ReminderJobService::new(
@@ -110,6 +111,7 @@ async fn main() -> anyhow::Result<()> {
         notification_repo.clone(),
         config.reminders.default_days_before.clone(),
         config.server.encryption_key.clone(),
+        config.commands.signal_cli_path.clone(),
     ));
 
     // Handle commands

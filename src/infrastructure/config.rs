@@ -11,6 +11,8 @@ pub struct AppConfig {
     pub auth: AuthConfig,
     pub reminders: RemindersConfig,
     #[serde(default)]
+    pub commands: CommandsConfig,
+    #[serde(default)]
     pub logging: LoggingConfig,
 }
 
@@ -76,6 +78,20 @@ pub struct RemindersConfig {
     pub default_days_before: Vec<u32>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct CommandsConfig {
+    #[serde(default = "default_signal_cli_path")]
+    pub signal_cli_path: String,
+}
+
+impl Default for CommandsConfig {
+    fn default() -> Self {
+        Self {
+            signal_cli_path: default_signal_cli_path(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct LoggingConfig {
     /// Log output: "stdout" (default) or "syslog"
@@ -124,6 +140,10 @@ fn default_schedule() -> String {
 
 fn default_days_before() -> Vec<u32> {
     vec![7, 3, 1, 0]
+}
+
+fn default_signal_cli_path() -> String {
+    "signal-cli".to_string()
 }
 
 impl ServerConfig {
@@ -261,13 +281,20 @@ impl AppConfig {
             let _ = self.server.oidc_callback_url()?;
         }
 
+        if self.commands.signal_cli_path.trim().is_empty() {
+            anyhow::bail!("commands.signal_cli_path must not be empty");
+        }
+
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ServerConfig;
+    use super::{
+        AppConfig, AuthConfig, CommandsConfig, DatabaseConfig, LoggingConfig, RemindersConfig,
+        ServerConfig,
+    };
 
     fn server_config() -> ServerConfig {
         ServerConfig {
@@ -324,5 +351,56 @@ mod tests {
         let nets = config.trusted_proxy_nets().unwrap();
 
         assert_eq!(nets.len(), 2);
+    }
+
+    fn app_config() -> AppConfig {
+        AppConfig {
+            database: DatabaseConfig {
+                url: "sqlite:///tmp/test.db?mode=rwc".to_string(),
+                max_connections: 10,
+            },
+            server: server_config(),
+            auth: AuthConfig {
+                allow_registration: false,
+                oidc: None,
+            },
+            reminders: RemindersConfig {
+                schedule: "0 0 8 * * *".to_string(),
+                default_days_before: vec![7, 3, 1, 0],
+            },
+            commands: CommandsConfig::default(),
+            logging: LoggingConfig::default(),
+        }
+    }
+
+    #[test]
+    fn commands_config_defaults_signal_cli_path() {
+        let config: AppConfig = serde_yaml::from_str(
+            r#"
+database:
+  url: "sqlite:///tmp/test.db?mode=rwc"
+server:
+  listen: "0.0.0.0:3000"
+  server_name: "birthdays.example.com"
+  session_secret: "12345678901234567890123456789012"
+  encryption_key: "enc-key"
+  run_as_user: "birthday-reminders"
+  run_as_group: "birthday-reminders"
+auth: {}
+reminders: {}
+logging: {}
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.commands.signal_cli_path, "signal-cli");
+    }
+
+    #[test]
+    fn rejects_empty_signal_cli_path() {
+        let mut config = app_config();
+        config.commands.signal_cli_path = "   ".to_string();
+
+        assert!(config.validate().is_err());
     }
 }

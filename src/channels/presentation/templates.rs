@@ -32,7 +32,7 @@ pub struct ChannelFormTemplate {
     pub email_smtp_security: String,
     pub telegram_bot_token: String,
     pub telegram_chat_id: String,
-    pub signal_api_url: String,
+    pub signal_sender: String,
     pub signal_recipient: String,
     pub whatsapp_phone_number_id: String,
     pub whatsapp_access_token: String,
