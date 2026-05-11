@@ -11,6 +11,7 @@ use crate::channels::domain::repository::{
     NotificationChannelRecord, NotificationChannelRepository,
 };
 use crate::channels::infrastructure::dispatcher;
+use crate::channels::infrastructure::signal::SignalRuntimeConfig;
 use crate::reminders::domain::reminder::ReminderPolicy;
 use crate::reminders::domain::services::compute_due_reminders;
 use crate::users::domain::repository::UserRepository;
@@ -22,7 +23,7 @@ pub struct ReminderJobService {
     notification_repo: Arc<dyn NotificationChannelRepository>,
     default_days_before: Vec<u32>,
     encryption_key: String,
-    signal_cli_path: String,
+    signal_runtime: SignalRuntimeConfig,
 }
 
 impl ReminderJobService {
@@ -32,7 +33,7 @@ impl ReminderJobService {
         notification_repo: Arc<dyn NotificationChannelRepository>,
         default_days_before: Vec<u32>,
         encryption_key: String,
-        signal_cli_path: String,
+        signal_runtime: SignalRuntimeConfig,
     ) -> Self {
         Self {
             user_repo,
@@ -40,7 +41,7 @@ impl ReminderJobService {
             notification_repo,
             default_days_before,
             encryption_key,
-            signal_cli_path,
+            signal_runtime,
         }
     }
 
@@ -183,7 +184,7 @@ impl ReminderJobService {
                 }
 
                 // Build sender and send
-                match dispatcher::build_sender(channel, &self.signal_cli_path) {
+                match dispatcher::build_sender(channel, &self.signal_runtime) {
                     Ok(sender) => match sender.send(reminder).await {
                         Ok(()) => {
                             info!(

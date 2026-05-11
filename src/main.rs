@@ -19,8 +19,10 @@ use auth::infrastructure::oidc::OidcClient;
 use birthdays::application::commands::BirthdayCommandService;
 use birthdays::application::queries::BirthdayQueryService;
 use channels::application::commands::NotificationCommandService;
+use channels::infrastructure::signal::{SignalRuntimeConfig, SignalTransport};
 use cli::commands::{Cli, Commands};
 use infrastructure::config::AppConfig;
+use infrastructure::config::SignalTransportMode;
 use infrastructure::database::{DatabasePool, Repositories};
 use infrastructure::web::server::{self, AppState};
 use reminders::application::reminder_job::ReminderJobService;
@@ -95,6 +97,17 @@ async fn main() -> anyhow::Result<()> {
     let birthday_repo = repos.birthday_repo;
     let notification_repo = repos.notification_repo;
 
+    let signal_runtime = SignalRuntimeConfig {
+        transport: match config.commands.signal_transport {
+            SignalTransportMode::Cli => SignalTransport::Cli {
+                binary_path: config.commands.signal_cli_path.clone(),
+            },
+            SignalTransportMode::Api => SignalTransport::Api {
+                base_url: config.commands.signal_api_url.clone(),
+            },
+        },
+    };
+
     // Create services
     let user_cmd_svc = UserCommandService::new(user_repo.clone());
     let birthday_cmd_svc = BirthdayCommandService::new(birthday_repo.clone());
@@ -102,7 +115,7 @@ async fn main() -> anyhow::Result<()> {
     let notification_svc = NotificationCommandService::new(
         notification_repo.clone(),
         config.server.encryption_key.clone(),
-        config.commands.signal_cli_path.clone(),
+        signal_runtime.clone(),
     );
 
     let reminder_svc = Arc::new(ReminderJobService::new(
@@ -111,7 +124,7 @@ async fn main() -> anyhow::Result<()> {
         notification_repo.clone(),
         config.reminders.default_days_before.clone(),
         config.server.encryption_key.clone(),
-        config.commands.signal_cli_path.clone(),
+        signal_runtime,
     ));
 
     // Handle commands
