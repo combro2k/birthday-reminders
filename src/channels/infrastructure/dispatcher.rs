@@ -8,7 +8,7 @@ use super::email::EmailSender;
 use super::gotify::GotifySender;
 use super::ntfy::NtfySender;
 use super::pushover::PushoverSender;
-use super::signal::SignalSender;
+use super::signal::{SignalRuntimeConfig, SignalSender};
 use super::sms::SmsSender;
 use super::telegram::TelegramSender;
 use super::whatsapp::WhatsappSender;
@@ -16,7 +16,7 @@ use super::whatsapp::WhatsappSender;
 /// Build a NotificationSender from a channel record
 pub fn build_sender(
     record: &NotificationChannelRecord,
-    signal_cli_path: &str,
+    signal_runtime: &SignalRuntimeConfig,
 ) -> Result<Box<dyn NotificationSender>, NotificationError> {
     let kind = ChannelKind::from_str(&record.channel_type).ok_or_else(|| {
         NotificationError::InvalidConfig(format!("Unknown channel type: {}", record.channel_type))
@@ -41,10 +41,7 @@ pub fn build_sender(
         ChannelKind::Signal => {
             let config: SignalConfig = serde_json::from_value(record.config.clone())
                 .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
-            Ok(Box::new(SignalSender::new(
-                config,
-                signal_cli_path.to_string(),
-            )))
+            Ok(Box::new(SignalSender::new(config, signal_runtime.clone())))
         }
         ChannelKind::Whatsapp => {
             let config: WhatsappConfig = serde_json::from_value(record.config.clone())

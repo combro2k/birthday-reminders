@@ -83,8 +83,12 @@ reminders:
 
 # The entire commands section is optional (all fields have defaults)
 commands:
+  # Signal transport backend: "cli" (default) or "api"
+  # signal_transport: "cli"
   # Path to the signal-cli executable used by the Signal notification channel (default: "signal-cli")
   # signal_cli_path: "/usr/local/bin/signal-cli"
+  # Base URL for signal-cli-api when signal_transport is set to "api" (default: "http://127.0.0.1:8080")
+  # signal_api_url: "http://127.0.0.1:8080"
 
 # The entire logging section is optional (all fields have defaults)
 logging:
