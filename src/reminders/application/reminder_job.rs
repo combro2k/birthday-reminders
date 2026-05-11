@@ -22,6 +22,7 @@ pub struct ReminderJobService {
     notification_repo: Arc<dyn NotificationChannelRepository>,
     default_days_before: Vec<u32>,
     encryption_key: String,
+    signal_cli_path: String,
 }
 
 impl ReminderJobService {
@@ -31,6 +32,7 @@ impl ReminderJobService {
         notification_repo: Arc<dyn NotificationChannelRepository>,
         default_days_before: Vec<u32>,
         encryption_key: String,
+        signal_cli_path: String,
     ) -> Self {
         Self {
             user_repo,
@@ -38,6 +40,7 @@ impl ReminderJobService {
             notification_repo,
             default_days_before,
             encryption_key,
+            signal_cli_path,
         }
     }
 
@@ -180,7 +183,7 @@ impl ReminderJobService {
                 }
 
                 // Build sender and send
-                match dispatcher::build_sender(channel) {
+                match dispatcher::build_sender(channel, &self.signal_cli_path) {
                     Ok(sender) => match sender.send(reminder).await {
                         Ok(()) => {
                             info!(
