@@ -16,6 +16,7 @@ use super::whatsapp::WhatsappSender;
 /// Build a NotificationSender from a channel record
 pub fn build_sender(
     record: &NotificationChannelRecord,
+    signal_cli_path: &str,
 ) -> Result<Box<dyn NotificationSender>, NotificationError> {
     let kind = ChannelKind::from_str(&record.channel_type).ok_or_else(|| {
         NotificationError::InvalidConfig(format!("Unknown channel type: {}", record.channel_type))
@@ -40,7 +41,10 @@ pub fn build_sender(
         ChannelKind::Signal => {
             let config: SignalConfig = serde_json::from_value(record.config.clone())
                 .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
-            Ok(Box::new(SignalSender::new(config)))
+            Ok(Box::new(SignalSender::new(
+                config,
+                signal_cli_path.to_string(),
+            )))
         }
         ChannelKind::Whatsapp => {
             let config: WhatsappConfig = serde_json::from_value(record.config.clone())

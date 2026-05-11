@@ -106,10 +106,11 @@ pub struct TelegramConfig {
     pub chat_id: String,
 }
 
-/// Signal channel configuration (user-provided, stub)
+/// Signal channel configuration (signal-cli)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignalConfig {
-    pub api_url: String,
+    #[serde(alias = "api_url")]
+    pub sender: String,
     pub recipient: String,
 }
 
@@ -196,7 +197,7 @@ pub enum NtfyAuthType {
 
 #[cfg(test)]
 mod tests {
-    use super::{EmailConfig, EmailProvider, SmtpSecurity};
+    use super::{EmailConfig, EmailProvider, SignalConfig, SmtpSecurity};
 
     #[test]
     fn proton_bridge_defaults_remain_localhost() {
@@ -220,5 +221,31 @@ mod tests {
         assert_eq!(config.resolved_host(), "smtp.protonmail.ch");
         assert_eq!(config.resolved_port(), 587);
         assert_eq!(config.resolved_security(), SmtpSecurity::Starttls);
+    }
+
+    #[test]
+    fn signal_config_deserializes_legacy_api_url_field() {
+        let raw = serde_json::json!({
+            "api_url": "+12025550100",
+            "recipient": "+12025550199"
+        });
+
+        let config: SignalConfig = serde_json::from_value(raw).unwrap();
+
+        assert_eq!(config.sender, "+12025550100");
+        assert_eq!(config.recipient, "+12025550199");
+    }
+
+    #[test]
+    fn signal_config_serializes_sender_field() {
+        let config = SignalConfig {
+            sender: "+12025550100".to_string(),
+            recipient: "+12025550199".to_string(),
+        };
+
+        let serialized = serde_json::to_value(config).unwrap();
+
+        assert_eq!(serialized["sender"], "+12025550100");
+        assert_eq!(serialized["recipient"], "+12025550199");
     }
 }

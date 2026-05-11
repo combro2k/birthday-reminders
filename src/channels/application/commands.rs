@@ -12,13 +12,19 @@ use crate::users::domain::user::UserId;
 pub struct NotificationCommandService {
     repo: Arc<dyn NotificationChannelRepository>,
     encryption_key: String,
+    signal_cli_path: String,
 }
 
 impl NotificationCommandService {
-    pub fn new(repo: Arc<dyn NotificationChannelRepository>, encryption_key: String) -> Self {
+    pub fn new(
+        repo: Arc<dyn NotificationChannelRepository>,
+        encryption_key: String,
+        signal_cli_path: String,
+    ) -> Self {
         Self {
             repo,
             encryption_key,
+            signal_cli_path,
         }
     }
 
@@ -108,7 +114,7 @@ impl NotificationCommandService {
 
         let decrypted = self.decrypt_record(record)?;
 
-        let sender = dispatcher::build_sender(&decrypted)
+        let sender = dispatcher::build_sender(&decrypted, &self.signal_cli_path)
             .map_err(|e| anyhow::anyhow!("Failed to build sender: {}", e))?;
 
         sender
