@@ -6,6 +6,15 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-05-11
+
+### Added
+- Signal channel now supports configurable transport backends: local `signal-cli` (`commands.signal_transport = "cli"`) or HTTP `signal-cli-api` (`commands.signal_transport = "api"`).
+- Added YAML option `commands.signal_api_url` for the Signal API base URL.
+
+### Changed
+- Signal runtime sender construction now uses a transport abstraction shared by both channel test sends and scheduled reminder sends.
+
 ## [1.1.9] - 2026-05-11
 
 ### Added

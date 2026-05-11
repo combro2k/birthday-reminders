@@ -497,26 +497,38 @@ Channels are grouped by type in the UI:
 
 ### Signal Setup
 
-Signal notifications use a local `signal-cli` binary.
+Signal notifications support two transport backends:
+
+- `cli` (default): execute a local `signal-cli` binary.
+- `api`: call a remote or local `signal-cli-api` HTTP endpoint.
 
 #### Prerequisites
 
-- Install and register `signal-cli` for a sender number on the host running Birthday Reminders.
-- Ensure the service user can execute the configured binary path.
+- Configure and register a Signal sender account in the selected backend.
+- Ensure the configured sender number exists in that backend.
 
 #### Configuration
 
-In your YAML config, set the command path when `signal-cli` is not on `PATH`:
+CLI mode (default):
 
 ```yaml
 commands:
+  signal_transport: "cli"
   signal_cli_path: "/usr/local/bin/signal-cli"
+```
+
+API mode (`signal-cli-api`):
+
+```yaml
+commands:
+  signal_transport: "api"
+  signal_api_url: "http://127.0.0.1:8080"
 ```
 
 In the web UI under **Notifications** → **Configure Signal**:
 
-- **Sender Number**: the number registered in `signal-cli`.
-- **Recipient**: destination Signal identifier supported by `signal-cli`.
+- **Sender Number**: the number registered in the configured Signal backend.
+- **Recipient**: destination Signal identifier supported by the backend.
 
 ### WhatsApp Cloud API Setup
 

@@ -349,7 +349,7 @@ dependencies = [
 
 [[package]]
 name = "birthday-reminders"
-version = "1.1.9"
+version = "1.1.10"
 dependencies = [
  "anyhow",
  "argon2",
