@@ -6,25 +6,26 @@ use crate::channels::domain::repository::{
     NotificationChannelRecord, NotificationChannelRepository,
 };
 use crate::channels::infrastructure::dispatcher;
+use crate::channels::infrastructure::signal::SignalRuntimeConfig;
 use crate::infrastructure::error::RepositoryError;
 use crate::users::domain::user::UserId;
 
 pub struct NotificationCommandService {
     repo: Arc<dyn NotificationChannelRepository>,
     encryption_key: String,
-    signal_cli_path: String,
+    signal_runtime: SignalRuntimeConfig,
 }
 
 impl NotificationCommandService {
     pub fn new(
         repo: Arc<dyn NotificationChannelRepository>,
         encryption_key: String,
-        signal_cli_path: String,
+        signal_runtime: SignalRuntimeConfig,
     ) -> Self {
         Self {
             repo,
             encryption_key,
-            signal_cli_path,
+            signal_runtime,
         }
     }
 
@@ -114,7 +115,7 @@ impl NotificationCommandService {
 
         let decrypted = self.decrypt_record(record)?;
 
-        let sender = dispatcher::build_sender(&decrypted, &self.signal_cli_path)
+        let sender = dispatcher::build_sender(&decrypted, &self.signal_runtime)
             .map_err(|e| anyhow::anyhow!("Failed to build sender: {}", e))?;
 
         sender

@@ -80,16 +80,30 @@ pub struct RemindersConfig {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CommandsConfig {
+    #[serde(default)]
+    pub signal_transport: SignalTransportMode,
     #[serde(default = "default_signal_cli_path")]
     pub signal_cli_path: String,
+    #[serde(default = "default_signal_api_url")]
+    pub signal_api_url: String,
 }
 
 impl Default for CommandsConfig {
     fn default() -> Self {
         Self {
+            signal_transport: SignalTransportMode::default(),
             signal_cli_path: default_signal_cli_path(),
+            signal_api_url: default_signal_api_url(),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum SignalTransportMode {
+    #[default]
+    Cli,
+    Api,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -144,6 +158,10 @@ fn default_days_before() -> Vec<u32> {
 
 fn default_signal_cli_path() -> String {
     "signal-cli".to_string()
+}
+
+fn default_signal_api_url() -> String {
+    "http://127.0.0.1:8080".to_string()
 }
 
 impl ServerConfig {
@@ -281,8 +299,24 @@ impl AppConfig {
             let _ = self.server.oidc_callback_url()?;
         }
 
-        if self.commands.signal_cli_path.trim().is_empty() {
-            anyhow::bail!("commands.signal_cli_path must not be empty");
+        match self.commands.signal_transport {
+            SignalTransportMode::Cli => {
+                if self.commands.signal_cli_path.trim().is_empty() {
+                    anyhow::bail!(
+                        "commands.signal_cli_path must not be empty when commands.signal_transport=cli"
+                    );
+                }
+            }
+            SignalTransportMode::Api => {
+                let api_url = self.commands.signal_api_url.trim();
+                if api_url.is_empty() {
+                    anyhow::bail!(
+                        "commands.signal_api_url must not be empty when commands.signal_transport=api"
+                    );
+                }
+                Url::parse(api_url)
+                    .with_context(|| format!("Invalid commands.signal_api_url: {api_url}"))?;
+            }
         }
 
         Ok(())
@@ -293,7 +327,7 @@ impl AppConfig {
 mod tests {
     use super::{
         AppConfig, AuthConfig, CommandsConfig, DatabaseConfig, LoggingConfig, RemindersConfig,
-        ServerConfig,
+        ServerConfig, SignalTransportMode,
     };
 
     fn server_config() -> ServerConfig {
@@ -393,13 +427,24 @@ logging: {}
         )
         .unwrap();
 
+        assert_eq!(config.commands.signal_transport, SignalTransportMode::Cli);
         assert_eq!(config.commands.signal_cli_path, "signal-cli");
+        assert_eq!(config.commands.signal_api_url, "http://127.0.0.1:8080");
     }
 
     #[test]
     fn rejects_empty_signal_cli_path() {
         let mut config = app_config();
         config.commands.signal_cli_path = "   ".to_string();
+
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_signal_api_url_in_api_mode() {
+        let mut config = app_config();
+        config.commands.signal_transport = SignalTransportMode::Api;
+        config.commands.signal_api_url = "not-a-url".to_string();
 
         assert!(config.validate().is_err());
     }
