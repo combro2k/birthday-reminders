@@ -495,6 +495,29 @@ Channels are grouped by type in the UI:
 | **Signal** | Messages via signal-cli |
 | **WhatsApp** | Messages via Meta WhatsApp Cloud API |
 
+### Signal Setup
+
+Signal notifications use a local `signal-cli` binary.
+
+#### Prerequisites
+
+- Install and register `signal-cli` for a sender number on the host running Birthday Reminders.
+- Ensure the service user can execute the configured binary path.
+
+#### Configuration
+
+In your YAML config, set the command path when `signal-cli` is not on `PATH`:
+
+```yaml
+commands:
+  signal_cli_path: "/usr/local/bin/signal-cli"
+```
+
+In the web UI under **Notifications** → **Configure Signal**:
+
+- **Sender Number**: the number registered in `signal-cli`.
+- **Recipient**: destination Signal identifier supported by `signal-cli`.
+
 ### WhatsApp Cloud API Setup
 
 To configure WhatsApp reminders, you'll need a Meta WhatsApp Business Account:

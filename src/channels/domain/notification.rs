@@ -116,6 +116,7 @@ impl ChannelKind {
             ChannelKind::Gotify,
             ChannelKind::Email,
             ChannelKind::Telegram,
+            ChannelKind::Signal,
             ChannelKind::Whatsapp,
             ChannelKind::Discord,
             ChannelKind::Sms,

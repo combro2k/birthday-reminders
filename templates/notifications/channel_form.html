@@ -4,6 +4,8 @@
 
 {% block title %}{{ channel_name }} - Birthday Reminders{% endblock %}
 
+{% block body_attributes %}id="page-channels-edit"{% endblock %}
+
 {% block body %}
 <nav class="navbar">
     <a href="/" class="nav-brand">🎂 Birthdays</a>
@@ -134,16 +136,17 @@
 
         {% if channel_type == "signal" %}
         <div class="form-group">
-            <label for="signal_api_url">Signal API URL</label>
-            <input id="signal_api_url" name="signal_api_url" type="url" value="{{ signal_api_url }}" required>
+            <label for="signal_sender">Sender Number</label>
+            <input id="signal_sender" name="signal_sender" type="text" value="{{ signal_sender }}" required>
         </div>
         <div class="form-group">
             <label for="signal_recipient">Recipient</label>
             <input id="signal_recipient" name="signal_recipient" type="text" value="{{ signal_recipient }}" required>
         </div>
-        <div class="alert alert-warning">
-            Signal sending is not yet fully implemented. Configuration can still be saved for future use.
-        </div>
+        <details class="help-text">
+            <summary>Signal setup help</summary>
+            <p>Use the Signal number already registered with your local signal-cli installation as the Sender Number. Recipient should be the destination Signal identifier supported by signal-cli.</p>
+        </details>
         {% endif %}
 
         {% if channel_type == "whatsapp" %}

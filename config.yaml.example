@@ -81,6 +81,11 @@ reminders:
   # How many days before a birthday to send reminders (default: [7, 3, 1, 0])
   # default_days_before: [7, 3, 1, 0]
 
+# The entire commands section is optional (all fields have defaults)
+commands:
+  # Path to the signal-cli executable used by the Signal notification channel (default: "signal-cli")
+  # signal_cli_path: "/usr/local/bin/signal-cli"
+
 # The entire logging section is optional (all fields have defaults)
 logging:
   # Log output: "stdout" or "syslog" (default: "stdout")
