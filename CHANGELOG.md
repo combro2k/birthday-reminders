@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-05-11
+
 ### Added
 - Global YAML command configuration option `commands.signal_cli_path` to control where the Signal integration finds the `signal-cli` executable.
 
@@ -14,6 +16,7 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 - Signal channel configuration now uses sender/recipient semantics in the UI and domain model; legacy saved configs using `api_url` remain compatible.
 - Signal sender execution now uses the configured `signal-cli` path for both test notifications and scheduled reminder dispatch.
 - Notification channel edit template now sets `page-channels-edit` body id for frontend module loading consistency.
+- Bumped project version to `1.1.9` in `Cargo.toml` and `package.json`.
 
 ### Fixed
 - Clarified Signal setup and host prerequisites in the README and channel form help text.
