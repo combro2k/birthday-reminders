@@ -3,6 +3,7 @@ mod birthdays;
 mod channels;
 mod cli;
 mod infrastructure;
+mod mcp;
 mod reminders;
 mod users;
 
