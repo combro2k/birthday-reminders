@@ -1,0 +1,293 @@
+# Birthday Reminders MCP Configuration Guide
+
+This guide helps MCP clients (LM Studio, Hermes, Claude Desktop, Cursor, and others) connect to and use the Birthday Reminders API endpoint.
+
+## Endpoint Details
+
+- **URL**: `http://localhost:3000/mcp` (local development) or `https://your-host.example.com/mcp` (production)
+- **Transport**: Streamable HTTP (rmcp) or HTTP
+- **Authentication**: Mandatory API token in every tool call
+- **Tools Available**:
+  - `list_birthdays` — List all birthdays
+  - `upcoming_birthdays` — List upcoming birthdays (configurable days ahead)
+  - `add_birthday` — Add a new birthday with optional contact fields
+  - `remove_birthday` — Not supported; use web interface instead
+
+## Setup Instructions
+
+### Step 1: Generate an API Token
+
+1. Open the Birthday Reminders web UI
+2. Navigate to **Settings → API Tokens**
+3. Click **Generate New Token**
+4. Enter a token name (e.g., "LM Studio", "Hermes Local")
+5. **Copy the token immediately** — it will not be shown again
+6. Store it securely in your environment
+
+### Step 2: Store Token in Environment
+
+**Linux/macOS:**
+```bash
+export BIRTHDAY_API_TOKEN="your-token-here"
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:BIRTHDAY_API_TOKEN="your-token-here"
+```
+
+**Permanently (macOS/Linux):**
+Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+```bash
+export BIRTHDAY_API_TOKEN="your-token-here"
+```
+
+### Step 3: Configure Your MCP Client
+
+#### LM Studio
+
+1. Go to **Servers** → **MCP Servers**
+2. Add a new server:
+   - **Name**: `birthday-reminders`
+   - **URL**: `http://localhost:3000/mcp`
+   - **Type**: `Streamable HTTP`
+3. Add the environment variable:
+   - **Key**: `BIRTHDAY_API_TOKEN`
+   - **Value**: (leave empty — client will read from system environment)
+
+#### Hermes
+
+1. Edit your Hermes config file (usually `~/.hermes/config.yaml` or similar)
+2. Add to the MCP servers section:
+   ```yaml
+   mcpServers:
+     birthday-reminders:
+       transport: streamable_http
+       url: http://localhost:3000/mcp
+   ```
+3. Set `BIRTHDAY_API_TOKEN` in your system environment before launching Hermes
+
+#### Claude Desktop
+
+1. Edit the Claude Desktop config:
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+2. Add to `mcpServers`:
+   ```json
+   {
+     "mcpServers": {
+       "birthday-reminders": {
+         "transport": "streamable_http",
+         "url": "http://localhost:3000/mcp"
+       }
+     }
+   }
+   ```
+3. Set `BIRTHDAY_API_TOKEN` in your system environment
+
+#### Cursor
+
+1. Open Cursor settings
+2. Find the **MCP Servers** section
+3. Add:
+   - **Name**: `birthday-reminders`
+   - **URL**: `http://localhost:3000/mcp`
+   - **Transport**: `streamable_http` or `http`
+4. Set `BIRTHDAY_API_TOKEN` in your system environment
+
+#### Generic MCP Client
+
+If your client supports `mcpServers` JSON:
+```json
+{
+  "mcpServers": {
+    "birthday-reminders": {
+      "transport": "streamable_http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+## Tool Usage Examples
+
+### list_birthdays
+
+Returns all birthdays for the authenticated user.
+
+```json
+{
+  "token": "$BIRTHDAY_API_TOKEN"
+}
+```
+
+Response:
+```json
+{
+  "birthdays": [
+    {
+      "id": "uuid-here",
+      "name": "Jane Doe",
+      "birth_date": "1990-05-15",
+      "age": 35,
+      "turning_age": 36,
+      "days_until": 42,
+      "email": "jane@example.com",
+      "phone_number": "+31 6 12345678",
+      "address": "Keizersgracht 1",
+      "postal_code": "1015 CC",
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "notes": "Likes coffee"
+    }
+  ]
+}
+```
+
+### upcoming_birthdays
+
+List birthdays happening in the next N days.
+
+```json
+{
+  "token": "$BIRTHDAY_API_TOKEN",
+  "days": 30
+}
+```
+
+### add_birthday
+
+Add a new birthday.
+
+```json
+{
+  "token": "$BIRTHDAY_API_TOKEN",
+  "name": "John Smith",
+  "birth_date": "1985-12-25",
+  "email": "john@example.com",
+  "phone_number": "+1-555-1234",
+  "address": "123 Main St",
+  "postal_code": "90210",
+  "city": "Beverly Hills",
+  "country": "USA",
+  "notes": "Likes chocolate"
+}
+```
+
+All fields except `token`, `name`, and `birth_date` are optional.
+
+### remove_birthday
+
+Not supported via MCP. Use the web interface to delete birthdays.
+
+## Token Persistence
+
+**Important**: MCP endpoints are stateless. Each new session loses context.
+
+### Solutions:
+
+1. **Environment Variables** (Recommended)
+   - Set `BIRTHDAY_API_TOKEN` in your system environment
+   - Reference it in all tool calls
+   - Most secure for local clients
+
+2. **System Prompt**
+   - Add to your MCP client's system instructions:
+   ```
+   When calling birthday reminders tools, always include this token in the parameters:
+   $BIRTHDAY_API_TOKEN
+   ```
+
+3. **Config File**
+   - Store the token in your MCP client's config
+   - Reference it in tool arguments
+   - Keep config file permissions restrictive
+
+## Security Best Practices
+
+- **Never** commit API tokens to version control
+- **Never** share tokens publicly
+- Use environment variables for local/desktop clients (LM Studio, Hermes, Cursor)
+- Create a dedicated token for each client/device
+- Revoke tokens you no longer use in **Settings → API Tokens**
+- For shared/cloud clients, use tokens with limited lifetime if available
+- Treat API tokens like passwords
+
+## Troubleshooting
+
+### "Invalid API token" Error
+
+- Verify the token is set correctly in your environment: `echo $BIRTHDAY_API_TOKEN`
+- Check the token hasn't been revoked in the web UI
+- Create a new token if unsure
+
+### Tool Not Found
+
+- Ensure the MCP endpoint is correctly configured
+- Verify the server URL is reachable: `curl http://localhost:3000/mcp`
+- Check that `mcp.enabled: true` in `config.yaml`
+
+### Token Lost After Restart
+
+- MCP is stateless; you must provide the token with every tool call
+- Use environment variables to avoid re-typing
+- Or add the token to your client's system prompt
+
+### Connection Refused
+
+- Ensure Birthday Reminders server is running
+- Check the endpoint URL matches your deployment (localhost vs. domain)
+- Verify firewall/network access to the endpoint
+
+## Advanced: Remote Deployments
+
+If running Birthday Reminders remotely:
+
+1. Update the URL in your MCP client config:
+   ```json
+   "url": "https://birthdays.example.com/mcp"
+   ```
+
+2. Ensure `server.server_name` in `config.yaml` matches:
+   ```yaml
+   server:
+     server_name: "birthdays.example.com"
+     scheme: "https"
+   ```
+
+3. Store the remote token in `BIRTHDAY_API_TOKEN` (same as local)
+
+## Integration Examples
+
+### Ask a Language Model to List Birthdays
+
+Prompt:
+```
+Call the list_birthdays tool to show me all stored birthdays.
+Always include the token from the environment variable BIRTHDAY_API_TOKEN.
+```
+
+### Schedule a Reminder Check
+
+Prompt:
+```
+Use the upcoming_birthdays tool to find birthdays in the next 7 days.
+Include token: $BIRTHDAY_API_TOKEN
+```
+
+### Add a Birthday from Conversation
+
+Prompt:
+```
+Add a birthday for Sarah (born 1992-03-15) using the add_birthday tool.
+Include token: $BIRTHDAY_API_TOKEN
+Contact: sarah@example.com
+Phone: +1-555-9876
+City: Portland, OR
+```
+
+## Support & Documentation
+
+- **Full Documentation**: See [README.md](README.md) for complete setup instructions
+- **API Token Management**: [Settings → API Tokens](http://localhost:3000/settings/api-tokens)
+- **Web UI**: [Dashboard](http://localhost:3000/)
