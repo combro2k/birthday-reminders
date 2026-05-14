@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.1.11] - 2026-05-14
+
+### Added
+- Streamable HTTP MCP support via `rmcp` on the same application port as the web UI.
+- MCP birthday tools for listing birthdays, upcoming birthdays, adding birthdays, and a remove tool that returns web-interface guidance instead of deleting.
+
+### Changed
+- MCP tool authorization now requires a token on every call and reuses the existing API token resolution path.
+- Added MCP endpoint configuration to the YAML example and documented shared-port usage in the README.
+
 ## [1.1.10] - 2026-05-11
 
 ### Added

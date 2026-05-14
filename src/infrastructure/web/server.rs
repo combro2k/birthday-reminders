@@ -7,7 +7,7 @@ use axum::{
     http::StatusCode,
     middleware,
     response::Html,
-    routing::{get, post},
+    routing::{any_service, get, post},
 };
 use tower_sessions::SessionManagerLayer;
 use tower_sessions_sqlx_store::MySqlStore;
@@ -173,12 +173,20 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         ))
         .layer(middleware::from_fn(csrf_middleware));
 
-    Router::new()
+    let mut app = Router::new()
         .merge(public)
         .merge(protected)
         .route("/static/{*path}", get(static_handler))
         .layer(session_layer)
-        .with_state(state)
+        .with_state(state.clone());
+
+    if state.config.mcp.enabled {
+        let mcp_service =
+            crate::mcp::presentation::streamable_http::build_streamable_http_service(state.clone());
+        app = app.route_service(&state.config.mcp.path, any_service(mcp_service));
+    }
+
+    app
 }
 
 async fn health_check(State(state): State<Arc<AppState>>) -> impl axum::response::IntoResponse {
