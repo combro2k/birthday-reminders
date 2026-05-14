@@ -82,7 +82,7 @@ pub struct RemindersConfig {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct McpConfig {
-    #[serde(default = "default_true")]
+    #[serde(default = "default_false")]
     pub enabled: bool,
     #[serde(default = "default_mcp_path")]
     pub path: String,
@@ -99,7 +99,7 @@ pub struct McpConfig {
 impl Default for McpConfig {
     fn default() -> Self {
         Self {
-            enabled: default_true(),
+            enabled: default_false(),
             path: default_mcp_path(),
             stateful_mode: default_true(),
             json_response: false,
@@ -157,6 +157,10 @@ fn default_log_level() -> String {
 
 fn default_mcp_path() -> String {
     "/mcp".to_string()
+}
+
+fn default_false() -> bool {
+    false
 }
 
 fn default_scopes() -> Vec<String> {
@@ -475,7 +479,7 @@ logging: {}
         assert_eq!(config.commands.signal_transport, SignalTransportMode::Cli);
         assert_eq!(config.commands.signal_cli_path, "signal-cli");
         assert_eq!(config.commands.signal_api_url, "http://127.0.0.1:8080");
-        assert!(config.mcp.enabled);
+        assert!(!config.mcp.enabled);
         assert_eq!(config.mcp.path, "/mcp");
     }
 

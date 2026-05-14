@@ -83,8 +83,8 @@ reminders:
 
 # The entire mcp section is optional (all fields have defaults)
 mcp:
-  # Enable streamable HTTP MCP endpoint on the same application port (default: true)
-  # enabled: true
+  # Enable streamable HTTP MCP endpoint on the same application port (default: false)
+  # enabled: false
   # Route path for MCP endpoint (default: "/mcp")
   # path: "/mcp"
   # Streamable HTTP session mode (default: true)
