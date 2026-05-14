@@ -487,6 +487,61 @@ Supported MCP birthday tools:
 
 `remove_birthday` is intentionally not supported for deletion and always returns guidance to delete birthdays via the web interface.
 
+### Token Persistence Across Sessions
+
+MCP endpoints are stateless by design — each new conversation with LM Studio, Hermes, or any other MCP client starts fresh and cannot access tokens from previous sessions. You must provide the token with each tool call.
+
+**Recommended: Use Environment Variables**
+
+Set your API token as an environment variable on your system, then reference it from your MCP client:
+
+```bash
+# On Linux/macOS
+export BIRTHDAY_API_TOKEN="your-api-token-here"
+
+# On Windows (PowerShell)
+$env:BIRTHDAY_API_TOKEN="your-api-token-here"
+```
+
+**LM Studio**
+
+1. Set `BIRTHDAY_API_TOKEN` in your system environment.
+2. Configure the MCP server in LM Studio settings to use the endpoint URL.
+3. When using a tool in LM Studio, include the token from the environment variable or ask the model to use it:
+   ```
+   Use this API token: $BIRTHDAY_API_TOKEN
+   ```
+
+**Hermes**
+
+1. Set `BIRTHDAY_API_TOKEN` in your environment.
+2. Add the MCP endpoint to Hermes config.
+3. In your system prompt or initial message, include:
+   ```
+   API Token: $BIRTHDAY_API_TOKEN
+   ```
+
+**General Approach for Any MCP Client**
+
+If your client supports system prompts or init messages, add this to your system instructions:
+
+```
+When calling birthday reminders tools, always include this token:
+your-api-token-here
+
+All tool calls must include:
+{
+  "token": "your-api-token-here",
+  ...other params...
+}
+```
+
+**Security Note**
+
+- Never commit API tokens to version control.
+- For desktop/local clients (LM Studio, Hermes, local Cursor), using environment variables is secure.
+- For cloud-based or shared clients, create a dedicated token with limited lifetime or scope if the server supports token expiration.
+
 ## Notification Channels
 
 Users can configure one or more notification channels in the web UI under **Settings → Notification Channels**:
