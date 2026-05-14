@@ -13,6 +13,7 @@ use crate::infrastructure::web::server::AppState;
 use crate::mcp::application::birthdays::{
     AddBirthdayInput, ListBirthdaysInput, RemoveBirthdayInput, UpcomingBirthdaysInput,
 };
+use crate::mcp::application::setup_guide;
 
 #[derive(Clone)]
 pub(crate) struct BirthdayMcpServer {
@@ -67,6 +68,13 @@ impl BirthdayMcpServer {
             input,
         )
         .await
+    }
+
+    #[tool(
+        description = "Get MCP setup guide with configuration instructions for LM Studio, Hermes, Claude Desktop, Cursor, and other clients. No authentication required."
+    )]
+    async fn get_mcp_setup_guide(&self) -> Result<String, ErrorData> {
+        setup_guide::get_mcp_setup_guide().await
     }
 }
 
