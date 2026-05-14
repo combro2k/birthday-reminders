@@ -81,6 +81,23 @@ reminders:
   # How many days before a birthday to send reminders (default: [7, 3, 1, 0])
   # default_days_before: [7, 3, 1, 0]
 
+# The entire mcp section is optional (all fields have defaults)
+mcp:
+  # Enable streamable HTTP MCP endpoint on the same application port (default: true)
+  # enabled: true
+  # Route path for MCP endpoint (default: "/mcp")
+  # path: "/mcp"
+  # Streamable HTTP session mode (default: true)
+  # stateful_mode: true
+  # Return JSON directly in stateless mode (default: false)
+  # json_response: false
+  # Optional explicit Host allowlist for MCP requests; if omitted, localhost + server_name/base_url hosts are used
+  # allowed_hosts:
+  #   - "birthdays.example.com"
+  # Optional Origin allowlist for browser-based MCP clients
+  # allowed_origins:
+  #   - "https://birthdays.example.com"
+
 # The entire commands section is optional (all fields have defaults)
 commands:
   # Signal transport backend: "cli" (default) or "api"

@@ -460,6 +460,33 @@ The `add` command accepts these optional contact fields:
 
 These same fields are also available in the web form when creating or editing a birthday.
 
+## MCP (rmcp) Usage
+
+The server now exposes a Streamable HTTP MCP endpoint on the same port as the web app.
+
+- Default endpoint path: `/mcp`
+- Transport: Streamable HTTP (rmcp)
+- Authentication: mandatory API token on every tool call (no session/cookie fallback)
+
+The MCP endpoint can be configured in `config.yaml`:
+
+```yaml
+mcp:
+  enabled: true
+  path: "/mcp"
+  stateful_mode: true
+  json_response: false
+```
+
+Supported MCP birthday tools:
+
+- `list_birthdays`
+- `upcoming_birthdays`
+- `add_birthday`
+- `remove_birthday`
+
+`remove_birthday` is intentionally not supported for deletion and always returns guidance to delete birthdays via the web interface.
+
 ## Notification Channels
 
 Users can configure one or more notification channels in the web UI under **Settings → Notification Channels**:

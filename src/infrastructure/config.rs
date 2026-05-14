@@ -11,6 +11,8 @@ pub struct AppConfig {
     pub auth: AuthConfig,
     pub reminders: RemindersConfig,
     #[serde(default)]
+    pub mcp: McpConfig,
+    #[serde(default)]
     pub commands: CommandsConfig,
     #[serde(default)]
     pub logging: LoggingConfig,
@@ -79,6 +81,35 @@ pub struct RemindersConfig {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct McpConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_mcp_path")]
+    pub path: String,
+    #[serde(default = "default_true")]
+    pub stateful_mode: bool,
+    #[serde(default)]
+    pub json_response: bool,
+    #[serde(default)]
+    pub allowed_hosts: Vec<String>,
+    #[serde(default)]
+    pub allowed_origins: Vec<String>,
+}
+
+impl Default for McpConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_true(),
+            path: default_mcp_path(),
+            stateful_mode: default_true(),
+            json_response: false,
+            allowed_hosts: vec![],
+            allowed_origins: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct CommandsConfig {
     #[serde(default)]
     pub signal_transport: SignalTransportMode,
@@ -122,6 +153,10 @@ fn default_log_output() -> String {
 
 fn default_log_level() -> String {
     "info".to_string()
+}
+
+fn default_mcp_path() -> String {
+    "/mcp".to_string()
 }
 
 fn default_scopes() -> Vec<String> {
@@ -319,6 +354,14 @@ impl AppConfig {
             }
         }
 
+        let mcp_path = self.mcp.path.trim();
+        if mcp_path.is_empty() {
+            anyhow::bail!("mcp.path must not be empty");
+        }
+        if !mcp_path.starts_with('/') {
+            anyhow::bail!("mcp.path must start with '/'");
+        }
+
         Ok(())
     }
 }
@@ -326,8 +369,8 @@ impl AppConfig {
 #[cfg(test)]
 mod tests {
     use super::{
-        AppConfig, AuthConfig, CommandsConfig, DatabaseConfig, LoggingConfig, RemindersConfig,
-        ServerConfig, SignalTransportMode,
+        AppConfig, AuthConfig, CommandsConfig, DatabaseConfig, LoggingConfig, McpConfig,
+        RemindersConfig, ServerConfig, SignalTransportMode,
     };
 
     fn server_config() -> ServerConfig {
@@ -402,6 +445,7 @@ mod tests {
                 schedule: "0 0 8 * * *".to_string(),
                 default_days_before: vec![7, 3, 1, 0],
             },
+            mcp: McpConfig::default(),
             commands: CommandsConfig::default(),
             logging: LoggingConfig::default(),
         }
@@ -422,6 +466,7 @@ server:
   run_as_group: "birthday-reminders"
 auth: {}
 reminders: {}
+mcp: {}
 logging: {}
 "#,
         )
@@ -430,6 +475,8 @@ logging: {}
         assert_eq!(config.commands.signal_transport, SignalTransportMode::Cli);
         assert_eq!(config.commands.signal_cli_path, "signal-cli");
         assert_eq!(config.commands.signal_api_url, "http://127.0.0.1:8080");
+        assert!(config.mcp.enabled);
+        assert_eq!(config.mcp.path, "/mcp");
     }
 
     #[test]
