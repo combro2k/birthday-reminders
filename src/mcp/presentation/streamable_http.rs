@@ -29,7 +29,9 @@ impl BirthdayMcpServer {
 
 #[tool_router(server_handler)]
 impl BirthdayMcpServer {
-    #[tool(description = "List all birthdays for the authenticated user. Token is mandatory.")]
+    #[tool(
+        description = "List all birthdays for the authenticated user. Provide token parameter or Authorization Bearer token."
+    )]
     async fn list_birthdays(
         &self,
         Parameters(input): Parameters<ListBirthdaysInput>,
@@ -38,7 +40,7 @@ impl BirthdayMcpServer {
     }
 
     #[tool(
-        description = "List upcoming birthdays for the authenticated user. Token is mandatory. Optional `days` defaults to 30."
+        description = "List upcoming birthdays for the authenticated user. Provide token parameter or Authorization Bearer token. Optional `days` defaults to 30."
     )]
     async fn upcoming_birthdays(
         &self,
@@ -48,7 +50,7 @@ impl BirthdayMcpServer {
     }
 
     #[tool(
-        description = "Add a birthday for the authenticated user. Token is mandatory. `birth_date` must be YYYY-MM-DD."
+        description = "Add a birthday for the authenticated user. Provide token parameter or Authorization Bearer token. `birth_date` must be YYYY-MM-DD."
     )]
     async fn add_birthday(
         &self,
@@ -58,7 +60,7 @@ impl BirthdayMcpServer {
     }
 
     #[tool(
-        description = "Look up birthdays by name for the authenticated user. Token is mandatory. Uses case-insensitive substring matching, so partial names work (e.g. \"Anna\" matches \"Anna Smith\"). Returns all matches with age, days until next birthday, and contact details."
+        description = "Look up birthdays by name for the authenticated user. Provide token parameter or Authorization Bearer token. Uses case-insensitive substring matching, so partial names work (e.g. \"Anna\" matches \"Anna Smith\"). Returns all matches with age, days until next birthday, and contact details."
     )]
     async fn get_birthday_by_name(
         &self,
@@ -68,7 +70,7 @@ impl BirthdayMcpServer {
     }
 
     #[tool(
-        description = "Remove birthday is intentionally not supported in MCP. Token is mandatory; use the web interface for deletion."
+        description = "Remove birthday is intentionally not supported in MCP. Provide token parameter or Authorization Bearer token; use the web interface for deletion."
     )]
     async fn remove_birthday(
         &self,

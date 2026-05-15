@@ -6,7 +6,7 @@ This guide helps MCP clients (LM Studio, Hermes, Claude Desktop, Cursor, and oth
 
 - **URL**: `http://localhost:3000/mcp` (local development) or `https://your-host.example.com/mcp` (production)
 - **Transport**: Streamable HTTP (rmcp) or HTTP
-- **Authentication**: Mandatory API token in every tool call
+- **Authentication**: API token via either global `Authorization: Bearer <token>` header or per-tool `token` parameter
 - **Tools Available**:
   - `list_birthdays` — List all birthdays
   - `upcoming_birthdays` — List upcoming birthdays (configurable days ahead)
@@ -55,6 +55,8 @@ export BIRTHDAY_API_TOKEN="your-token-here"
 3. Add the environment variable:
    - **Key**: `BIRTHDAY_API_TOKEN`
    - **Value**: (leave empty — client will read from system environment)
+4. If custom headers are supported in your LM Studio version, set:
+  - `Authorization: Bearer ${BIRTHDAY_API_TOKEN}`
 
 #### Hermes
 
@@ -65,6 +67,8 @@ export BIRTHDAY_API_TOKEN="your-token-here"
      birthday-reminders:
        transport: streamable_http
        url: http://localhost:3000/mcp
+       headers:
+         Authorization: "Bearer ${BIRTHDAY_API_TOKEN}"
    ```
 3. Set `BIRTHDAY_API_TOKEN` in your system environment before launching Hermes
 
@@ -79,7 +83,10 @@ export BIRTHDAY_API_TOKEN="your-token-here"
      "mcpServers": {
        "birthday-reminders": {
          "transport": "streamable_http",
-         "url": "http://localhost:3000/mcp"
+          "url": "http://localhost:3000/mcp",
+          "headers": {
+            "Authorization": "Bearer ${BIRTHDAY_API_TOKEN}"
+          }
        }
      }
    }
@@ -94,7 +101,9 @@ export BIRTHDAY_API_TOKEN="your-token-here"
    - **Name**: `birthday-reminders`
    - **URL**: `http://localhost:3000/mcp`
    - **Transport**: `streamable_http` or `http`
-4. Set `BIRTHDAY_API_TOKEN` in your system environment
+4. Set header (recommended when available):
+  - `Authorization: Bearer ${BIRTHDAY_API_TOKEN}`
+5. Set `BIRTHDAY_API_TOKEN` in your system environment
 
 #### Generic MCP Client
 
@@ -104,17 +113,34 @@ If your client supports `mcpServers` JSON:
   "mcpServers": {
     "birthday-reminders": {
       "transport": "streamable_http",
-      "url": "http://localhost:3000/mcp"
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BIRTHDAY_API_TOKEN}"
+      }
     }
   }
 }
 ```
+
+## HTTP Header Authentication
+
+Use a global MCP config header to authenticate all tool calls automatically:
+
+```http
+Authorization: Bearer $BIRTHDAY_API_TOKEN
+```
+
+When this header is configured, the `token` field in tool parameters is optional.
 
 ## Tool Usage Examples
 
 ### list_birthdays
 
 Returns all birthdays for the authenticated user.
+
+Authentication options:
+- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
+- Tool parameter fallback: include `token` in the payload
 
 ```json
 {
@@ -149,6 +175,10 @@ Response:
 
 List birthdays happening in the next N days.
 
+Authentication options:
+- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
+- Tool parameter fallback: include `token` in the payload
+
 ```json
 {
   "token": "$BIRTHDAY_API_TOKEN",
@@ -159,6 +189,10 @@ List birthdays happening in the next N days.
 ### get_birthday_by_name
 
 Look up birthdays by name. Uses case-insensitive substring matching, so partial names work (e.g. `"Anna"` matches `"Anna Smith"` and `"Anna Jones"`).
+
+Authentication options:
+- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
+- Tool parameter fallback: include `token` in the payload
 
 ```json
 {
@@ -197,6 +231,10 @@ If no match is found, `count` is `0` and `matches` is an empty array.
 
 Add a new birthday.
 
+Authentication options:
+- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
+- Tool parameter fallback: include `token` in the payload
+
 ```json
 {
   "token": "$BIRTHDAY_API_TOKEN",
@@ -212,7 +250,7 @@ Add a new birthday.
 }
 ```
 
-All fields except `token`, `name`, and `birth_date` are optional.
+If you use header authentication, all fields except `name` and `birth_date` are optional.
 
 ### remove_birthday
 
@@ -229,16 +267,17 @@ Not supported via MCP. Use the web interface to delete birthdays.
    - Reference it in all tool calls
    - Most secure for local clients
 
-2. **System Prompt**
-   - Add to your MCP client's system instructions:
-   ```
-   When calling birthday reminders tools, always include this token in the parameters:
-   $BIRTHDAY_API_TOKEN
-   ```
+2. **MCP Config Header**
+  - Configure your MCP server entry with:
+  - `Authorization: Bearer ${BIRTHDAY_API_TOKEN}`
+  - Best for clients that support static/dynamic headers per MCP server
 
-3. **Config File**
+3. **System Prompt**
+  - If headers are not supported, instruct the model to include `token` in each tool call
+
+4. **Config File**
    - Store the token in your MCP client's config
-   - Reference it in tool arguments
+  - Reference it in headers where supported, otherwise tool arguments
    - Keep config file permissions restrictive
 
 ## Security Best Practices
@@ -302,7 +341,8 @@ If running Birthday Reminders remotely:
 Prompt:
 ```
 Call the list_birthdays tool to show me all stored birthdays.
-Always include the token from the environment variable BIRTHDAY_API_TOKEN.
+Prefer MCP header authentication with Authorization: Bearer $BIRTHDAY_API_TOKEN.
+If headers are unavailable, include token from BIRTHDAY_API_TOKEN in tool parameters.
 ```
 
 ### Schedule a Reminder Check
@@ -310,7 +350,8 @@ Always include the token from the environment variable BIRTHDAY_API_TOKEN.
 Prompt:
 ```
 Use the upcoming_birthdays tool to find birthdays in the next 7 days.
-Include token: $BIRTHDAY_API_TOKEN
+Prefer MCP header authentication with Authorization: Bearer $BIRTHDAY_API_TOKEN.
+If headers are unavailable, include token: $BIRTHDAY_API_TOKEN
 ```
 
 ### Look Up Someone's Birthday
@@ -329,7 +370,8 @@ For any of these patterns, extract the person's name and call `get_birthday_by_n
 Prompt:
 ```
 When is Anna's birthday? Use the get_birthday_by_name tool with name "Anna".
-Include token: $BIRTHDAY_API_TOKEN
+Prefer MCP header authentication with Authorization: Bearer $BIRTHDAY_API_TOKEN.
+If headers are unavailable, include token: $BIRTHDAY_API_TOKEN
 ```
 
 The tool returns all matches with their birth date, current age, days until next birthday, and contact details.
@@ -339,7 +381,8 @@ The tool returns all matches with their birth date, current age, days until next
 Prompt:
 ```
 Add a birthday for Sarah (born 1992-03-15) using the add_birthday tool.
-Include token: $BIRTHDAY_API_TOKEN
+Prefer MCP header authentication with Authorization: Bearer $BIRTHDAY_API_TOKEN.
+If headers are unavailable, include token: $BIRTHDAY_API_TOKEN
 Contact: sarah@example.com
 Phone: +1-555-9876
 City: Portland, OR
