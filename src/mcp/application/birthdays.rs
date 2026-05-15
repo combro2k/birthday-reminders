@@ -38,9 +38,22 @@ pub struct RemoveBirthdayInput {
     pub id: String,
 }
 
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct GetBirthdayByNameInput {
+    pub token: String,
+    /// Name or partial name to search for (case-insensitive substring match).
+    pub name: String,
+}
+
 #[derive(Debug, Serialize)]
 struct BirthdaysResponse {
     birthdays: Vec<BirthdayOutput>,
+}
+
+#[derive(Debug, Serialize)]
+struct GetBirthdayByNameResponse {
+    count: usize,
+    matches: Vec<BirthdayOutput>,
 }
 
 #[derive(Debug, Serialize)]
@@ -161,6 +174,40 @@ pub async fn add_birthday(state: &AppState, input: AddBirthdayInput) -> Result<S
     let response = AddBirthdayResponse {
         message: "Birthday added".to_string(),
         birthday: to_output(&birthday, today),
+    };
+
+    serde_json::to_string(&response)
+        .map_err(|e| ErrorData::internal_error(format!("Failed to serialize result: {e}"), None))
+}
+
+pub async fn get_birthday_by_name(
+    state: &AppState,
+    input: GetBirthdayByNameInput,
+) -> Result<String, ErrorData> {
+    let user_id = resolve_user_id(state, &input.token).await?;
+
+    let name = input.name.trim().to_string();
+    if name.is_empty() {
+        return Err(ErrorData::invalid_params("name is required", None));
+    }
+
+    let birthdays = state
+        .birthday_query_service
+        .list_all(&user_id)
+        .await
+        .map_err(|e| ErrorData::internal_error(format!("Failed to list birthdays: {e}"), None))?;
+
+    let today = Local::now().date_naive();
+    let name_lower = name.to_lowercase();
+    let matched: Vec<BirthdayOutput> = birthdays
+        .iter()
+        .filter(|b| b.name.to_lowercase().contains(&name_lower))
+        .map(|b| to_output(b, today))
+        .collect();
+
+    let response = GetBirthdayByNameResponse {
+        count: matched.len(),
+        matches: matched,
     };
 
     serde_json::to_string(&response)

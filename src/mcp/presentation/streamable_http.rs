@@ -11,8 +11,10 @@ use rmcp::{
 
 use crate::infrastructure::web::server::AppState;
 use crate::mcp::application::birthdays::{
-    AddBirthdayInput, ListBirthdaysInput, RemoveBirthdayInput, UpcomingBirthdaysInput,
+    AddBirthdayInput, GetBirthdayByNameInput, ListBirthdaysInput, RemoveBirthdayInput,
+    UpcomingBirthdaysInput,
 };
+use crate::mcp::application::setup_guide;
 
 #[derive(Clone)]
 pub(crate) struct BirthdayMcpServer {
@@ -56,6 +58,16 @@ impl BirthdayMcpServer {
     }
 
     #[tool(
+        description = "Look up birthdays by name for the authenticated user. Token is mandatory. Uses case-insensitive substring matching, so partial names work (e.g. \"Anna\" matches \"Anna Smith\"). Returns all matches with age, days until next birthday, and contact details."
+    )]
+    async fn get_birthday_by_name(
+        &self,
+        Parameters(input): Parameters<GetBirthdayByNameInput>,
+    ) -> Result<String, ErrorData> {
+        crate::mcp::application::birthdays::get_birthday_by_name(self.state.as_ref(), input).await
+    }
+
+    #[tool(
         description = "Remove birthday is intentionally not supported in MCP. Token is mandatory; use the web interface for deletion."
     )]
     async fn remove_birthday(
@@ -67,6 +79,13 @@ impl BirthdayMcpServer {
             input,
         )
         .await
+    }
+
+    #[tool(
+        description = "Get MCP setup guide with configuration instructions for LM Studio, Hermes, Claude Desktop, Cursor, and other clients. No authentication required."
+    )]
+    async fn get_mcp_setup_guide(&self) -> Result<String, ErrorData> {
+        setup_guide::get_mcp_setup_guide().await
     }
 }
 
