@@ -315,6 +315,17 @@ Include token: $BIRTHDAY_API_TOKEN
 
 ### Look Up Someone's Birthday
 
+Use the `get_birthday_by_name` tool whenever the user asks questions such as:
+
+- "What is Anna's birthday?"
+- "When is the birthday of Anna?"
+- "Can you tell me when Anna is aging?"
+- "Can you tell me the birthday of Anna?"
+- "How old is Anna turning?"
+- "When does Anna celebrate her birthday?"
+
+For any of these patterns, extract the person's name and call `get_birthday_by_name`. The tool uses case-insensitive substring matching, so a partial name like `"Anna"` will match `"Anna Smith"` and `"Anna Jones"`.
+
 Prompt:
 ```
 When is Anna's birthday? Use the get_birthday_by_name tool with name "Anna".
