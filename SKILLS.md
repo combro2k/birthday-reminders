@@ -10,6 +10,7 @@ This guide helps MCP clients (LM Studio, Hermes, Claude Desktop, Cursor, and oth
 - **Tools Available**:
   - `list_birthdays` — List all birthdays
   - `upcoming_birthdays` — List upcoming birthdays (configurable days ahead)
+  - `get_birthday_by_name` — Look up a person's birthday by name (case-insensitive partial match)
   - `add_birthday` — Add a new birthday with optional contact fields
   - `remove_birthday` — Not supported; use web interface instead
 
@@ -155,6 +156,43 @@ List birthdays happening in the next N days.
 }
 ```
 
+### get_birthday_by_name
+
+Look up birthdays by name. Uses case-insensitive substring matching, so partial names work (e.g. `"Anna"` matches `"Anna Smith"` and `"Anna Jones"`).
+
+```json
+{
+  "token": "$BIRTHDAY_API_TOKEN",
+  "name": "Jane"
+}
+```
+
+Response:
+```json
+{
+  "count": 1,
+  "matches": [
+    {
+      "id": "uuid-here",
+      "name": "Jane Doe",
+      "birth_date": "1990-05-15",
+      "age": 35,
+      "turning_age": 36,
+      "days_until": 0,
+      "email": "jane@example.com",
+      "phone_number": null,
+      "address": null,
+      "postal_code": null,
+      "city": null,
+      "country": null,
+      "notes": null
+    }
+  ]
+}
+```
+
+If no match is found, `count` is `0` and `matches` is an empty array.
+
 ### add_birthday
 
 Add a new birthday.
@@ -274,6 +312,16 @@ Prompt:
 Use the upcoming_birthdays tool to find birthdays in the next 7 days.
 Include token: $BIRTHDAY_API_TOKEN
 ```
+
+### Look Up Someone's Birthday
+
+Prompt:
+```
+When is Anna's birthday? Use the get_birthday_by_name tool with name "Anna".
+Include token: $BIRTHDAY_API_TOKEN
+```
+
+The tool returns all matches with their birth date, current age, days until next birthday, and contact details.
 
 ### Add a Birthday from Conversation
 
