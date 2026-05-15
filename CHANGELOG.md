@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.1.12] - 2026-05-15
+
+### Added
+- MCP tool `get_birthday_by_name` — look up a person's birthday by name using case-insensitive substring matching; returns all matches with age, days until next birthday, and contact details.
+- Documented `get_birthday_by_name` in `SKILLS.md` (setup guide, usage example with request/response JSON, and integration prompt example).
+
 ## [1.1.11] - 2026-05-14
 
 ### Added

@@ -11,7 +11,8 @@ use rmcp::{
 
 use crate::infrastructure::web::server::AppState;
 use crate::mcp::application::birthdays::{
-    AddBirthdayInput, ListBirthdaysInput, RemoveBirthdayInput, UpcomingBirthdaysInput,
+    AddBirthdayInput, GetBirthdayByNameInput, ListBirthdaysInput, RemoveBirthdayInput,
+    UpcomingBirthdaysInput,
 };
 use crate::mcp::application::setup_guide;
 
@@ -54,6 +55,16 @@ impl BirthdayMcpServer {
         Parameters(input): Parameters<AddBirthdayInput>,
     ) -> Result<String, ErrorData> {
         crate::mcp::application::birthdays::add_birthday(self.state.as_ref(), input).await
+    }
+
+    #[tool(
+        description = "Look up birthdays by name for the authenticated user. Token is mandatory. Uses case-insensitive substring matching, so partial names work (e.g. \"Anna\" matches \"Anna Smith\"). Returns all matches with age, days until next birthday, and contact details."
+    )]
+    async fn get_birthday_by_name(
+        &self,
+        Parameters(input): Parameters<GetBirthdayByNameInput>,
+    ) -> Result<String, ErrorData> {
+        crate::mcp::application::birthdays::get_birthday_by_name(self.state.as_ref(), input).await
     }
 
     #[tool(
