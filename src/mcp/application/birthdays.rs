@@ -2,25 +2,33 @@ use chrono::{Local, NaiveDate};
 use rmcp::ErrorData;
 use rmcp::schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use tokio::task_local;
 
 use crate::birthdays::domain::birthday::Birthday;
 use crate::infrastructure::web::server::AppState;
 use crate::users::domain::user::UserId;
 
+task_local! {
+    pub(crate) static HTTP_AUTH_USER_ID: UserId;
+}
+
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct ListBirthdaysInput {
-    pub token: String,
+    #[serde(default)]
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct UpcomingBirthdaysInput {
-    pub token: String,
+    #[serde(default)]
+    pub token: Option<String>,
     pub days: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct AddBirthdayInput {
-    pub token: String,
+    #[serde(default)]
+    pub token: Option<String>,
     pub name: String,
     pub birth_date: String,
     pub email: Option<String>,
@@ -34,13 +42,15 @@ pub struct AddBirthdayInput {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct RemoveBirthdayInput {
-    pub token: String,
+    #[serde(default)]
+    pub token: Option<String>,
     pub id: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct GetBirthdayByNameInput {
-    pub token: String,
+    #[serde(default)]
+    pub token: Option<String>,
     /// Name or partial name to search for (case-insensitive substring match).
     pub name: String,
 }
@@ -230,11 +240,21 @@ pub async fn remove_birthday_not_supported(
         .map_err(|e| ErrorData::internal_error(format!("Failed to serialize result: {e}"), None))
 }
 
-async fn resolve_user_id(state: &AppState, token: &str) -> Result<UserId, ErrorData> {
-    let token = token.trim();
-    if token.is_empty() {
-        return Err(ErrorData::invalid_params("token is required", None));
+async fn resolve_user_id(state: &AppState, token: &Option<String>) -> Result<UserId, ErrorData> {
+    if let Ok(user_id) = HTTP_AUTH_USER_ID.try_with(|user_id| user_id.clone()) {
+        return Ok(user_id);
     }
+
+    let token = token
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| {
+            ErrorData::invalid_params(
+                "token is required when Authorization Bearer token is not configured",
+                None,
+            )
+        })?;
 
     state
         .user_command_service

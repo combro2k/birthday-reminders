@@ -183,7 +183,13 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
     if state.config.mcp.enabled {
         let mcp_service =
             crate::mcp::presentation::streamable_http::build_streamable_http_service(state.clone());
-        app = app.route_service(&state.config.mcp.path, any_service(mcp_service));
+        app = app.route_service(
+            &state.config.mcp.path,
+            any_service(mcp_service).layer(middleware::from_fn_with_state(
+                state.clone(),
+                crate::mcp::infrastructure::auth::mcp_auth_middleware,
+            )),
+        );
     }
 
     app
