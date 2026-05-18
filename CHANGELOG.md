@@ -6,6 +6,15 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-18
+
+### Added
+- OpenAPI 3.1 specification served at `/openapi.json` documenting the public HTTP API.
+- MCP server now supports a global bearer token for authentication, with per-request token fallback.
+
+### Changed
+- Consolidated DDD principles, secure coding guidelines, and code quality expectations into `AGENTS.md`.
+
 ## [1.1.12] - 2026-05-15
 
 ### Added
