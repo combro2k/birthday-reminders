@@ -42,6 +42,9 @@ openidconnect = "4.0"
 # MCP
 rmcp = { version = "1.7.0", features = ["server", "macros", "schemars", "tower", "transport-streamable-http-server", "transport-streamable-http-server-session"] }
 
+# OpenAPI specification
+utoipa = "5"
+
 # Auth
 argon2 = "0.5"
 rand = "0.8"
