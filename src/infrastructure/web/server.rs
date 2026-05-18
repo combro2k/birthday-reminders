@@ -27,6 +27,7 @@ use crate::users::domain::repository::UserRepository;
 use super::middleware::{
     ProxyTrust, RateLimiter, auth_middleware, csrf_middleware, rate_limit_middleware,
 };
+use super::openapi::openapi_spec_handler;
 use crate::auth::presentation::handlers as auth;
 use crate::birthdays::presentation::handlers as birthdays;
 use crate::channels::presentation::handlers as notifications;
@@ -167,6 +168,8 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
             get(admin::users_page).post(admin::create_user),
         )
         .route("/admin/users/{id}/delete", post(admin::delete_user))
+        // API specification
+        .route("/openapi.json", get(openapi_spec_handler))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
