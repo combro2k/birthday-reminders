@@ -31,7 +31,7 @@ csv = "1"
 tokio-cron-scheduler = "0.15"
 
 # HTTP Client (Gotify, Telegram)
-reqwest = { version = "0.13.3", features = ["json", "form"] }
+reqwest = { version = "0.12", features = ["json"] }
 
 # Email
 lettre = { version = "0.11", features = ["tokio1-native-tls", "builder", "smtp-transport"] }
