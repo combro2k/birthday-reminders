@@ -12,13 +12,13 @@ CREATE TABLE IF NOT EXISTS user_reminder_settings (
 INSERT INTO user_reminder_settings
 SELECT
   CASE
-    WHEN typeof(user_id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(user_id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(user_id), 1, 8),
       SUBSTR(HEX(user_id), 9, 4),
       SUBSTR(HEX(user_id), 13, 4),
       SUBSTR(HEX(user_id), 17, 4),
       SUBSTR(HEX(user_id), 21, 12)
-    )
+    ))
     ELSE user_id
   END as user_id,
   days_before

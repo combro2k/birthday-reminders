@@ -56,12 +56,10 @@ CREATE TABLE IF NOT EXISTS reminder_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_oidc_subject ON users(oidc_subject);
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_birthdays_user_id ON birthdays(user_id);
 CREATE INDEX IF NOT EXISTS idx_birthdays_birth_date ON birthdays(birth_date);
 CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
 CREATE INDEX IF NOT EXISTS idx_notification_channels_user_id ON notification_channels(user_id);
 CREATE INDEX IF NOT EXISTS idx_reminder_log_birthday_id ON reminder_log(birthday_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_reminder_log_unique ON reminder_log(birthday_id, channel_type, days_before, year);

@@ -25,13 +25,13 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users 
 SELECT 
   CASE 
-    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(id), 1, 8),
       SUBSTR(HEX(id), 9, 4),
       SUBSTR(HEX(id), 13, 4),
       SUBSTR(HEX(id), 17, 4),
       SUBSTR(HEX(id), 21, 12)
-    )
+    ))
     ELSE id
   END as id,
   username,
@@ -48,8 +48,6 @@ FROM users_old;
 DROP TABLE users_old;
 
 CREATE INDEX IF NOT EXISTS idx_users_oidc_subject ON users(oidc_subject);
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- Table: birthdays
 ALTER TABLE birthdays RENAME TO birthdays_old;
@@ -72,23 +70,23 @@ CREATE TABLE IF NOT EXISTS birthdays (
 INSERT INTO birthdays 
 SELECT 
   CASE 
-    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(id), 1, 8),
       SUBSTR(HEX(id), 9, 4),
       SUBSTR(HEX(id), 13, 4),
       SUBSTR(HEX(id), 17, 4),
       SUBSTR(HEX(id), 21, 12)
-    )
+    ))
     ELSE id
   END as id,
   CASE 
-    WHEN typeof(user_id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(user_id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(user_id), 1, 8),
       SUBSTR(HEX(user_id), 9, 4),
       SUBSTR(HEX(user_id), 13, 4),
       SUBSTR(HEX(user_id), 17, 4),
       SUBSTR(HEX(user_id), 21, 12)
-    )
+    ))
     ELSE user_id
   END as user_id,
   name,
@@ -123,23 +121,23 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 INSERT INTO api_tokens 
 SELECT 
   CASE 
-    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(id), 1, 8),
       SUBSTR(HEX(id), 9, 4),
       SUBSTR(HEX(id), 13, 4),
       SUBSTR(HEX(id), 17, 4),
       SUBSTR(HEX(id), 21, 12)
-    )
+    ))
     ELSE id
   END as id,
   CASE 
-    WHEN typeof(user_id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(user_id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(user_id), 1, 8),
       SUBSTR(HEX(user_id), 9, 4),
       SUBSTR(HEX(user_id), 13, 4),
       SUBSTR(HEX(user_id), 17, 4),
       SUBSTR(HEX(user_id), 21, 12)
-    )
+    ))
     ELSE user_id
   END as user_id,
   token_hash,
@@ -151,7 +149,7 @@ FROM api_tokens_old;
 DROP TABLE api_tokens_old;
 
 CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
 
 -- Table: notification_channels
 ALTER TABLE notification_channels RENAME TO notification_channels_old;
@@ -170,23 +168,23 @@ CREATE TABLE IF NOT EXISTS notification_channels (
 INSERT INTO notification_channels 
 SELECT 
   CASE 
-    WHEN typeof(id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(id), 1, 8),
       SUBSTR(HEX(id), 9, 4),
       SUBSTR(HEX(id), 13, 4),
       SUBSTR(HEX(id), 17, 4),
       SUBSTR(HEX(id), 21, 12)
-    )
+    ))
     ELSE id
   END as id,
   CASE 
-    WHEN typeof(user_id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(user_id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(user_id), 1, 8),
       SUBSTR(HEX(user_id), 9, 4),
       SUBSTR(HEX(user_id), 13, 4),
       SUBSTR(HEX(user_id), 17, 4),
       SUBSTR(HEX(user_id), 21, 12)
-    )
+    ))
     ELSE user_id
   END as user_id,
   channel_type,
@@ -216,13 +214,13 @@ INSERT INTO reminder_log
 SELECT 
   id,
   CASE 
-    WHEN typeof(birthday_id) = 'blob' THEN PRINTF('%s-%s-%s-%s-%s',
+    WHEN typeof(birthday_id) = 'blob' THEN LOWER(PRINTF('%s-%s-%s-%s-%s',
       SUBSTR(HEX(birthday_id), 1, 8),
       SUBSTR(HEX(birthday_id), 9, 4),
       SUBSTR(HEX(birthday_id), 13, 4),
       SUBSTR(HEX(birthday_id), 17, 4),
       SUBSTR(HEX(birthday_id), 21, 12)
-    )
+    ))
     ELSE birthday_id
   END as birthday_id,
   channel_type,
