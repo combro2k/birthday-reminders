@@ -6,7 +6,7 @@ This guide helps MCP clients (LM Studio, Hermes, Claude Desktop, Cursor, and oth
 
 - **URL**: `http://localhost:3000/mcp` (local development) or `https://your-host.example.com/mcp` (production)
 - **Transport**: Streamable HTTP (rmcp) or HTTP
-- **Authentication**: API token via either global `Authorization: Bearer <token>` header or per-tool `token` parameter
+- **Authentication**: API token via `Authorization: Bearer <token>` header — authenticated once per MCP session
 - **Tools Available**:
   - `list_birthdays` — List all birthdays
   - `upcoming_birthdays` — List upcoming birthdays (configurable days ahead)
@@ -124,13 +124,13 @@ If your client supports `mcpServers` JSON:
 
 ## HTTP Header Authentication
 
-Use a global MCP config header to authenticate all tool calls automatically:
+Configure your MCP client with a global `Authorization` header to authenticate the MCP session:
 
 ```http
 Authorization: Bearer $BIRTHDAY_API_TOKEN
 ```
 
-When this header is configured, the `token` field in tool parameters is optional.
+The token is validated once when the MCP session is initialized. All subsequent tool calls within the same session are automatically authenticated — no per-tool token is needed.
 
 ## Tool Usage Examples
 
@@ -138,14 +138,8 @@ When this header is configured, the `token` field in tool parameters is optional
 
 Returns all birthdays for the authenticated user.
 
-Authentication options:
-- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
-- Tool parameter fallback: include `token` in the payload
-
 ```json
-{
-  "token": "$BIRTHDAY_API_TOKEN"
-}
+{}
 ```
 
 Response:
@@ -175,13 +169,8 @@ Response:
 
 List birthdays happening in the next N days.
 
-Authentication options:
-- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
-- Tool parameter fallback: include `token` in the payload
-
 ```json
 {
-  "token": "$BIRTHDAY_API_TOKEN",
   "days": 30
 }
 ```
@@ -190,13 +179,8 @@ Authentication options:
 
 Look up birthdays by name. Uses case-insensitive substring matching, so partial names work (e.g. `"Anna"` matches `"Anna Smith"` and `"Anna Jones"`).
 
-Authentication options:
-- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
-- Tool parameter fallback: include `token` in the payload
-
 ```json
 {
-  "token": "$BIRTHDAY_API_TOKEN",
   "name": "Jane"
 }
 ```
@@ -231,13 +215,8 @@ If no match is found, `count` is `0` and `matches` is an empty array.
 
 Add a new birthday.
 
-Authentication options:
-- Global header (recommended): `Authorization: Bearer $BIRTHDAY_API_TOKEN`
-- Tool parameter fallback: include `token` in the payload
-
 ```json
 {
-  "token": "$BIRTHDAY_API_TOKEN",
   "name": "John Smith",
   "birth_date": "1985-12-25",
   "email": "john@example.com",
@@ -256,29 +235,20 @@ If you use header authentication, all fields except `name` and `birth_date` are 
 
 Not supported via MCP. Use the web interface to delete birthdays.
 
-## Token Persistence
+## Session-Based Authentication
 
-**Important**: MCP endpoints are stateless. Each new session loses context.
+**How it works**: Your API token is verified once when the MCP session is initialized. The server binds your identity to the MCP session, so subsequent tool calls are authenticated automatically.
 
-### Solutions:
+### Setup:
 
 1. **Environment Variables** (Recommended)
    - Set `BIRTHDAY_API_TOKEN` in your system environment
-   - Reference it in all tool calls
    - Most secure for local clients
 
 2. **MCP Config Header**
-  - Configure your MCP server entry with:
-  - `Authorization: Bearer ${BIRTHDAY_API_TOKEN}`
-  - Best for clients that support static/dynamic headers per MCP server
-
-3. **System Prompt**
-  - If headers are not supported, instruct the model to include `token` in each tool call
-
-4. **Config File**
-   - Store the token in your MCP client's config
-  - Reference it in headers where supported, otherwise tool arguments
-   - Keep config file permissions restrictive
+   - Configure your MCP server entry with:
+   - `Authorization: Bearer ${BIRTHDAY_API_TOKEN}`
+   - Best for clients that support static/dynamic headers per MCP server
 
 ## Security Best Practices
 

@@ -339,6 +339,7 @@ dependencies = [
  "chrono",
  "clap",
  "csv",
+ "futures-core",
  "hex",
  "ipnet",
  "lettre",

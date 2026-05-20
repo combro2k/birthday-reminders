@@ -13,22 +13,15 @@ task_local! {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-pub struct ListBirthdaysInput {
-    #[serde(default)]
-    pub token: Option<String>,
-}
+pub struct ListBirthdaysInput {}
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct UpcomingBirthdaysInput {
-    #[serde(default)]
-    pub token: Option<String>,
     pub days: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct AddBirthdayInput {
-    #[serde(default)]
-    pub token: Option<String>,
     pub name: String,
     pub birth_date: String,
     pub email: Option<String>,
@@ -42,15 +35,11 @@ pub struct AddBirthdayInput {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct RemoveBirthdayInput {
-    #[serde(default)]
-    pub token: Option<String>,
     pub id: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct GetBirthdayByNameInput {
-    #[serde(default)]
-    pub token: Option<String>,
     /// Name or partial name to search for (case-insensitive substring match).
     pub name: String,
 }
@@ -98,9 +87,9 @@ struct RemoveBirthdayNotSupportedResponse {
 
 pub async fn list_birthdays(
     state: &AppState,
-    input: ListBirthdaysInput,
+    _input: ListBirthdaysInput,
 ) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id(state, &input.token).await?;
+    let user_id = resolve_user_id()?;
     let birthdays = state
         .birthday_query_service
         .list_all(&user_id)
@@ -123,7 +112,7 @@ pub async fn upcoming_birthdays(
     state: &AppState,
     input: UpcomingBirthdaysInput,
 ) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id(state, &input.token).await?;
+    let user_id = resolve_user_id()?;
     let days = input.days.unwrap_or(30);
     if days > 3660 {
         return Err(ErrorData::invalid_params(
@@ -153,7 +142,7 @@ pub async fn upcoming_birthdays(
 }
 
 pub async fn add_birthday(state: &AppState, input: AddBirthdayInput) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id(state, &input.token).await?;
+    let user_id = resolve_user_id()?;
 
     let name = input.name.trim().to_string();
     if name.is_empty() {
@@ -194,7 +183,7 @@ pub async fn get_birthday_by_name(
     state: &AppState,
     input: GetBirthdayByNameInput,
 ) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id(state, &input.token).await?;
+    let user_id = resolve_user_id()?;
 
     let name = input.name.trim().to_string();
     if name.is_empty() {
@@ -225,10 +214,10 @@ pub async fn get_birthday_by_name(
 }
 
 pub async fn remove_birthday_not_supported(
-    state: &AppState,
+    _state: &AppState,
     input: RemoveBirthdayInput,
 ) -> Result<String, ErrorData> {
-    let _ = resolve_user_id(state, &input.token).await?;
+    let _ = resolve_user_id()?;
 
     let response = RemoveBirthdayNotSupportedResponse {
         supported: false,
@@ -240,27 +229,15 @@ pub async fn remove_birthday_not_supported(
         .map_err(|e| ErrorData::internal_error(format!("Failed to serialize result: {e}"), None))
 }
 
-async fn resolve_user_id(state: &AppState, token: &Option<String>) -> Result<UserId, ErrorData> {
-    if let Ok(user_id) = HTTP_AUTH_USER_ID.try_with(|user_id| user_id.clone()) {
-        return Ok(user_id);
-    }
-
-    let token = token
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| {
+fn resolve_user_id() -> Result<UserId, ErrorData> {
+    HTTP_AUTH_USER_ID
+        .try_with(|user_id| user_id.clone())
+        .map_err(|_| {
             ErrorData::invalid_params(
-                "token is required when Authorization Bearer token is not configured",
+                "Not authenticated. Provide an Authorization: Bearer <token> header when initializing the MCP session.",
                 None,
             )
-        })?;
-
-    state
-        .user_command_service
-        .resolve_api_token(token, &state.db)
-        .await
-        .map_err(|_| ErrorData::invalid_params("Invalid API token", None))
+        })
 }
 
 fn to_output(birthday: &Birthday, today: NaiveDate) -> BirthdayOutput {

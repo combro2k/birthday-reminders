@@ -184,12 +184,19 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         .with_state(state.clone());
 
     if state.config.mcp.enabled {
-        let mcp_service =
-            crate::mcp::presentation::streamable_http::build_streamable_http_service(state.clone());
+        let session_manager = std::sync::Arc::new(
+            crate::mcp::infrastructure::session::AuthenticatedSessionManager::default(),
+        );
+        let mcp_service = crate::mcp::presentation::streamable_http::build_streamable_http_service(
+            state.clone(),
+            session_manager.clone(),
+        );
+        let mcp_auth_state =
+            crate::mcp::infrastructure::auth::McpAuthState::new(state.clone(), session_manager);
         app = app.route_service(
             &state.config.mcp.path,
             any_service(mcp_service).layer(middleware::from_fn_with_state(
-                state.clone(),
+                mcp_auth_state,
                 crate::mcp::infrastructure::auth::mcp_auth_middleware,
             )),
         );

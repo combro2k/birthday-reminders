@@ -74,6 +74,7 @@ syslog = "7"
 # Utilities
 anyhow = "1"
 thiserror = "2"
+futures-core = "0.3"
 uuid = { version = "1", features = ["v4", "serde"] }
 async-trait = "0.1"
 ipnet = "2"
