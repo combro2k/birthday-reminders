@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-05-20
+
+### Changed
+- MCP authentication now binds users to `Mcp-Session-Id` server sessions after initial bearer-token authentication, so MCP tools no longer require passing token parameters on every call.
+- Added MCP session-user binding cleanup via an authenticated session manager wrapper to keep auth state consistent when sessions close.
+
 ## [1.2.0] - 2026-05-18
 
 ### Added
