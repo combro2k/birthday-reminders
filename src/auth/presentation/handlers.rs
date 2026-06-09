@@ -16,12 +16,19 @@ use crate::infrastructure::web::server::AppState;
 pub struct LoginForm {
     pub username: String,
     pub password: String,
+    pub next: Option<String>,
+}
+
+#[derive(Deserialize, Default)]
+pub struct LoginQuery {
+    pub next: Option<String>,
 }
 
 async fn build_login_template(
     state: &AppState,
     session: &Session,
     error: Option<String>,
+    next: Option<String>,
 ) -> LoginTemplate {
     LoginTemplate {
         error,
@@ -35,11 +42,16 @@ async fn build_login_template(
             .unwrap_or_default(),
         registration_enabled: state.config.auth.allow_registration,
         csrf_token: get_csrf_token(session).await,
+        next,
     }
 }
 
-pub async fn login_page(State(state): State<Arc<AppState>>, session: Session) -> impl IntoResponse {
-    let template = build_login_template(&state, &session, None).await;
+pub async fn login_page(
+    State(state): State<Arc<AppState>>,
+    session: Session,
+    Query(params): Query<LoginQuery>,
+) -> impl IntoResponse {
+    let template = build_login_template(&state, &session, None, params.next).await;
     Html(template.to_string())
 }
 
@@ -57,10 +69,12 @@ pub async fn login_submit(
             if set_user_id(&session, &user.id).await.is_err() {
                 return Redirect::to("/auth/login").into_response();
             }
-            Redirect::to("/").into_response()
+            let target = safe_next_path(form.next.as_deref()).unwrap_or("/");
+            Redirect::to(target).into_response()
         }
         Err(e) => {
-            let template = build_login_template(&state, &session, Some(e.to_string())).await;
+            let template =
+                build_login_template(&state, &session, Some(e.to_string()), form.next).await;
             Html(template.to_string()).into_response()
         }
     }
@@ -84,7 +98,8 @@ pub async fn oidc_login(State(state): State<Arc<AppState>>, session: Session) ->
         }
         Err(e) => {
             let template =
-                build_login_template(&state, &session, Some(format!("OIDC error: {}", e))).await;
+                build_login_template(&state, &session, Some(format!("OIDC error: {}", e)), None)
+                    .await;
             Html(template.to_string()).into_response()
         }
     }
@@ -133,9 +148,18 @@ pub async fn oidc_callback(
             Redirect::to("/").into_response()
         }
         Err(e) => {
-            let template = build_login_template(&state, &session, Some(e.to_string())).await;
+            let template = build_login_template(&state, &session, Some(e.to_string()), None).await;
             Html(template.to_string()).into_response()
         }
+    }
+}
+
+fn safe_next_path(next: Option<&str>) -> Option<&str> {
+    let candidate = next?.trim();
+    if candidate.starts_with('/') && !candidate.starts_with("//") {
+        Some(candidate)
+    } else {
+        None
     }
 }
 

@@ -10,6 +10,7 @@ pub struct LoginTemplate {
     pub oidc_provider_name: String,
     pub registration_enabled: bool,
     pub csrf_token: String,
+    pub next: Option<String>,
 }
 
 #[derive(Template)]

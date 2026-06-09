@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Unsubscribe - Birthday Reminders{% endblock %}
+
+{% block body_attributes %}id="page-channels-unsubscribe"{% endblock %}
+
+{% block body %}
+<div class="auth-container">
+    <h1>Birthday Reminders</h1>
+    <h2>Email Unsubscribe</h2>
+
+    {% if let Some(error_text) = error %}
+    <div class="alert alert-error">{{ error_text }}</div>
+    {% endif %}
+
+    {% if valid %}
+        {% if already_unsubscribed %}
+        <div class="alert alert-info">This email channel is already unsubscribed.</div>
+        {% else %}
+        <p>You can unsubscribe this email channel now.</p>
+        <form method="POST" action="/unsubscribe">
+            <input type="hidden" name="token" value="{{ token }}">
+            <button type="submit" class="btn btn-danger btn-full">Disable Email Notifications</button>
+        </form>
+        {% endif %}
+
+        <p class="text-center mt-1">
+            Want broader changes?
+            <a href="/auth/login?next=%2Fnotifications">Log in to manage all channels</a>
+        </p>
+    {% else %}
+    <div class="alert alert-error">This unsubscribe link is invalid or expired.</div>
+    {% endif %}
+</div>
+{% endblock %}
