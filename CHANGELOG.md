@@ -6,6 +6,18 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-10
+
+### Added
+- Full reverse proxy header support: `X-Forwarded-Proto` and `X-Forwarded-Host` are now extracted from trusted proxies alongside the existing `X-Forwarded-For` and `X-Real-IP` handling.
+- New `ClientInfo` struct inserted into request extensions by `proxy_headers_middleware`, making resolved client IP, scheme, and host available to all handlers.
+- Authentication event logging with client IP: login failures (warn), OIDC failures (warn), unauthenticated access attempts (warn), and successful logins (debug).
+- RFC 8058 List-Unsubscribe flow with one-click unsubscribe tokens for email notifications.
+
+### Changed
+- Rate limiter simplified to read client IP from `ClientInfo` extensions instead of re-computing independently.
+- `trusted_proxies` config now controls trust for all forwarded headers (`X-Forwarded-For`, `X-Real-IP`, `X-Forwarded-Proto`, `X-Forwarded-Host`).
+
 ## [1.2.1] - 2026-05-20
 
 ### Changed
