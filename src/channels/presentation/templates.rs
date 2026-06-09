@@ -58,8 +58,18 @@ pub struct ChannelFormTemplate {
     pub csrf_token: String,
 }
 
+#[derive(Template)]
+#[template(path = "notifications/unsubscribe.html")]
+pub struct UnsubscribeTemplate {
+    pub token: String,
+    pub valid: bool,
+    pub already_unsubscribed: bool,
+    pub error: Option<String>,
+}
+
 impl AppVersion for ChannelsTemplate {}
 impl AppVersion for ChannelFormTemplate {}
+impl AppVersion for UnsubscribeTemplate {}
 
 // ---- View Models ----
 

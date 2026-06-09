@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::auth::infrastructure::crypto;
+use crate::channels::application::unsubscribe::UnsubscribeService;
 use crate::channels::domain::notification::ChannelKind;
 use crate::channels::domain::repository::{
     NotificationChannelRecord, NotificationChannelRepository,
@@ -14,6 +15,7 @@ pub struct NotificationCommandService {
     repo: Arc<dyn NotificationChannelRepository>,
     encryption_key: String,
     signal_runtime: SignalRuntimeConfig,
+    unsubscribe_service: Arc<UnsubscribeService>,
 }
 
 impl NotificationCommandService {
@@ -21,11 +23,13 @@ impl NotificationCommandService {
         repo: Arc<dyn NotificationChannelRepository>,
         encryption_key: String,
         signal_runtime: SignalRuntimeConfig,
+        unsubscribe_service: Arc<UnsubscribeService>,
     ) -> Self {
         Self {
             repo,
             encryption_key,
             signal_runtime,
+            unsubscribe_service,
         }
     }
 
@@ -88,6 +92,16 @@ impl NotificationCommandService {
             .upsert(user_id, channel_type, enabled, encrypted_config)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to save channel: {}", e))?;
+
+        if channel_type == "email"
+            && enabled
+            && let Err(e) = self
+                .unsubscribe_service
+                .invalidate_tokens(user_id, channel_type)
+                .await
+        {
+            tracing::warn!("Failed to invalidate unsubscribe tokens: {}", e);
+        }
 
         // Return the record with decrypted config for display
         let mut decrypted = record;

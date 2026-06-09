@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::{
     Form,
     extract::{Extension, Path, Query, State},
+    http::StatusCode,
     response::{Html, IntoResponse, Redirect},
 };
 use serde::Deserialize;
@@ -16,7 +17,7 @@ use crate::channels::domain::notification_config::{
 };
 use crate::channels::domain::repository::NotificationChannelRecord;
 use crate::channels::presentation::templates::{
-    ChannelFormTemplate, ChannelGroupView, ChannelKindView, ChannelsTemplate,
+    ChannelFormTemplate, ChannelGroupView, ChannelKindView, ChannelsTemplate, UnsubscribeTemplate,
 };
 use crate::infrastructure::web::server::AppState;
 use crate::users::domain::user::User;
@@ -30,6 +31,315 @@ pub struct TestResultQuery {
 #[derive(Debug, Deserialize, Default)]
 pub struct TestChannelForm {
     pub source: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct UnsubscribeQuery {
+    pub token: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct UnsubscribeForm {
+    pub token: Option<String>,
+}
+
+pub async fn unsubscribe_page(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<UnsubscribeQuery>,
+) -> impl IntoResponse {
+    let token = query.token.unwrap_or_default();
+
+    if token.is_empty() {
+        let template = UnsubscribeTemplate {
+            token,
+            valid: false,
+            already_unsubscribed: false,
+            error: Some("Missing unsubscribe token".to_string()),
+        };
+        return Html(template.to_string()).into_response();
+    }
+
+    match state.unsubscribe_service.find_token(&token).await {
+        Ok(Some(found)) => {
+            let template = UnsubscribeTemplate {
+                token,
+                valid: found.is_valid() || found.used_at.is_some(),
+                already_unsubscribed: found.used_at.is_some(),
+                error: None,
+            };
+            Html(template.to_string()).into_response()
+        }
+        Ok(None) => {
+            let template = UnsubscribeTemplate {
+                token,
+                valid: false,
+                already_unsubscribed: false,
+                error: Some("Invalid unsubscribe token".to_string()),
+            };
+            Html(template.to_string()).into_response()
+        }
+        Err(e) => {
+            let template = UnsubscribeTemplate {
+                token,
+                valid: false,
+                already_unsubscribed: false,
+                error: Some(format!("Failed to verify token: {}", e)),
+            };
+            Html(template.to_string()).into_response()
+        }
+    }
+}
+
+pub async fn unsubscribe_post(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<UnsubscribeQuery>,
+    Form(form): Form<UnsubscribeForm>,
+) -> impl IntoResponse {
+    let token = form.token.or(query.token).unwrap_or_default();
+    if token.is_empty() {
+        return (StatusCode::BAD_REQUEST, "Missing unsubscribe token").into_response();
+    }
+
+    match state.unsubscribe_service.process_unsubscribe(&token).await {
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    use axum::{
+        body::to_bytes,
+        extract::{Form, Query, State},
+        response::IntoResponse,
+    };
+    use serde_json::json;
+    use uuid::Uuid;
+
+    use crate::auth::application::auth_service::AuthService;
+    use crate::birthdays::application::commands::BirthdayCommandService;
+    use crate::birthdays::application::queries::BirthdayQueryService;
+    use crate::channels::application::commands::NotificationCommandService;
+    use crate::channels::application::unsubscribe::UnsubscribeService;
+    use crate::channels::infrastructure::signal::{SignalRuntimeConfig, SignalTransport};
+    use crate::infrastructure::config::{
+        AppConfig, AuthConfig, CommandsConfig, DatabaseConfig, LoggingConfig, McpConfig,
+        RemindersConfig, ServerConfig,
+    };
+    use crate::infrastructure::database::{DatabasePool, Repositories};
+    use crate::infrastructure::web::server::AppState;
+    use crate::users::application::commands::UserCommandService;
+
+    fn test_config() -> AppConfig {
+        AppConfig {
+            database: DatabaseConfig {
+                url: "sqlite://:memory:".to_string(),
+                max_connections: 5,
+            },
+            server: ServerConfig {
+                listen: "127.0.0.1:0".to_string(),
+                base_url: Some("http://localhost:8080".to_string()),
+                server_name: Some("localhost:8080".to_string()),
+                scheme: "http".to_string(),
+                session_secret: "0123456789abcdef0123456789abcdef".to_string(),
+                encryption_key: "test-encryption-key-for-tests-32-bytes".to_string(),
+                trusted_proxies: vec![],
+                run_as_user: "root".to_string(),
+                run_as_group: "root".to_string(),
+            },
+            auth: AuthConfig {
+                allow_registration: true,
+                oidc: None,
+            },
+            reminders: RemindersConfig {
+                schedule: "0 0 8 * * *".to_string(),
+                default_days_before: vec![7, 3, 1, 0],
+            },
+            mcp: McpConfig::default(),
+            commands: CommandsConfig::default(),
+            logging: LoggingConfig::default(),
+        }
+    }
+
+    async fn build_test_state() -> Arc<AppState> {
+        let db = DatabasePool::connect("sqlite://:memory:", 5)
+            .await
+            .expect("connect sqlite in-memory db");
+        db.run_migrations(false).await.expect("run migrations");
+
+        let Repositories {
+            user_repo,
+            birthday_repo,
+            notification_repo,
+            unsubscribe_token_repo,
+        } = Repositories::new(&db);
+
+        let signal_runtime = SignalRuntimeConfig {
+            transport: SignalTransport::Cli {
+                binary_path: "signal-cli".to_string(),
+            },
+        };
+
+        let unsubscribe_service = Arc::new(UnsubscribeService::new(
+            unsubscribe_token_repo,
+            notification_repo.clone(),
+        ));
+
+        let notification_service = NotificationCommandService::new(
+            notification_repo.clone(),
+            "test-encryption-key-for-tests-32-bytes".to_string(),
+            signal_runtime,
+            unsubscribe_service.clone(),
+        );
+
+        Arc::new(AppState {
+            db: db.clone(),
+            config: test_config(),
+            auth_service: AuthService::new(user_repo.clone(), None, false, "user".to_string()),
+            user_command_service: UserCommandService::new(user_repo.clone()),
+            birthday_command_service: BirthdayCommandService::new(birthday_repo.clone()),
+            birthday_query_service: BirthdayQueryService::new(birthday_repo),
+            notification_service,
+            unsubscribe_service,
+            user_repo,
+            oidc_client: None,
+        })
+    }
+
+    async fn seed_user_channel_and_token(state: &AppState, token: &str) -> Uuid {
+        let pool = match &state.db {
+            DatabasePool::Sqlite(pool) => pool,
+            _ => panic!("test expects sqlite database"),
+        };
+
+        let user_id = Uuid::new_v4();
+        let channel_id = Uuid::new_v4();
+        let token_id = Uuid::new_v4();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        sqlx::query(
+            "INSERT INTO users (id, username, email, password_hash, role, auth_method, date_format, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(user_id.to_string())
+        .bind("u1")
+        .bind("u1@example.com")
+        .bind("hash")
+        .bind("user")
+        .bind("local")
+        .bind("%d-%m-%Y")
+        .bind(&now)
+        .bind(&now)
+        .execute(pool)
+        .await
+        .expect("insert user");
+
+        sqlx::query(
+            "INSERT INTO notification_channels (id, user_id, channel_type, enabled, config, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(channel_id.to_string())
+        .bind(user_id.to_string())
+        .bind("email")
+        .bind(true)
+        .bind(json!({"provider":"gmail","username":"a@b.com","password":"secret","to":"a@b.com"}).to_string())
+        .bind(&now)
+        .bind(&now)
+        .execute(pool)
+        .await
+        .expect("insert email channel");
+
+        sqlx::query(
+            "INSERT INTO unsubscribe_tokens (id, user_id, channel_type, token, created_at)
+             VALUES (?, ?, ?, ?, ?)",
+        )
+        .bind(token_id.to_string())
+        .bind(user_id.to_string())
+        .bind("email")
+        .bind(token)
+        .bind(&now)
+        .execute(pool)
+        .await
+        .expect("insert unsubscribe token");
+
+        user_id
+    }
+
+    #[tokio::test]
+    async fn unsubscribe_post_disables_channel_and_marks_token_used() {
+        let state = build_test_state().await;
+        let token = "us_test_token_1";
+        let user_id = seed_user_channel_and_token(&state, token).await;
+
+        let response = unsubscribe_post(
+            State(state.clone()),
+            Query(UnsubscribeQuery::default()),
+            Form(UnsubscribeForm {
+                token: Some(token.to_string()),
+            }),
+        )
+        .await
+        .into_response();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let pool = match &state.db {
+            DatabasePool::Sqlite(pool) => pool,
+            _ => panic!("test expects sqlite database"),
+        };
+
+        let enabled: i64 = sqlx::query_scalar(
+            "SELECT enabled FROM notification_channels WHERE user_id = ? AND channel_type = ?",
+        )
+        .bind(user_id.to_string())
+        .bind("email")
+        .fetch_one(pool)
+        .await
+        .expect("fetch updated channel enabled flag");
+        assert_eq!(enabled, 0);
+
+        let used_at: Option<String> =
+            sqlx::query_scalar("SELECT used_at FROM unsubscribe_tokens WHERE token = ?")
+                .bind(token)
+                .fetch_one(pool)
+                .await
+                .expect("fetch token used_at");
+        assert!(used_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn unsubscribe_post_missing_token_returns_bad_request() {
+        let state = build_test_state().await;
+
+        let response = unsubscribe_post(
+            State(state),
+            Query(UnsubscribeQuery::default()),
+            Form(UnsubscribeForm::default()),
+        )
+        .await
+        .into_response();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn unsubscribe_page_missing_token_shows_message() {
+        let state = build_test_state().await;
+
+        let response = unsubscribe_page(State(state), Query(UnsubscribeQuery::default()))
+            .await
+            .into_response();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("read response body");
+        let text = String::from_utf8_lossy(&body);
+        assert!(text.contains("Missing unsubscribe token"));
+    }
 }
 
 pub async fn list_channels(

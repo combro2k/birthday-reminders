@@ -20,13 +20,14 @@ use auth::infrastructure::oidc::OidcClient;
 use birthdays::application::commands::BirthdayCommandService;
 use birthdays::application::queries::BirthdayQueryService;
 use channels::application::commands::NotificationCommandService;
+use channels::application::unsubscribe::UnsubscribeService;
 use channels::infrastructure::signal::{SignalRuntimeConfig, SignalTransport};
 use cli::commands::{Cli, Commands};
 use infrastructure::config::AppConfig;
 use infrastructure::config::SignalTransportMode;
 use infrastructure::database::{DatabasePool, Repositories};
 use infrastructure::web::server::{self, AppState};
-use reminders::application::reminder_job::ReminderJobService;
+use reminders::application::reminder_job::{ReminderJobOptions, ReminderJobService};
 use users::application::commands::UserCommandService;
 
 #[tokio::main]
@@ -97,6 +98,7 @@ async fn main() -> anyhow::Result<()> {
     let user_repo = repos.user_repo;
     let birthday_repo = repos.birthday_repo;
     let notification_repo = repos.notification_repo;
+    let unsubscribe_token_repo = repos.unsubscribe_token_repo;
 
     let signal_runtime = SignalRuntimeConfig {
         transport: match config.commands.signal_transport {
@@ -113,19 +115,34 @@ async fn main() -> anyhow::Result<()> {
     let user_cmd_svc = UserCommandService::new(user_repo.clone());
     let birthday_cmd_svc = BirthdayCommandService::new(birthday_repo.clone());
     let birthday_query_svc = BirthdayQueryService::new(birthday_repo.clone());
+    let unsubscribe_svc = Arc::new(UnsubscribeService::new(
+        unsubscribe_token_repo.clone(),
+        notification_repo.clone(),
+    ));
     let notification_svc = NotificationCommandService::new(
         notification_repo.clone(),
         config.server.encryption_key.clone(),
         signal_runtime.clone(),
+        unsubscribe_svc.clone(),
     );
+
+    let base_url = config
+        .server
+        .public_base_url()
+        .map(|u| u.to_string())
+        .unwrap_or_else(|_| "http://localhost:8080".to_string());
 
     let reminder_svc = Arc::new(ReminderJobService::new(
         user_repo.clone(),
         birthday_repo.clone(),
         notification_repo.clone(),
-        config.reminders.default_days_before.clone(),
-        config.server.encryption_key.clone(),
-        signal_runtime,
+        ReminderJobOptions {
+            default_days_before: config.reminders.default_days_before.clone(),
+            encryption_key: config.server.encryption_key.clone(),
+            signal_runtime,
+            unsubscribe_service: unsubscribe_svc.clone(),
+            base_url,
+        },
     ));
 
     // Handle commands
@@ -202,6 +219,7 @@ async fn main() -> anyhow::Result<()> {
             birthday_command_service: birthday_cmd_svc,
             birthday_query_service: birthday_query_svc,
             notification_service: notification_svc,
+            unsubscribe_service: unsubscribe_svc,
             user_repo: user_repo.clone(),
             oidc_client,
         });

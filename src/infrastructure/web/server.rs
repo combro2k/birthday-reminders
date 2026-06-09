@@ -19,6 +19,7 @@ use crate::auth::infrastructure::oidc::OidcClient;
 use crate::birthdays::application::commands::BirthdayCommandService;
 use crate::birthdays::application::queries::BirthdayQueryService;
 use crate::channels::application::commands::NotificationCommandService;
+use crate::channels::application::unsubscribe::UnsubscribeService;
 use crate::infrastructure::config::AppConfig;
 use crate::infrastructure::database::DatabasePool;
 use crate::users::application::commands::UserCommandService;
@@ -42,6 +43,7 @@ pub struct AppState {
     pub birthday_command_service: BirthdayCommandService,
     pub birthday_query_service: BirthdayQueryService,
     pub notification_service: NotificationCommandService,
+    pub unsubscribe_service: Arc<UnsubscribeService>,
     pub user_repo: Arc<dyn UserRepository>,
     pub oidc_client: Option<Arc<OidcClient>>,
 }
@@ -109,6 +111,10 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
     let public = Router::new()
         .route("/health", get(health_check))
         .route("/offline", get(offline_page))
+        .route(
+            "/unsubscribe",
+            get(notifications::unsubscribe_page).post(notifications::unsubscribe_post),
+        )
         .merge(auth_routes);
 
     // Protected routes (auth required)

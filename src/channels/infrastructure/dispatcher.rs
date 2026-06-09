@@ -13,10 +13,25 @@ use super::sms::SmsSender;
 use super::telegram::TelegramSender;
 use super::whatsapp::WhatsappSender;
 
+/// Context for email-specific features (List-Unsubscribe headers).
+pub struct EmailContext {
+    pub unsubscribe_url: String,
+    pub list_id_domain: String,
+}
+
 /// Build a NotificationSender from a channel record
 pub fn build_sender(
     record: &NotificationChannelRecord,
     signal_runtime: &SignalRuntimeConfig,
+) -> Result<Box<dyn NotificationSender>, NotificationError> {
+    build_sender_with_email_ctx(record, signal_runtime, None)
+}
+
+/// Build a NotificationSender, optionally with email unsubscribe context.
+pub fn build_sender_with_email_ctx(
+    record: &NotificationChannelRecord,
+    signal_runtime: &SignalRuntimeConfig,
+    email_ctx: Option<&EmailContext>,
 ) -> Result<Box<dyn NotificationSender>, NotificationError> {
     let kind = ChannelKind::from_str(&record.channel_type).ok_or_else(|| {
         NotificationError::InvalidConfig(format!("Unknown channel type: {}", record.channel_type))
@@ -31,7 +46,12 @@ pub fn build_sender(
         ChannelKind::Email => {
             let config: EmailConfig = serde_json::from_value(record.config.clone())
                 .map_err(|e| NotificationError::InvalidConfig(e.to_string()))?;
-            Ok(Box::new(EmailSender::new(config)))
+            let mut sender = EmailSender::new(config);
+            if let Some(ctx) = email_ctx {
+                sender = sender
+                    .with_unsubscribe(ctx.unsubscribe_url.clone(), ctx.list_id_domain.clone());
+            }
+            Ok(Box::new(sender))
         }
         ChannelKind::Telegram => {
             let config: TelegramConfig = serde_json::from_value(record.config.clone())

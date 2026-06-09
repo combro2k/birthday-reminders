@@ -13,9 +13,13 @@ use crate::birthdays::infrastructure::mysql_repo::MysqlBirthdayRepo;
 use crate::birthdays::infrastructure::pg_repo::PgBirthdayRepo;
 use crate::birthdays::infrastructure::sqlite_repo::SqliteBirthdayRepo;
 use crate::channels::domain::repository::NotificationChannelRepository;
+use crate::channels::domain::unsubscribe_token_repository::UnsubscribeTokenRepository;
 use crate::channels::infrastructure::mysql_repo::MysqlNotificationRepo;
+use crate::channels::infrastructure::mysql_unsubscribe_repo::MysqlUnsubscribeTokenRepo;
 use crate::channels::infrastructure::pg_repo::PgNotificationRepo;
+use crate::channels::infrastructure::pg_unsubscribe_repo::PgUnsubscribeTokenRepo;
 use crate::channels::infrastructure::sqlite_repo::SqliteNotificationRepo;
+use crate::channels::infrastructure::sqlite_unsubscribe_repo::SqliteUnsubscribeTokenRepo;
 use crate::users::domain::repository::UserRepository;
 use crate::users::infrastructure::mysql_repo::MysqlUserRepo;
 use crate::users::infrastructure::pg_repo::PgUserRepo;
@@ -118,6 +122,7 @@ pub struct Repositories {
     pub user_repo: Arc<dyn UserRepository>,
     pub birthday_repo: Arc<dyn BirthdayRepository>,
     pub notification_repo: Arc<dyn NotificationChannelRepository>,
+    pub unsubscribe_token_repo: Arc<dyn UnsubscribeTokenRepository>,
 }
 
 impl Repositories {
@@ -127,16 +132,19 @@ impl Repositories {
                 user_repo: Arc::new(PgUserRepo::new(pg.clone())),
                 birthday_repo: Arc::new(PgBirthdayRepo::new(pg.clone())),
                 notification_repo: Arc::new(PgNotificationRepo::new(pg.clone())),
+                unsubscribe_token_repo: Arc::new(PgUnsubscribeTokenRepo::new(pg.clone())),
             },
             DatabasePool::Sqlite(sqlite) => Self {
                 user_repo: Arc::new(SqliteUserRepo::new(sqlite.clone())),
                 birthday_repo: Arc::new(SqliteBirthdayRepo::new(sqlite.clone())),
                 notification_repo: Arc::new(SqliteNotificationRepo::new(sqlite.clone())),
+                unsubscribe_token_repo: Arc::new(SqliteUnsubscribeTokenRepo::new(sqlite.clone())),
             },
             DatabasePool::Mysql(mysql) => Self {
                 user_repo: Arc::new(MysqlUserRepo::new(mysql.clone())),
                 birthday_repo: Arc::new(MysqlBirthdayRepo::new(mysql.clone())),
                 notification_repo: Arc::new(MysqlNotificationRepo::new(mysql.clone())),
+                unsubscribe_token_repo: Arc::new(MysqlUnsubscribeTokenRepo::new(mysql.clone())),
             },
         }
     }

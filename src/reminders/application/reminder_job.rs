@@ -7,10 +7,11 @@ use tracing::{error, info, warn};
 
 use crate::auth::infrastructure::crypto;
 use crate::birthdays::domain::repository::BirthdayRepository;
+use crate::channels::application::unsubscribe::UnsubscribeService;
 use crate::channels::domain::repository::{
     NotificationChannelRecord, NotificationChannelRepository,
 };
-use crate::channels::infrastructure::dispatcher;
+use crate::channels::infrastructure::dispatcher::{self, EmailContext};
 use crate::channels::infrastructure::signal::SignalRuntimeConfig;
 use crate::reminders::domain::reminder::ReminderPolicy;
 use crate::reminders::domain::services::compute_due_reminders;
@@ -24,6 +25,16 @@ pub struct ReminderJobService {
     default_days_before: Vec<u32>,
     encryption_key: String,
     signal_runtime: SignalRuntimeConfig,
+    unsubscribe_service: Arc<UnsubscribeService>,
+    base_url: String,
+}
+
+pub struct ReminderJobOptions {
+    pub default_days_before: Vec<u32>,
+    pub encryption_key: String,
+    pub signal_runtime: SignalRuntimeConfig,
+    pub unsubscribe_service: Arc<UnsubscribeService>,
+    pub base_url: String,
 }
 
 impl ReminderJobService {
@@ -31,17 +42,17 @@ impl ReminderJobService {
         user_repo: Arc<dyn UserRepository>,
         birthday_repo: Arc<dyn BirthdayRepository>,
         notification_repo: Arc<dyn NotificationChannelRepository>,
-        default_days_before: Vec<u32>,
-        encryption_key: String,
-        signal_runtime: SignalRuntimeConfig,
+        options: ReminderJobOptions,
     ) -> Self {
         Self {
             user_repo,
             birthday_repo,
             notification_repo,
-            default_days_before,
-            encryption_key,
-            signal_runtime,
+            default_days_before: options.default_days_before,
+            encryption_key: options.encryption_key,
+            signal_runtime: options.signal_runtime,
+            unsubscribe_service: options.unsubscribe_service,
+            base_url: options.base_url,
         }
     }
 
@@ -184,7 +195,33 @@ impl ReminderJobService {
                 }
 
                 // Build sender and send
-                match dispatcher::build_sender(channel, &self.signal_runtime) {
+                let email_ctx = if channel.channel_type == "email" {
+                    match self
+                        .unsubscribe_service
+                        .get_or_create_unsubscribe_url(user_id, "email", &self.base_url)
+                        .await
+                    {
+                        Ok(url) => {
+                            let domain = extract_domain(&self.base_url);
+                            Some(EmailContext {
+                                unsubscribe_url: url,
+                                list_id_domain: domain,
+                            })
+                        }
+                        Err(e) => {
+                            warn!("Failed to generate unsubscribe URL: {}", e);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                };
+
+                match dispatcher::build_sender_with_email_ctx(
+                    channel,
+                    &self.signal_runtime,
+                    email_ctx.as_ref(),
+                ) {
                     Ok(sender) => match sender.send(reminder).await {
                         Ok(()) => {
                             info!(
@@ -221,4 +258,12 @@ impl ReminderJobService {
 
         Ok(())
     }
+}
+
+/// Extract domain from a base URL for use in List-Id header.
+fn extract_domain(base_url: &str) -> String {
+    url::Url::parse(base_url)
+        .ok()
+        .and_then(|u| u.host_str().map(|s| s.to_string()))
+        .unwrap_or_else(|| "localhost".to_string())
 }
