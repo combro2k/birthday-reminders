@@ -191,8 +191,10 @@ mod tests {
 
     #[test]
     fn message_contains_list_headers_when_unsubscribe_configured() {
-        let sender = EmailSender::new(base_config())
-            .with_unsubscribe("https://example.com/unsubscribe?token=us_abc".to_string(), "example.com".to_string());
+        let sender = EmailSender::new(base_config()).with_unsubscribe(
+            "https://example.com/unsubscribe?token=us_abc".to_string(),
+            "example.com".to_string(),
+        );
 
         let msg = sender
             .build_message("Birthday Reminder", "Body")

@@ -51,10 +51,7 @@ pub async fn auth_middleware(
     }
 
     // Log the authentication failure with client IP
-    let client_ip = request
-        .extensions()
-        .get::<ClientInfo>()
-        .map(|ci| ci.ip);
+    let client_ip = request.extensions().get::<ClientInfo>().map(|ci| ci.ip);
     let path = request.uri().path().to_string();
 
     // Check if this is an API request or browser request
