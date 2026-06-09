@@ -50,6 +50,13 @@ pub async fn auth_middleware(
         return next.run(request).await;
     }
 
+    // Log the authentication failure with client IP
+    let client_ip = request
+        .extensions()
+        .get::<ClientInfo>()
+        .map(|ci| ci.ip);
+    let path = request.uri().path().to_string();
+
     // Check if this is an API request or browser request
     let is_api = request
         .headers()
@@ -58,8 +65,19 @@ pub async fn auth_middleware(
         .is_some_and(|v| v.contains("application/json"));
 
     if is_api {
+        tracing::warn!(
+            client_ip = ?client_ip,
+            path = %path,
+            method = "bearer",
+            "authentication failed for API request"
+        );
         StatusCode::UNAUTHORIZED.into_response()
     } else {
+        tracing::warn!(
+            client_ip = ?client_ip,
+            path = %path,
+            "unauthenticated browser request, redirecting to login"
+        );
         Redirect::to("/auth/login").into_response()
     }
 }
@@ -159,6 +177,15 @@ pub struct RateLimiter {
     requests: Mutex<HashMap<IpAddr, Vec<Instant>>>,
 }
 
+/// Resolved client connection info after processing reverse proxy headers.
+/// Inserted into request extensions by [`proxy_headers_middleware`].
+#[derive(Debug, Clone)]
+pub struct ClientInfo {
+    pub ip: IpAddr,
+    pub scheme: Option<String>,
+    pub host: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct ProxyTrust {
     trusted_proxies: Vec<IpNet>,
@@ -167,6 +194,29 @@ pub struct ProxyTrust {
 impl ProxyTrust {
     pub fn new(trusted_proxies: Vec<IpNet>) -> Self {
         Self { trusted_proxies }
+    }
+
+    /// Resolve all client information from proxy headers when the peer is trusted.
+    pub fn client_info(&self, headers: &HeaderMap, peer_ip: Option<IpAddr>) -> ClientInfo {
+        let ip = self
+            .client_ip(headers, peer_ip)
+            .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+
+        let trusted = peer_ip.is_some_and(|p| self.is_trusted(p));
+
+        let scheme = if trusted {
+            self.forwarded_scheme(headers)
+        } else {
+            None
+        };
+
+        let host = if trusted {
+            self.forwarded_host(headers)
+        } else {
+            None
+        };
+
+        ClientInfo { ip, scheme, host }
     }
 
     pub fn client_ip(&self, headers: &HeaderMap, peer_ip: Option<IpAddr>) -> Option<IpAddr> {
@@ -191,6 +241,34 @@ impl ProxyTrust {
         }
 
         headers.get("x-real-ip").and_then(parse_single_ip_header)
+    }
+
+    fn forwarded_scheme(&self, headers: &HeaderMap) -> Option<String> {
+        let value = headers
+            .get("x-forwarded-proto")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.trim().to_ascii_lowercase())?;
+
+        // Only accept valid schemes
+        if matches!(value.as_str(), "http" | "https") {
+            Some(value)
+        } else {
+            None
+        }
+    }
+
+    fn forwarded_host(&self, headers: &HeaderMap) -> Option<String> {
+        let value = headers
+            .get("x-forwarded-host")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.trim().to_string())?;
+
+        // Reject empty or obviously invalid host values
+        if value.is_empty() || value.contains('/') || value.contains('\\') {
+            return None;
+        }
+
+        Some(value)
     }
 
     fn is_trusted(&self, ip: IpAddr) -> bool {
@@ -226,9 +304,10 @@ impl RateLimiter {
     }
 }
 
-/// Rate limiting middleware
-pub async fn rate_limit_middleware(
-    limiter: Arc<RateLimiter>,
+/// Middleware that resolves reverse proxy headers into [`ClientInfo`] and inserts it
+/// into request extensions. Must be applied as an outer layer so inner handlers and
+/// middleware can access the resolved client information.
+pub async fn proxy_headers_middleware(
     proxy_trust: Arc<ProxyTrust>,
     request: Request,
     next: Next,
@@ -237,8 +316,30 @@ pub async fn rate_limit_middleware(
         .extensions()
         .get::<ConnectInfo<std::net::SocketAddr>>()
         .map(|ci| ci.0.ip());
-    let ip = proxy_trust
-        .client_ip(request.headers(), peer_ip)
+    let client_info = proxy_trust.client_info(request.headers(), peer_ip);
+
+    tracing::debug!(
+        client_ip = %client_info.ip,
+        forwarded_proto = client_info.scheme.as_deref().unwrap_or("-"),
+        forwarded_host = client_info.host.as_deref().unwrap_or("-"),
+        "resolved client info from proxy headers"
+    );
+
+    let mut request = request;
+    request.extensions_mut().insert(client_info);
+    next.run(request).await
+}
+
+/// Rate limiting middleware
+pub async fn rate_limit_middleware(
+    limiter: Arc<RateLimiter>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let ip = request
+        .extensions()
+        .get::<ClientInfo>()
+        .map(|ci| ci.ip)
         .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
 
     if limiter.check(ip).await {
@@ -325,5 +426,133 @@ mod tests {
         let ip = trust.client_ip(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
 
         assert_eq!(ip, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+    }
+
+    // --- X-Forwarded-Proto tests ---
+
+    #[test]
+    fn extracts_forwarded_proto_from_trusted_proxy() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-proto", "https".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.scheme.as_deref(), Some("https"));
+    }
+
+    #[test]
+    fn ignores_forwarded_proto_from_untrusted_peer() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-proto", "https".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::new(198, 51, 100, 1))));
+
+        assert_eq!(info.scheme, None);
+    }
+
+    #[test]
+    fn rejects_invalid_forwarded_proto() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-proto", "ftp".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.scheme, None);
+    }
+
+    #[test]
+    fn normalises_forwarded_proto_to_lowercase() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-proto", "HTTPS".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.scheme.as_deref(), Some("https"));
+    }
+
+    // --- X-Forwarded-Host tests ---
+
+    #[test]
+    fn extracts_forwarded_host_from_trusted_proxy() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-host", "birthdays.example.com".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.host.as_deref(), Some("birthdays.example.com"));
+    }
+
+    #[test]
+    fn extracts_forwarded_host_with_port() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "x-forwarded-host",
+            "birthdays.example.com:8443".parse().unwrap(),
+        );
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.host.as_deref(), Some("birthdays.example.com:8443"));
+    }
+
+    #[test]
+    fn ignores_forwarded_host_from_untrusted_peer() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-host", "evil.example.com".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::new(198, 51, 100, 1))));
+
+        assert_eq!(info.host, None);
+    }
+
+    #[test]
+    fn rejects_forwarded_host_with_path() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-host", "evil.com/path".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.host, None);
+    }
+
+    // --- ClientInfo integration tests ---
+
+    #[test]
+    fn client_info_resolves_all_fields_from_trusted_proxy() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-for", "203.0.113.50".parse().unwrap());
+        headers.insert("x-forwarded-proto", "https".parse().unwrap());
+        headers.insert("x-forwarded-host", "birthdays.example.com".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        assert_eq!(info.ip, IpAddr::V4(Ipv4Addr::new(203, 0, 113, 50)));
+        assert_eq!(info.scheme.as_deref(), Some("https"));
+        assert_eq!(info.host.as_deref(), Some("birthdays.example.com"));
+    }
+
+    #[test]
+    fn client_info_ignores_all_forwarded_headers_from_untrusted_peer() {
+        let trust = proxy_trust();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-for", "203.0.113.50".parse().unwrap());
+        headers.insert("x-forwarded-proto", "https".parse().unwrap());
+        headers.insert("x-forwarded-host", "evil.example.com".parse().unwrap());
+
+        let info = trust.client_info(&headers, Some(IpAddr::V4(Ipv4Addr::new(198, 51, 100, 1))));
+
+        // Untrusted peer: use the peer IP directly, ignore forwarded headers
+        assert_eq!(info.ip, IpAddr::V4(Ipv4Addr::new(198, 51, 100, 1)));
+        assert_eq!(info.scheme, None);
+        assert_eq!(info.host, None);
     }
 }
