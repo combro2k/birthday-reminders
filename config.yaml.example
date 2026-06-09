@@ -25,7 +25,9 @@ server:
   encryption_key: "generate-a-random-key-for-encryption-here"
   # Path to static files directory (default: "/var/lib/birthday-reminders/static")
   # static_dir: "/var/lib/birthday-reminders/static"
-  # Trust forwarded IP headers only from these proxy IPs or CIDR ranges (default: [])
+  # Trust forwarded headers only from these proxy IPs or CIDR ranges (default: [])
+  # When set, the app will honour X-Forwarded-For, X-Real-IP, X-Forwarded-Proto,
+  # and X-Forwarded-Host headers from requests originating from these addresses.
   # trusted_proxies:
   #   - "127.0.0.1"
   #   - "10.0.0.0/8"

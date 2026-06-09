@@ -26,7 +26,8 @@ use crate::users::application::commands::UserCommandService;
 use crate::users::domain::repository::UserRepository;
 
 use super::middleware::{
-    ProxyTrust, RateLimiter, auth_middleware, csrf_middleware, rate_limit_middleware,
+    ProxyTrust, RateLimiter, auth_middleware, csrf_middleware, proxy_headers_middleware,
+    rate_limit_middleware,
 };
 use super::openapi::openapi_spec_handler;
 use crate::auth::presentation::handlers as auth;
@@ -104,8 +105,7 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         .layer(middleware::from_fn(csrf_middleware))
         .layer(middleware::from_fn(move |req, next| {
             let limiter = auth_rate_limiter.clone();
-            let proxy_trust = proxy_trust.clone();
-            rate_limit_middleware(limiter, proxy_trust, req, next)
+            rate_limit_middleware(limiter, req, next)
         }));
 
     let public = Router::new()
@@ -187,6 +187,10 @@ fn build_app<S: tower_sessions::session_store::SessionStore + Clone>(
         .merge(protected)
         .route("/static/{*path}", get(static_handler))
         .layer(session_layer)
+        .layer(middleware::from_fn(move |req, next| {
+            let proxy_trust = proxy_trust.clone();
+            proxy_headers_middleware(proxy_trust, req, next)
+        }))
         .with_state(state.clone());
 
     if state.config.mcp.enabled {

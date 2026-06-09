@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    Form,
+    Extension, Form,
     extract::{Query, State},
     response::{Html, IntoResponse, Redirect},
 };
@@ -10,6 +10,7 @@ use tower_sessions::Session;
 
 use crate::auth::infrastructure::session::{clear_session, get_csrf_token, set_user_id};
 use crate::auth::presentation::templates::{LoginTemplate, RegisterTemplate};
+use crate::infrastructure::web::middleware::ClientInfo;
 use crate::infrastructure::web::server::AppState;
 
 #[derive(Deserialize)]
@@ -58,8 +59,11 @@ pub async fn login_page(
 pub async fn login_submit(
     State(state): State<Arc<AppState>>,
     session: Session,
+    client_info: Option<Extension<ClientInfo>>,
     Form(form): Form<LoginForm>,
 ) -> impl IntoResponse {
+    let client_ip = client_info.map(|Extension(ci)| ci.ip);
+
     match state
         .auth_service
         .login_local(&form.username, &form.password)
@@ -69,10 +73,12 @@ pub async fn login_submit(
             if set_user_id(&session, &user.id).await.is_err() {
                 return Redirect::to("/auth/login").into_response();
             }
+            tracing::debug!(client_ip = ?client_ip, username = %form.username, "login succeeded");
             let target = safe_next_path(form.next.as_deref()).unwrap_or("/");
             Redirect::to(target).into_response()
         }
         Err(e) => {
+            tracing::warn!(client_ip = ?client_ip, username = %form.username, "login failed");
             let template =
                 build_login_template(&state, &session, Some(e.to_string()), form.next).await;
             Html(template.to_string()).into_response()
@@ -114,8 +120,10 @@ pub struct OidcCallback {
 pub async fn oidc_callback(
     State(state): State<Arc<AppState>>,
     session: Session,
+    client_info: Option<Extension<ClientInfo>>,
     Query(params): Query<OidcCallback>,
 ) -> impl IntoResponse {
+    let client_ip = client_info.map(|Extension(ci)| ci.ip);
     // Retrieve flow state from session
     let flow_state_json: Option<String> = session.get(OIDC_STATE_KEY).await.ok().flatten();
     let _ = session.remove::<String>(OIDC_STATE_KEY).await;
@@ -133,6 +141,7 @@ pub async fn oidc_callback(
 
     // Verify CSRF
     if params.state != flow_state.csrf_token {
+        tracing::warn!(client_ip = ?client_ip, "OIDC callback CSRF mismatch");
         return Redirect::to("/auth/login").into_response();
     }
 
@@ -145,9 +154,11 @@ pub async fn oidc_callback(
             if set_user_id(&session, &user.id).await.is_err() {
                 return Redirect::to("/auth/login").into_response();
             }
+            tracing::debug!(client_ip = ?client_ip, user_id = ?user.id, "OIDC login succeeded");
             Redirect::to("/").into_response()
         }
         Err(e) => {
+            tracing::warn!(client_ip = ?client_ip, error = %e, "OIDC login failed");
             let template = build_login_template(&state, &session, Some(e.to_string()), None).await;
             Html(template.to_string()).into_response()
         }
