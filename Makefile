@@ -12,6 +12,7 @@ PACKAGE_DIR = target/package/$(PACKAGE_NAME)
 all: build
 
 build-css:
+	npm ci
 	npm run build:css
 
 build: build-css
