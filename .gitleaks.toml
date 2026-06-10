@@ -1,0 +1,3 @@
+[allowlist]
+description = "Allow test fixture values"
+commits = ["01b580d86e4474931a0525af6c3793fc98c1c767"]

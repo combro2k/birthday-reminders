@@ -143,7 +143,11 @@ pub async fn upcoming_birthdays(
         .map_err(|e| ErrorData::internal_error(format!("Failed to serialize result: {e}"), None))
 }
 
-pub async fn add_birthday(state: &AppState, input: AddBirthdayInput, user_id: Option<&UserId>) -> Result<String, ErrorData> {
+pub async fn add_birthday(
+    state: &AppState,
+    input: AddBirthdayInput,
+    user_id: Option<&UserId>,
+) -> Result<String, ErrorData> {
     let user_id = resolve_user_id(user_id)?;
 
     let name = input.name.trim().to_string();

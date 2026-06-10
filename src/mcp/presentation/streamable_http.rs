@@ -9,8 +9,8 @@ use rmcp::{
 
 use crate::infrastructure::web::server::AppState;
 use crate::mcp::application::birthdays::{
-    AddBirthdayInput, GetBirthdayByNameInput, ListBirthdaysInput, RemoveBirthdayInput,
-    UpcomingBirthdaysInput, HTTP_AUTH_USER_ID,
+    AddBirthdayInput, GetBirthdayByNameInput, HTTP_AUTH_USER_ID, ListBirthdaysInput,
+    RemoveBirthdayInput, UpcomingBirthdaysInput,
 };
 use crate::mcp::application::setup_guide;
 use crate::users::domain::user::UserId;

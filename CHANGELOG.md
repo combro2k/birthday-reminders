@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-10
+
+### Fixed
+- MCP Bearer token authentication failing in spawned tasks due to missing token propagation.
+- Tailwind CSS input file migrated to v4 `@import` syntax.
+- Makefile now runs `npm ci` before building CSS to ensure dependencies are present.
+
+### Changed
+- CSS build step is now conditional in `release-check.sh` and optional in the Makefile.
+
 ## [1.3.0] - 2026-06-10
 
 ### Added
@@ -19,6 +29,9 @@ The format is based on Keep a Changelog and this project uses semantic versionin
 - `trusted_proxies` config now controls trust for all forwarded headers (`X-Forwarded-For`, `X-Real-IP`, `X-Forwarded-Proto`, `X-Forwarded-Host`).
 
 ## [1.2.1] - 2026-05-20
+
+### Fixed
+- Corrected SQL migration issues across all three database backends (SQLite, MySQL, PostgreSQL).
 
 ### Changed
 - MCP authentication now binds users to `Mcp-Session-Id` server sessions after initial bearer-token authentication, so MCP tools no longer require passing token parameters on every call.
