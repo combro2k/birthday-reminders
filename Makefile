@@ -15,7 +15,7 @@ build-css:
 	npm ci
 	npm run build:css
 
-build: build-css
+build:
 	cargo build --release
 
 install: build
@@ -61,7 +61,7 @@ package-deb: build
 	@echo ""
 	@echo "Package created: target/package/birthday-reminders_$(VERSION)_amd64.deb"
 
-package-apk: build-css
+package-apk:
 	@command -v nfpm >/dev/null 2>&1 || { echo "ERROR: nfpm not found. See https://nfpm.goreleaser.com/install/"; exit 1; }
 	@command -v docker >/dev/null 2>&1 || { echo "ERROR: docker not found, required for musl/Alpine build"; exit 1; }
 	mkdir -p target/package

@@ -33,8 +33,13 @@ fi
 printf '\n[release-check] Running gitleaks detect\n'
 gitleaks detect
 
-printf '\n[release-check] Running Tailwind CSS build\n'
-npx @tailwindcss/cli -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
+css_changed="$(git status --porcelain -- static/tailwind.input.css templates/)"
+if [[ -n "${css_changed}" ]]; then
+	printf '\n[release-check] CSS-related changes detected; running Tailwind CSS build\n'
+	npx @tailwindcss/cli -i ./static/tailwind.input.css -o ./static/tailwind.css --minify
+else
+	printf '\n[release-check] No CSS-related changes (tailwind.input.css, templates/); skipping Tailwind CSS build\n'
+fi
 
 printf '\n[release-check] Running cargo fmt --all -- --check\n'
 cargo fmt --all -- --check
