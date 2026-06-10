@@ -10,18 +10,20 @@ use rmcp::{
 use crate::infrastructure::web::server::AppState;
 use crate::mcp::application::birthdays::{
     AddBirthdayInput, GetBirthdayByNameInput, ListBirthdaysInput, RemoveBirthdayInput,
-    UpcomingBirthdaysInput,
+    UpcomingBirthdaysInput, HTTP_AUTH_USER_ID,
 };
 use crate::mcp::application::setup_guide;
+use crate::users::domain::user::UserId;
 
 #[derive(Clone)]
 pub(crate) struct BirthdayMcpServer {
     state: Arc<AppState>,
+    user_id: Option<UserId>,
 }
 
 impl BirthdayMcpServer {
-    fn new(state: Arc<AppState>) -> Self {
-        Self { state }
+    fn new(state: Arc<AppState>, user_id: Option<UserId>) -> Self {
+        Self { state, user_id }
     }
 }
 
@@ -34,7 +36,12 @@ impl BirthdayMcpServer {
         &self,
         Parameters(input): Parameters<ListBirthdaysInput>,
     ) -> Result<String, ErrorData> {
-        crate::mcp::application::birthdays::list_birthdays(self.state.as_ref(), input).await
+        crate::mcp::application::birthdays::list_birthdays(
+            self.state.as_ref(),
+            input,
+            self.user_id.as_ref(),
+        )
+        .await
     }
 
     #[tool(
@@ -44,7 +51,12 @@ impl BirthdayMcpServer {
         &self,
         Parameters(input): Parameters<UpcomingBirthdaysInput>,
     ) -> Result<String, ErrorData> {
-        crate::mcp::application::birthdays::upcoming_birthdays(self.state.as_ref(), input).await
+        crate::mcp::application::birthdays::upcoming_birthdays(
+            self.state.as_ref(),
+            input,
+            self.user_id.as_ref(),
+        )
+        .await
     }
 
     #[tool(
@@ -54,7 +66,12 @@ impl BirthdayMcpServer {
         &self,
         Parameters(input): Parameters<AddBirthdayInput>,
     ) -> Result<String, ErrorData> {
-        crate::mcp::application::birthdays::add_birthday(self.state.as_ref(), input).await
+        crate::mcp::application::birthdays::add_birthday(
+            self.state.as_ref(),
+            input,
+            self.user_id.as_ref(),
+        )
+        .await
     }
 
     #[tool(
@@ -64,7 +81,12 @@ impl BirthdayMcpServer {
         &self,
         Parameters(input): Parameters<GetBirthdayByNameInput>,
     ) -> Result<String, ErrorData> {
-        crate::mcp::application::birthdays::get_birthday_by_name(self.state.as_ref(), input).await
+        crate::mcp::application::birthdays::get_birthday_by_name(
+            self.state.as_ref(),
+            input,
+            self.user_id.as_ref(),
+        )
+        .await
     }
 
     #[tool(
@@ -77,6 +99,7 @@ impl BirthdayMcpServer {
         crate::mcp::application::birthdays::remove_birthday_not_supported(
             self.state.as_ref(),
             input,
+            self.user_id.as_ref(),
         )
         .await
     }
@@ -101,7 +124,13 @@ pub fn build_streamable_http_service(
     StreamableHttpService::new(
         {
             let state = state.clone();
-            move || Ok(BirthdayMcpServer::new(state.clone()))
+            move || {
+                // Capture user_id from the task-local set by the auth middleware.
+                // This works because rmcp calls the factory in the same task
+                // BEFORE spawning the session worker.
+                let user_id = HTTP_AUTH_USER_ID.try_with(|uid| uid.clone()).ok();
+                Ok(BirthdayMcpServer::new(state.clone(), user_id))
+            }
         },
         session_manager,
         config,
