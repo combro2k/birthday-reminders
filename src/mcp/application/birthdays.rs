@@ -88,8 +88,9 @@ struct RemoveBirthdayNotSupportedResponse {
 pub async fn list_birthdays(
     state: &AppState,
     _input: ListBirthdaysInput,
+    user_id: Option<&UserId>,
 ) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id()?;
+    let user_id = resolve_user_id(user_id)?;
     let birthdays = state
         .birthday_query_service
         .list_all(&user_id)
@@ -111,8 +112,9 @@ pub async fn list_birthdays(
 pub async fn upcoming_birthdays(
     state: &AppState,
     input: UpcomingBirthdaysInput,
+    user_id: Option<&UserId>,
 ) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id()?;
+    let user_id = resolve_user_id(user_id)?;
     let days = input.days.unwrap_or(30);
     if days > 3660 {
         return Err(ErrorData::invalid_params(
@@ -141,8 +143,8 @@ pub async fn upcoming_birthdays(
         .map_err(|e| ErrorData::internal_error(format!("Failed to serialize result: {e}"), None))
 }
 
-pub async fn add_birthday(state: &AppState, input: AddBirthdayInput) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id()?;
+pub async fn add_birthday(state: &AppState, input: AddBirthdayInput, user_id: Option<&UserId>) -> Result<String, ErrorData> {
+    let user_id = resolve_user_id(user_id)?;
 
     let name = input.name.trim().to_string();
     if name.is_empty() {
@@ -182,8 +184,9 @@ pub async fn add_birthday(state: &AppState, input: AddBirthdayInput) -> Result<S
 pub async fn get_birthday_by_name(
     state: &AppState,
     input: GetBirthdayByNameInput,
+    user_id: Option<&UserId>,
 ) -> Result<String, ErrorData> {
-    let user_id = resolve_user_id()?;
+    let user_id = resolve_user_id(user_id)?;
 
     let name = input.name.trim().to_string();
     if name.is_empty() {
@@ -216,8 +219,9 @@ pub async fn get_birthday_by_name(
 pub async fn remove_birthday_not_supported(
     _state: &AppState,
     input: RemoveBirthdayInput,
+    user_id: Option<&UserId>,
 ) -> Result<String, ErrorData> {
-    let _ = resolve_user_id()?;
+    let _ = resolve_user_id(user_id)?;
 
     let response = RemoveBirthdayNotSupportedResponse {
         supported: false,
@@ -229,15 +233,13 @@ pub async fn remove_birthday_not_supported(
         .map_err(|e| ErrorData::internal_error(format!("Failed to serialize result: {e}"), None))
 }
 
-fn resolve_user_id() -> Result<UserId, ErrorData> {
-    HTTP_AUTH_USER_ID
-        .try_with(|user_id| user_id.clone())
-        .map_err(|_| {
-            ErrorData::invalid_params(
-                "Not authenticated. Provide an Authorization: Bearer <token> header when initializing the MCP session.",
-                None,
-            )
-        })
+fn resolve_user_id(user_id: Option<&UserId>) -> Result<UserId, ErrorData> {
+    user_id.cloned().ok_or_else(|| {
+        ErrorData::invalid_params(
+            "Not authenticated. Provide an Authorization: Bearer <token> header when initializing the MCP session.",
+            None,
+        )
+    })
 }
 
 fn to_output(birthday: &Birthday, today: NaiveDate) -> BirthdayOutput {
